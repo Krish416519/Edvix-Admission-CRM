@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Save, Settings2, SlidersHorizontal, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { fetchAiConfig, updateAiConfig } from '../../lib/adminService';
 import { toast } from 'sonner';
 
 export function AiSettings() {
@@ -16,10 +17,8 @@ export function AiSettings() {
   const fetchConfig = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('ai_settings').select('*').limit(1).single();
-      if (data) {
-        setConfig(data);
-      }
+      const data = await fetchAiConfig();
+      setConfig(data);
     } catch (err) {
       console.error('No AI config found or failed to load');
     }
@@ -33,12 +32,7 @@ export function AiSettings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { id, created_at, updated_at, ...updateData } = config;
-      if (id) {
-        await supabase.from('ai_settings').update(updateData).eq('id', id);
-      } else {
-        await supabase.from('ai_settings').insert([updateData]);
-      }
+      await updateAiConfig(config);
       toast.success('AI Configuration saved successfully');
       fetchConfig();
     } catch (err: any) {
@@ -46,10 +40,9 @@ export function AiSettings() {
     }
   };
 
-  // Hardcode usage limits for display purposes since it's not tracked in DB yet
-  const currentUsage = 1500000;
-  const usageLimitMonthly = 5000000;
-  const usagePercent = (currentUsage / usageLimitMonthly) * 100;
+  const currentUsage = config.currentUsage || 0;
+  const usageLimitMonthly = config.usageLimitMonthly || 50000;
+  const usagePercent = usageLimitMonthly > 0 ? (currentUsage / usageLimitMonthly) * 100 : 0;
 
   return (
     <div className="space-y-6 max-w-4xl">

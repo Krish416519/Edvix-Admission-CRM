@@ -16,9 +16,13 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
     email: '',
     password: '',
     role_id: '',
-    is_active: true
+    is_active: true,
+    department: '',
+    team: '',
+    manager_id: ''
   });
   const [roles, setRoles] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -28,15 +32,24 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
         email: initialData?.email || '',
         password: '',
         role_id: initialData?.role_id || '',
-        is_active: initialData?.is_active ?? true
+        is_active: initialData?.is_active ?? true,
+        department: initialData?.department || '',
+        team: initialData?.team || '',
+        manager_id: initialData?.manager_id || ''
       });
       fetchRoles();
+      fetchManagers();
     }
   }, [isOpen, initialData]);
 
   const fetchRoles = async () => {
     const { data } = await supabase.from('roles').select('id, name').order('name');
     if (data) setRoles(data);
+  };
+
+  const fetchManagers = async () => {
+    const { data } = await supabase.from('users').select('id, name').eq('is_active', true).order('name');
+    if (data) setManagers(data);
   };
 
   if (!isOpen) return null;
@@ -115,6 +128,47 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
               <option value="">Select a role...</option>
               {roles.map(r => (
                 <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Department</label>
+            <select
+              value={formData.department}
+              onChange={e => setFormData({ ...formData, department: e.target.value })}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Select department...</option>
+              <option value="Admissions">Admissions</option>
+              <option value="Counseling">Counseling</option>
+              <option value="Finance">Finance</option>
+              <option value="Operations">Operations</option>
+              <option value="IT">IT</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Team</label>
+            <input
+              type="text"
+              placeholder="e.g. North Region, Online Leads"
+              value={formData.team}
+              onChange={e => setFormData({ ...formData, team: e.target.value })}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Reporting Manager</label>
+            <select
+              value={formData.manager_id}
+              onChange={e => setFormData({ ...formData, manager_id: e.target.value })}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Select manager...</option>
+              {managers.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
               ))}
             </select>
           </div>

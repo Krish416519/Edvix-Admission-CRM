@@ -107,7 +107,7 @@ export function LeadsList() {
 
   // Bulk Assign state
   const [showBulkAssign, setShowBulkAssign] = useState(false);
-  const [bulkAssignUserId, setBulkAssignUserId] = useState('');
+  const [bulkAssignUserIds, setBulkAssignUserIds] = useState<string[]>([]);
   const [bulkAssignSearch, setBulkAssignSearch] = useState('');
 
   // Bulk Update state
@@ -168,19 +168,26 @@ export function LeadsList() {
     sort: { field: sortField as string, direction: sortDirection }
   });
 
-  const { allUsers, isAssigning, bulkAssignLeads } = useLeadAssignment();
+  const { allUsers, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
 
   const handleBulkAssign = async () => {
-    if (!bulkAssignUserId) {
-      toast.error('Please select a user to assign leads to');
+    if (bulkAssignUserIds.length === 0) {
+      toast.error('Please select at least one user to assign leads to');
       return;
     }
     const ids = Array.from(selectedIds) as string[];
-    const res = await bulkAssignLeads(ids, bulkAssignUserId);
+    let res;
+    if (bulkAssignUserIds.length === 1) {
+      res = await bulkAssignLeads(ids, bulkAssignUserIds[0]);
+    } else {
+      res = await roundRobinAssignLeads(ids, bulkAssignUserIds);
+    }
+    
     if (res.success) {
       setSelectedIds(new Set());
       setShowBulkAssign(false);
-      setBulkAssignUserId('');
+      setBulkAssignUserIds([]);
+      refresh();
     }
   };
 
@@ -1097,10 +1104,14 @@ export function LeadsList() {
                   .map(u => (
                     <button
                       key={u.id}
-                      onClick={() => setBulkAssignUserId(u.id)}
+                      onClick={() => {
+                        setBulkAssignUserIds(prev => 
+                          prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                        );
+                      }}
                       className={cn(
                         'w-full flex items-center gap-3 p-3 rounded-lg text-sm transition-colors text-left',
-                        bulkAssignUserId === u.id
+                        bulkAssignUserIds.includes(u.id)
                           ? 'bg-primary/10 border border-primary/30'
                           : 'hover:bg-muted border border-transparent'
                       )}
@@ -1111,7 +1122,7 @@ export function LeadsList() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-foreground truncate">{u.name}</span>
-                          {bulkAssignUserId === u.id && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                          {bulkAssignUserIds.includes(u.id) && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className={cn(
@@ -1139,14 +1150,14 @@ export function LeadsList() {
             </div>
             <div className="flex gap-2 p-5 border-t border-border">
               <button
-                onClick={() => { setShowBulkAssign(false); setBulkAssignUserId(''); }}
+                onClick={() => { setShowBulkAssign(false); setBulkAssignUserIds([]); }}
                 className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-muted-foreground hover:bg-muted transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkAssign}
-                disabled={!bulkAssignUserId || isAssigning}
+                disabled={bulkAssignUserIds.length === 0 || isAssigning}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isAssigning ? (
@@ -1155,7 +1166,7 @@ export function LeadsList() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
                 ) : <UserPlus className="w-4 h-4" />}
-                {isAssigning ? 'Assigning...' : `Assign ${selectedIds.size} Lead${selectedIds.size !== 1 ? 's' : ''}`}
+                {isAssigning ? 'Assigning...' : bulkAssignUserIds.length > 1 ? `Round Robin (${bulkAssignUserIds.length})` : `Assign ${selectedIds.size} Lead${selectedIds.size !== 1 ? 's' : ''}`}
               </button>
             </div>
           </div>

@@ -9,15 +9,14 @@ export async function fetchSystemMetrics(): Promise<SystemMetrics> {
     console.error('Error fetching dashboard metrics:', error);
     throw error;
   }
-  
-  // Provide defaults for hardware stats since they are "for-show"
+  // Provide defaults for hardware stats if the RPC hasn't been updated yet
   return {
     ...data,
-    serverStatus: 'Operational',
-    databaseStatus: 'Operational',
-    apiHealth: 99.9,
-    storageUsedGB: 12.4,
-    storageTotalGB: 100,
+    serverStatus: data.serverStatus || 'Operational',
+    databaseStatus: data.databaseStatus || 'Operational',
+    apiHealth: data.apiHealth || 99.9,
+    storageUsedGB: data.storageUsedGB || 12.4,
+    storageTotalGB: data.storageTotalGB || 100,
   } as SystemMetrics;
 }
 

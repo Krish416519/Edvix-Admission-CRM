@@ -10,7 +10,7 @@ import { UserFormModal } from './UserFormModal';
 const fetchUsers = async () => {
   const { data, error } = await supabase
     .from('users')
-    .select('id, email, name, role_id, is_active, last_login, role:roles(name)')
+    .select('id, email, name, role_id, is_active, last_login, department, team, manager_id, role:roles(name)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -23,6 +23,9 @@ const fetchUsers = async () => {
     name: u.name || u.email,
     email: u.email,
     role_id: u.role_id,
+    department: u.department || '',
+    team: u.team || '',
+    manager_id: u.manager_id || '',
     role: Array.isArray(u.role) ? u.role[0]?.name : (u.role?.name || 'User'),
     is_active: u.is_active,
     status: u.is_active ? 'Active' : 'Locked',
@@ -172,6 +175,14 @@ export function UserManagement() {
         });
         if (rpcError) throw rpcError;
         if (rpcData && !rpcData.success) throw new Error(rpcData.error || 'Update failed');
+        
+        // Update extra fields directly
+        await supabase.from('users').update({
+          department: formData.department || null,
+          team: formData.team || null,
+          manager_id: formData.manager_id || null
+        }).eq('id', selectedUser.id);
+        
         toast.success('User updated successfully');
       } else {
         // Create new user using the edge function to bypass signup restrictions
@@ -190,6 +201,16 @@ export function UserManagement() {
         if (rpcError) throw rpcError;
         if (rpcData && !rpcData.success) throw new Error(rpcData.error || 'Failed to create user');
         
+        // Wait, edge function might not return the new ID, so we fetch it by email
+        const { data: newUser } = await supabase.from('users').select('id').eq('email', formData.email).single();
+        if (newUser) {
+           await supabase.from('users').update({
+             department: formData.department || null,
+             team: formData.team || null,
+             manager_id: formData.manager_id || null
+           }).eq('id', newUser.id);
+        }
+        
         toast.success(`User ${formData.name} created successfully!`);
       }
       loadUsers();
@@ -197,6 +218,38 @@ export function UserManagement() {
       toast.error(err.message || 'Failed to save user');
       throw err;
     }
+  };
+
+  const handleExport = () => {
+    if (users.length === 0) return toast.error('No users to export');
+    const headers = ['Name', 'Email', 'Role', 'Status', 'Department', 'Team', 'Last Login'];
+    const csvContent = [
+      headers.join(','),
+      ...users.map(u => [
+        `"${u.name}"`,
+        `"${u.email}"`,
+        `"${u.role}"`,
+        `"${u.status}"`,
+        `"${u.department || ''}"`,
+        `"${u.team || ''}"`,
+        `"${u.lastLogin}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `edvix_users_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Basic import UI stub
+    toast.info('Import feature requires a backend processing endpoint. Not fully implemented.');
   };
 
   const isAllSelected = filteredUsers.length > 0 && selectedIds.size === filteredUsers.length;
@@ -212,16 +265,28 @@ export function UserManagement() {
           </h2>
           <p className="text-sm text-muted-foreground mt-1">Manage team members, roles, and account security.</p>
         </div>
-        <button
-          onClick={() => {
-            setSelectedUser(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover shadow-sm flex items-center gap-2 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add User
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary/80 shadow-sm transition-colors"
+          >
+            Export CSV
+          </button>
+          <label className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary/80 shadow-sm transition-colors cursor-pointer">
+            Import CSV
+            <input type="file" accept=".csv" className="hidden" onChange={handleImport} />
+          </label>
+          <button
+            onClick={() => {
+              setSelectedUser(null);
+              setIsModalOpen(true);
+            }}
+            className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover shadow-sm flex items-center gap-2 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">

@@ -415,6 +415,38 @@ export function useLeadAssignment(leadId?: string) {
     }
   };
 
+  // ─── Round Robin Assign ──────────────────────────────────────────────────────
+  const roundRobinAssignLeads = async (
+    leadIds: string[],
+    assigneeIds: string[],
+    notes?: string
+  ): Promise<{ success: boolean; count?: number; error?: string }> => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+    if (leadIds.length === 0) return { success: false, error: 'No leads selected' };
+    if (assigneeIds.length === 0) return { success: false, error: 'No assignees selected' };
+
+    setIsAssigning(true);
+    let successCount = 0;
+    try {
+      // Loop over leadIds and assigneeIds sequentially
+      for (let i = 0; i < leadIds.length; i++) {
+        const lid = leadIds[i];
+        const assigneeId = assigneeIds[i % assigneeIds.length]; // Round Robin logic
+        const res = await assignLeadFallback(lid, assigneeId, notes);
+        if (res.success) successCount++;
+      }
+      
+      toast.success(`${successCount} of ${leadIds.length} leads assigned via Round Robin`);
+      await fetchAssignableUsers();
+      return { success: true, count: successCount };
+    } catch (err: any) {
+      toast.error('Round robin assignment failed: ' + err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   // ─── Helper: filter users by role ────────────────────────────────────────────
   const getUsersByRole = (roleName: string) =>
     allUsers.filter(u => u.role_name === roleName);
@@ -429,6 +461,7 @@ export function useLeadAssignment(leadId?: string) {
     isAssigning,
     assignLead,
     bulkAssignLeads,
+    roundRobinAssignLeads,
     removeAssignment,
     getUsersByRole,
     refresh: fetchAssignableUsers,
