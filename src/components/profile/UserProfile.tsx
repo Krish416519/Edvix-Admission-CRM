@@ -1,0 +1,189 @@
+import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { User, Mail, Phone, Building2, Shield, Calendar, Clock, Activity, Camera } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
+
+export function UserProfile() {
+  const { user } = useAuth();
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [department, setDepartment] = useState(user?.department || '');
+  const [name, setName] = useState(user?.name || '');
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ phone, department, name })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+
+      // Update auth metadata as well so it's in sync
+      await supabase.auth.updateUser({
+        data: { name }
+      });
+        
+      toast.success('Profile updated successfully');
+      // A page reload or context refetch would happen if we triggered a session update, 
+      // but typically we can rely on the context refreshing or just state updating.
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update profile');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (!user) return null;
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleString();
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-10">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">My Profile</h1>
+        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Column - Profile Card */}
+        <div className="md:col-span-1 space-y-6">
+          <div className="bg-card border border-border rounded-xl p-6 shadow-sm text-center">
+            <div className="relative inline-block mb-4">
+              {user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-md mx-auto"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold border-4 border-background shadow-md mx-auto">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <button className="absolute bottom-0 right-0 p-1.5 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors">
+                <Camera className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5 mt-1">
+              <Shield className="w-3.5 h-3.5" />
+              {user.role}
+            </p>
+            
+            <div className="mt-6 pt-6 border-t border-border flex flex-col gap-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-2">
+                  <Activity className="w-4 h-4" /> Status
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.isActive ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'}`}>
+                  {user.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> Last Login
+                </span>
+                <span className="font-medium text-foreground text-right max-w-[120px] truncate" title={formatDate(user.lastLogin)}>
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Edit Form */}
+        <div className="md:col-span-2">
+          <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <h3 className="text-lg font-medium text-foreground">Personal Information</h3>
+              <p className="text-sm text-muted-foreground mt-1">Update your personal details and contact information.</p>
+            </div>
+            
+            <form onSubmit={handleUpdateProfile} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" /> Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm"
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" /> Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={user.email}
+                    disabled
+                    className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-muted-foreground cursor-not-allowed sm:text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Email cannot be changed directly.</p>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" /> Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 234 567 8900"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm"
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-muted-foreground" /> Department
+                  </label>
+                  <input
+                    type="text"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    placeholder="e.g. Sales, Marketing"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-4 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center"
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,133 @@
+import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, Users, GraduationCap, 
+  IndianRupee, PieChart, LogOut, Sparkles, UserPlus
+} from 'lucide-react';
+import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
+
+const navigation = [
+  { name: 'Overview', href: '/partner', icon: LayoutDashboard },
+  { name: 'My Leads', href: '/partner/leads', icon: Users },
+  { name: 'Admissions', href: '/partner/admissions', icon: GraduationCap },
+  { name: 'Commissions', href: '/partner/commissions', icon: IndianRupee },
+  { name: 'Reports', href: '/partner/reports', icon: PieChart },
+];
+
+export function PartnerSidebar({ 
+  sidebarOpen, 
+  setSidebarOpen 
+}: { 
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="relative z-50 lg:hidden">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 flex">
+            <div className="relative mr-16 flex w-full max-w-xs flex-1 transform transition duration-300 ease-in-out">
+              <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card border-r border-border px-6 pb-4">
+                <div className="flex h-16 shrink-0 items-center">
+                  <Sparkles className="h-8 w-8 text-indigo-500" />
+                  <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+                    Partner Portal
+                  </span>
+                </div>
+                <nav className="flex flex-1 flex-col">
+                  <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                    <li>
+                      <ul role="list" className="-mx-2 space-y-1">
+                        {navigation.map((item) => (
+                          <li key={item.name}>
+                            <NavLink
+                              to={item.href}
+                              end={item.href === '/partner'}
+                              onClick={() => setSidebarOpen(false)}
+                              className={({ isActive }) =>
+                                cn(
+                                  isActive
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                                  'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-all'
+                                )
+                              }
+                            >
+                              <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                              {item.name}
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border bg-card px-6 pb-4 pt-4">
+          <div className="flex h-12 shrink-0 items-center px-2">
+            <Sparkles className="h-7 w-7 text-indigo-500" />
+            <span className="ml-3 text-xl font-bold tracking-tight text-foreground">
+              Edvix <span className="text-muted-foreground font-medium text-lg">Partner</span>
+            </span>
+          </div>
+          <nav className="flex flex-1 flex-col pt-4">
+            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+              <li>
+                <div className="text-xs font-semibold leading-6 text-muted-foreground uppercase tracking-wider mb-2 px-2">
+                  Portal Menu
+                </div>
+                <ul role="list" className="-mx-2 space-y-1">
+                  {navigation.map((item) => (
+                    <li key={item.name}>
+                      <NavLink
+                        to={item.href}
+                        end={item.href === '/partner'}
+                        className={({ isActive }) =>
+                          cn(
+                            isActive
+                              ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                            'group flex gap-x-3 rounded-lg p-2.5 text-sm leading-6 font-medium transition-all'
+                          )
+                        }
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        {item.name}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+              
+              <li className="mt-auto -mx-2">
+                 <button
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }}
+                    className="w-full flex items-center gap-x-3 rounded-lg p-2.5 text-sm leading-6 font-medium text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Sign out
+                 </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </>
+  );
+}

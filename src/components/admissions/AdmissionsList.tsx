@@ -1,0 +1,219 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, ChevronRight, GraduationCap, Calendar, Building, BookOpen, User } from 'lucide-react';
+import { useAdmissions } from '../../hooks/useAdmissions';
+import { Admission, AdmissionStage } from '../../types/admission';
+import { EmptyState } from '../ui/EmptyState';
+import { Skeleton } from '../ui/Skeleton';
+import { AdmissionsDashboardWidgets } from './AdmissionsDashboardWidgets';
+
+const stages: AdmissionStage[] = [
+  'Inquiry',
+  'Interested',
+  'Counseling',
+  'Documents Pending',
+  'Documents Verified',
+  'Application Submitted',
+  'University Verification',
+  'Fee Pending',
+  'Payment Received',
+  'Admission Confirmed',
+  'Enrollment Completed',
+  'LMS Issued',
+  'Completed',
+  'Cancelled',
+];
+
+export function AdmissionsList() {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stageFilter, setStageFilter] = useState<AdmissionStage | 'All'>('All');
+  const [universityFilter, setUniversityFilter] = useState('All');
+  const [intakeFilter, setIntakeFilter] = useState('All');
+  const [counselorFilter, setCounselorFilter] = useState('All');
+
+  const { admissions, isLoading } = useAdmissions({
+    stage: stageFilter === 'All' ? undefined : stageFilter,
+    searchTerm: searchTerm || undefined,
+  });
+
+  const universities = Array.from(new Set(admissions.map(a => a.university).filter(Boolean)));
+  const intakes = Array.from(new Set(admissions.map(a => a.intake).filter(Boolean)));
+  const counselors = Array.from(new Set(admissions.map(a => a.counselorName).filter(Boolean)));
+
+  // Client-side filter for university/intake/counselor (these are display filters on already-fetched data)
+  const filteredAdmissions = admissions.filter(adm => {
+    const matchesUniv = universityFilter === 'All' || adm.university === universityFilter;
+    const matchesIntake = intakeFilter === 'All' || adm.intake === intakeFilter;
+    const matchesCounselor = counselorFilter === 'All' || adm.counselorName === counselorFilter;
+    return matchesUniv && matchesIntake && matchesCounselor;
+  });
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Admissions</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage and track student admissions progress.</p>
+        </div>
+      </div>
+      
+      <AdmissionsDashboardWidgets admissions={admissions} />
+
+      <div className="bg-card border border-border rounded-2xl shadow-sm flex flex-col flex-1 overflow-hidden">
+        {/* Toolbar */}
+        <div className="p-4 border-b border-border flex flex-col gap-4 bg-muted/20">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input 
+              type="text" 
+              placeholder="Search by student name, ID, or course..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-shadow"
+            />
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1.5 flex-1 min-w-[150px]">
+              <Filter className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
+              <select 
+                value={stageFilter}
+                onChange={e => setStageFilter(e.target.value as any)}
+                className="w-full bg-transparent text-sm focus:outline-none truncate"
+              >
+                <option value="All">All Stages</option>
+                {stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1.5 flex-1 min-w-[150px]">
+              <Building className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
+              <select 
+                value={universityFilter}
+                onChange={e => setUniversityFilter(e.target.value)}
+                className="w-full bg-transparent text-sm focus:outline-none truncate"
+              >
+                <option value="All">All Universities</option>
+                {universities.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1.5 flex-1 min-w-[150px]">
+              <Calendar className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
+              <select 
+                value={intakeFilter}
+                onChange={e => setIntakeFilter(e.target.value)}
+                className="w-full bg-transparent text-sm focus:outline-none truncate"
+              >
+                <option value="All">All Intakes</option>
+                {intakes.map(i => <option key={i} value={i}>{i}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-2 py-1.5 flex-1 min-w-[150px]">
+              <User className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
+              <select 
+                value={counselorFilter}
+                onChange={e => setCounselorFilter(e.target.value)}
+                className="w-full bg-transparent text-sm focus:outline-none truncate"
+              >
+                <option value="All">All Counselors</option>
+                {counselors.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-auto relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8">
+               <Skeleton className="h-12 w-full rounded-lg mb-4" />
+               <Skeleton className="h-16 w-full rounded-xl mb-2" />
+               <Skeleton className="h-16 w-full rounded-xl mb-2" />
+               <Skeleton className="h-16 w-full rounded-xl mb-2" />
+            </div>
+          )}
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="text-xs text-muted-foreground uppercase bg-muted/50 sticky top-0 z-10 border-b border-border">
+              <tr>
+                <th scope="col" className="px-6 py-3 font-semibold">Student & ID</th>
+                <th scope="col" className="px-6 py-3 font-semibold">Program & Intake</th>
+                <th scope="col" className="px-6 py-3 font-semibold">Stage</th>
+                <th scope="col" className="px-6 py-3 font-semibold">Counselor</th>
+                <th scope="col" className="px-6 py-3 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredAdmissions.map((adm) => (
+                <tr 
+                  key={adm.id} 
+                  onClick={() => navigate(`/admissions/${adm.id}`)}
+                  className="hover:bg-muted/30 transition-colors cursor-pointer group"
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shadow-sm">
+                        {adm.studentName.charAt(0)}
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{adm.studentName}</span>
+                        <span className="text-xs text-muted-foreground">{adm.admissionNumber || adm.id}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium text-foreground">{adm.course} • {adm.university}</span>
+                      <span className="text-xs text-muted-foreground">{adm.intake || 'N/A'} {adm.academicSession}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider">
+                      {adm.currentStage || adm.stage}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="font-medium">{adm.counselorName || 'Unassigned'}</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              
+              {filteredAdmissions.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-0">
+                    <EmptyState
+                      icon={GraduationCap}
+                      title="No admissions found"
+                      description="We couldn't find any admissions matching your current filters."
+                      action={
+                        <button 
+                          onClick={() => {
+                            setSearchTerm('');
+                            setStageFilter('All');
+                            setUniversityFilter('All');
+                            setIntakeFilter('All');
+                            setCounselorFilter('All');
+                          }}
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      }
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
