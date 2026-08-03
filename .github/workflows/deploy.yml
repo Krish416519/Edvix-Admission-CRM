@@ -27,6 +27,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
+      - name: 🔍 Check host DNS resolution
+        run: |
+          if ! getent hosts "${{ secrets.FTP_SERVER }}"; then
+            echo "ERROR: cannot resolve '${{ secrets.FTP_SERVER }}'. Verify the FTP_SERVER secret."
+            echo "Make sure it does NOT include 'ftp://' or 'sftp://' - it should just be the hostname (e.g. ftp.yourdomain.com or IP address)."
+            exit 1
+          fi
+
       - name: 📂 Sync files to Hostinger FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
