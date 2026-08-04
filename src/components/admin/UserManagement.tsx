@@ -150,6 +150,9 @@ export function UserManagement() {
         await adminDeleteUser(user.id);
         toast.success(`Deleted user ${user.name}`);
       } else if (action === 'Force Logout') {
+        const { data, error } = await supabase.rpc('admin_force_logout', { p_user_id: user.id });
+        if (error) throw error;
+        if (data && !data.success) throw new Error(data.error || 'Failed to force logout');
         toast.success(`Forced logout for ${user.name}`);
       } else if (action === 'Password Reset') {
         const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
