@@ -12,13 +12,13 @@ const navigation = [
   { name: 'Tasks', href: '/tasks', icon: CheckCircle },
   { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare },
   { name: 'Email', href: '/email', icon: Mail },
-  { name: 'Integrations', href: '/integration', icon: Network },
-  { name: 'Automation', href: '/automation', icon: Workflow },
-  { name: 'Analytics', href: '/analytics', icon: PieChart },
+  { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
+  { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
+  { name: 'Analytics', href: '/analytics', icon: PieChart, permission: { action: 'View Reports', resource: 'Reports' } },
   { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Admin Console', href: '/admin', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
-  { name: 'Backend Status', href: '/admin/backend', icon: Server, roles: ['Super Admin', 'Admin'] },
-  { name: 'Finance', href: '/finance', icon: IndianRupee, roles: ['Super Admin', 'Admin'] },
+  { name: 'Admin Console', href: '/admin', icon: ShieldAlert, permission: { action: 'Manage Settings', resource: 'System Settings' } },
+  { name: 'Backend Status', href: '/admin/backend', icon: Server, permission: { action: 'Manage Settings', resource: 'System Settings' } },
+  { name: 'Finance', href: '/finance', icon: IndianRupee, permission: { action: 'Read', resource: 'Finance' } },
   { name: 'Marketing Hub', href: '/marketing', icon: Megaphone, roles: ['Super Admin', 'Admin', 'Marketing'] },
   { name: 'Partner Portal', href: '/partner', icon: Network, roles: ['Super Admin', 'Admin', 'Partner'] },
   { name: 'University Portal', href: '/university', icon: GraduationCap, roles: ['Super Admin', 'Admin', 'University'] },
@@ -26,7 +26,7 @@ const navigation = [
 
 export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const location = useLocation();
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, hasPermission } = useAuth();
   const { unreadCount } = useNotifications();
 
   return (
@@ -59,7 +59,9 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         <div className="flex flex-1 flex-col overflow-y-auto px-3 py-4">
           <nav className="flex-1 space-y-1">
             {navigation.map((item) => {
+              // Backward compatibility for roles, preferred is permissions
               if (item.roles && !hasRole(item.roles as any)) return null;
+              if (item.permission && !hasPermission(item.permission.action, item.permission.resource)) return null;
               
               const isActive = location.pathname === item.href;
               return (

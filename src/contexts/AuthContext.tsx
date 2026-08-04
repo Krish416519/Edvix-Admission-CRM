@@ -6,9 +6,11 @@ import { toast } from 'sonner';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  permissions: { action: string; resource: string }[];
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: Role[]) => boolean;
+  hasPermission: (action: string, resource: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,14 +20,15 @@ const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=a042581f4e29026704d';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [permissions, setPermissions] = useState<{ action: string; resource: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper to construct our local User object from a Supabase User
   const parseSupabaseUser = (sbUser: any, profileData?: any): User => {
     const email = sbUser.email || '';
     
-    // Role is pulled directly from user metadata (JWT claim) or falls back to 'Viewer'
-    const role: Role = (sbUser.user_metadata?.role as Role) || 'Viewer';
+    // Role is pulled from the live DB (roles table) or falls back to 'Viewer'
+    const role: Role = (profileData?.roles?.name as Role) || (sbUser.user_metadata?.role as Role) || 'Viewer';
     
     const name = profileData?.name || sbUser.user_metadata?.name || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
     const avatar = profileData?.avatar_url || sbUser.user_metadata?.avatar_url || DEFAULT_AVATAR;
@@ -49,15 +52,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch user profile from DB
     const fetchUserProfile = async (userId: string) => {
       try {
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('users')
-          .select('*')
+          .select('*, roles(name)')
           .eq('id', userId)
           .single();
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching user profile:', error);
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching user profile:', profileError);
         }
-        return data || null;
+        
+        // Fetch permissions
+        const { data: permsData, error: permsError } = await supabase.rpc('get_user_permissions', { p_user_id: userId });
+        if (permsError) {
+          console.error('Error fetching permissions:', permsError);
+        } else if (permsData) {
+          setPermissions(permsData);
+        }
+
+        return profileData || null;
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
         return null;
@@ -144,8 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roles.includes(user.role);
   };
 
+  const hasPermission = (action: string, resource: string) => {
+    if (!user) return false;
+    if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
+    
+    return permissions.some(
+      (p) => p.action.toLowerCase() === action.toLowerCase() && 
+             p.resource.toLowerCase() === resource.toLowerCase()
+    );
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

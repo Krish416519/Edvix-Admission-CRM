@@ -31,17 +31,20 @@ CREATE INDEX IF NOT EXISTS idx_lead_assignments_active     ON public.lead_assign
 -- ─── 3. RLS ON lead_assignments ───────────────────────────────────────────────
 ALTER TABLE public.lead_assignments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins full access to lead_assignments" ON public.lead_assignments;
 -- Super Admin & Admin can do everything
 CREATE POLICY "Admins full access to lead_assignments" ON public.lead_assignments
   FOR ALL
   USING (public.user_role() IN ('Super Admin', 'Admin'))
   WITH CHECK (public.user_role() IN ('Super Admin', 'Admin'));
 
+DROP POLICY IF EXISTS "Manager TL can view lead_assignments" ON public.lead_assignments;
 -- Manager & Team Leader can view assignments in their scope
 CREATE POLICY "Manager TL can view lead_assignments" ON public.lead_assignments
   FOR SELECT
   USING (public.user_role() IN ('Manager', 'Team Leader'));
 
+DROP POLICY IF EXISTS "Counselors see own assignments" ON public.lead_assignments;
 -- Counselors can see their own assignments
 CREATE POLICY "Counselors see own assignments" ON public.lead_assignments
   FOR SELECT
