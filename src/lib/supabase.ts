@@ -13,10 +13,6 @@ export const supabase = hasSupabaseKeys
   // In production, missing keys would cause this to fail, which is expected.
   : createClient('https://placeholder.supabase.co', 'placeholder-key') ; 
 
-export const supabaseAdmin = hasSupabaseKeys
-  ? createClient(supabaseUrl, import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY)
-  : createClient('https://placeholder.supabase.co', 'placeholder-key'); 
-
 // Helper function to check real connectivity
 export const checkSupabaseConnection = async () => {
   if (!hasSupabaseKeys) {
