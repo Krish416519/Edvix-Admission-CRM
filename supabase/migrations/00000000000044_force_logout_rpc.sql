@@ -17,6 +17,10 @@ BEGIN
     DELETE FROM auth.refresh_tokens WHERE session_id IN (SELECT id FROM auth.sessions WHERE user_id = p_user_id);
     DELETE FROM auth.sessions WHERE user_id = p_user_id;
 
+    -- Update the user's updated_at timestamp to trigger a realtime Postgres update 
+    -- which the frontend will listen to and then verify session validity.
+    UPDATE public.users SET updated_at = NOW() WHERE id = p_user_id;
+
     RETURN jsonb_build_object('success', true);
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);

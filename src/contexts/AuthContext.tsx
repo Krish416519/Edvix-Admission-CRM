@@ -108,9 +108,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     });
 
+    let userChannel: any = null;
+
+    // We can't know the user id synchronously, so we wait for initAuth to finish
+    // then set up a realtime subscription if we have a user
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        userChannel = supabase.channel(`public:users:id=eq.${session.user.id}`)
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'users',
+            filter: `id=eq.${session.user.id}`
+          }, async (payload) => {
+            // Verify if the session is still valid by reaching out to the server
+            const { error: userError } = await supabase.auth.getUser();
+            if (userError) {
+              console.log('Session invalidated, logging out...');
+              await supabase.auth.signOut();
+              setUser(null);
+              window.location.href = '/login';
+            } else {
+              // Update local profile since it changed
+              const profile = await fetchUserProfile(session.user.id);
+              setUser(parseSupabaseUser(session.user, profile));
+            }
+          })
+          .subscribe();
+      }
+    };
+
+    initAuth().then(setupRealtime);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      if (userChannel) supabase.removeChannel(userChannel);
     };
   }, []);
 
