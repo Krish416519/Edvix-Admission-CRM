@@ -1,32 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Key, Copy, Plus, Trash2, Shield, Eye, EyeOff, AlertTriangle } from 'lucide-react';
-import { integrationService } from '../../lib/integrationService';
+import React, { useState } from 'react';
+import { Key, Copy, Plus, Trash2, Shield, Eye, EyeOff, AlertTriangle, Loader2 } from 'lucide-react';
+import { useIntegration } from '../../lib/integrationService';
 import { ApiKey } from '../../types/integration';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 
 export function ApiKeysTab() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const { apiKeys: keys, revokeApiKey, generateApiKey } = useIntegration();
   const [showKeyId, setShowKeyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setKeys(integrationService.getApiKeys());
-    const unsub = integrationService.subscribe((event) => {
-      if (event === 'api_keys_updated') {
-        setKeys([...integrationService.getApiKeys()]);
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  const handleCreate = () => {
-    integrationService.generateApiKey('New Integration Key', ['write']);
-    toast.success('API Key generated successfully');
+  const handleCreate = async () => {
+    try {
+      await generateApiKey('New Integration Key', ['write']);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleRevoke = (id: string) => {
-    integrationService.revokeApiKey(id);
-    toast.success('API Key revoked');
+  const handleRevoke = async (id: string) => {
+    try {
+      await revokeApiKey(id);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const copyToClipboard = (text: string) => {

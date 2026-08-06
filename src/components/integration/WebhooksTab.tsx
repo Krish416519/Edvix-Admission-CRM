@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Webhook, Plus, Settings2, Activity } from 'lucide-react';
-import { integrationService } from '../../lib/integrationService';
-import { WebhookConfig } from '../../types/integration';
+import React from 'react';
+import { Webhook, Plus, Settings2, Activity, Loader2 } from 'lucide-react';
+import { useIntegration } from '../../lib/integrationService';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
 
 export function WebhooksTab() {
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
-
-  useEffect(() => {
-    setWebhooks(integrationService.getWebhooks());
-  }, []);
+  const { webhooks } = useIntegration();
 
   return (
     <div className="space-y-6">

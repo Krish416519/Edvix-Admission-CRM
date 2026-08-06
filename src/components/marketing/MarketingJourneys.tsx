@@ -1,6 +1,6 @@
 import React from 'react';
-import { mockJourneys } from '../../data/mockMarketing';
-import { Workflow, Plus, Play, Pause, MoreHorizontal, MessageSquare, Mail, Clock, UserPlus } from 'lucide-react';
+import { useMarketing } from '../../hooks/useMarketing';
+import { Workflow, Plus, Play, Pause, MoreHorizontal, MessageSquare, Mail, Clock, UserPlus, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -13,6 +13,7 @@ const iconMap = {
 };
 
 export function MarketingJourneys() {
+  const { journeys, loading } = useMarketing();
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -27,8 +28,26 @@ export function MarketingJourneys() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {mockJourneys.map(journey => (
-          <div key={journey.id} className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
+        {loading ? (
+          <div className="col-span-1 lg:col-span-2 flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : journeys.length === 0 ? (
+          <div className="col-span-1 lg:col-span-2">
+            <EmptyState
+              icon={Workflow}
+              title="No journeys found"
+              description="Create your first automated nurturing journey to engage with leads."
+              action={
+                <button onClick={() => {}} className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-sm hover:bg-primary/90 transition-colors">
+                  Create Journey
+                </button>
+              }
+            />
+          </div>
+        ) : (
+          journeys.map(journey => (
+            <div key={journey.id} className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden">
             <div className="p-5 border-b border-border flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -83,7 +102,8 @@ export function MarketingJourneys() {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
 
         <button className="rounded-xl border-2 border-dashed border-border bg-card/50 hover:bg-muted/30 transition-colors flex flex-col items-center justify-center min-h-[300px] text-muted-foreground hover:text-foreground group">
           <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

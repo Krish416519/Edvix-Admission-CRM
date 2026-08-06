@@ -1,24 +1,26 @@
 import React from 'react';
-import { mockCampaigns } from '../../data/mockMarketing';
-import { TrendingUp, PieChart as PieChartIcon, IndianRupee, Target } from 'lucide-react';
+import { useMarketing } from '../../hooks/useMarketing';
+import { TrendingUp, PieChart as PieChartIcon, IndianRupee, Target, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 
 export function RoiDashboard() {
-  const chartData = mockCampaigns.map(c => ({
+  const { campaigns, loading } = useMarketing();
+
+  const chartData = campaigns.map(c => ({
     name: c.platform,
     spend: c.spend,
-    revenue: c.metrics.revenue,
-    roi: c.spend > 0 ? ((c.metrics.revenue - c.spend) / c.spend) * 100 : 0
+    revenue: c.metrics?.revenue || 0,
+    roi: c.spend > 0 ? (((c.metrics?.revenue || 0) - c.spend) / c.spend) * 100 : 0
   })).sort((a, b) => b.revenue - a.revenue);
 
-  const pieData = mockCampaigns.reduce((acc, c) => {
+  const pieData = campaigns.reduce((acc: any[], c) => {
     const existing = acc.find(x => x.name === c.platform);
     if (existing) {
-      existing.value += c.metrics.admissions;
+      existing.value += (c.metrics?.admissions || 0);
     } else {
-      acc.push({ name: c.platform, value: c.metrics.admissions });
+      acc.push({ name: c.platform, value: (c.metrics?.admissions || 0) });
     }
     return acc;
   }, [] as { name: string, value: number }[]);

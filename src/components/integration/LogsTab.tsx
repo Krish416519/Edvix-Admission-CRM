@@ -1,21 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, Clock, ServerCrash, CheckCircle2 } from 'lucide-react';
-import { integrationService } from '../../lib/integrationService';
+import React from 'react';
+import { Activity, Search, Filter, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useIntegration } from '../../lib/integrationService';
 import { ApiLog } from '../../types/integration';
 import { cn } from '../../lib/utils';
+import { format } from 'date-fns';
 
 export function LogsTab() {
-  const [logs, setLogs] = useState<ApiLog[]>([]);
-
-  useEffect(() => {
-    setLogs(integrationService.getLogs());
-    const unsub = integrationService.subscribe((event) => {
-      if (event === 'logs_updated') {
-        setLogs([...integrationService.getLogs()]);
-      }
-    });
-    return () => unsub();
-  }, []);
+  const { logs } = useIntegration();
 
   return (
     <div className="space-y-6">

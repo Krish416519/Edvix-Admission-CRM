@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, Megaphone, MoreHorizontal, Play, Pause, Trash2, Copy } from 'lucide-react';
-import { mockCampaigns } from '../../data/mockMarketing';
+import { Search, Filter, Plus, Megaphone, MoreHorizontal, Play, Pause, Trash2, Copy, Loader2 } from 'lucide-react';
+import { useMarketing } from '../../hooks/useMarketing';
 import { EmptyState } from '../ui/EmptyState';
 import { cn } from '../../lib/utils';
 
 export function CampaignsList() {
   const [searchTerm, setSearchTerm] = useState('');
+  const { campaigns, loading } = useMarketing();
   
-  const filteredCampaigns = mockCampaigns.filter(c => 
+  const filteredCampaigns = campaigns.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.platform.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -44,7 +45,11 @@ export function CampaignsList() {
         </div>
 
         <div className="flex-1 overflow-auto">
-          {filteredCampaigns.length > 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredCampaigns.length > 0 ? (
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-muted/50 text-muted-foreground sticky top-0 z-10 backdrop-blur-sm">
                 <tr>

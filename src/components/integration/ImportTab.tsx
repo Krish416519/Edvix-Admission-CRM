@@ -1,23 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, ArrowRight, X } from 'lucide-react';
-import { integrationService } from '../../lib/integrationService';
+import { useIntegration } from '../../lib/integrationService';
 import { ImportJob } from '../../types/integration';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
 export function ImportTab() {
-  const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const { importJobs: jobs, simulateCsvImport } = useIntegration();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-
-  useEffect(() => {
-    setJobs(integrationService.getImportJobs());
-    const unsub = integrationService.subscribe((event) => {
-      if (event === 'imports_updated') {
-        setJobs([...integrationService.getImportJobs()]);
-      }
-    });
-    return () => unsub();
-  }, []);
 
   return (
     <div className="space-y-6 relative">
@@ -110,7 +100,7 @@ function ImportWizard({ onClose }: { onClose: () => void }) {
 
   const handleSimulateImport = async () => {
     setIsProcessing(true);
-    await integrationService.simulateCsvImport(file?.name || 'leads.csv', 150);
+    await simulateCsvImport(file?.name || 'leads.csv', 150);
     setIsProcessing(false);
     toast.success('Import completed successfully');
     onClose();

@@ -6,11 +6,12 @@ import { WebhooksTab } from './WebhooksTab';
 import { ImportTab } from './ImportTab';
 import { LogsTab } from './LogsTab';
 import { toast } from 'sonner';
-import { integrationService } from '../../lib/integrationService';
+import { useIntegration } from '../../lib/integrationService';
 
 type Tab = 'API Keys' | 'Webhooks' | 'Import' | 'Logs' | 'Pipeline Tester';
 
 export function IntegrationCenter() {
+  const { simulateInboundLead } = useIntegration();
   const [activeTab, setActiveTab] = useState<Tab>('API Keys');
   const [testPayload, setTestPayload] = useState('{\n  "name": "Test Student",\n  "email": "test@example.com",\n  "phone": "9876543210",\n  "course": "B.Tech"\n}');
 
@@ -25,7 +26,7 @@ export function IntegrationCenter() {
   const handleSimulateWebhook = async () => {
     try {
       const parsed = JSON.parse(testPayload);
-      const result = await integrationService.simulateInboundLead(parsed, 'Webhook Tester');
+      const result = await simulateInboundLead(parsed, 'Webhook Tester');
       toast.success(`Lead ${result.status} successfully`);
       setActiveTab('Logs'); // Switch to logs to see it
     } catch (e: any) {

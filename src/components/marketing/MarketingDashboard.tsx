@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { mockCampaigns } from '../../data/mockMarketing';
+import { useMarketing } from '../../hooks/useMarketing';
 import { 
   Megaphone, Target, ArrowUpRight, ArrowDownRight, 
-  Users, IndianRupee, MousePointerClick, Activity
+  Users, IndianRupee, MousePointerClick, Activity, Loader2
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { cn } from '../../lib/utils';
@@ -18,12 +18,13 @@ const mockChartData = [
 ];
 
 export function MarketingDashboard() {
-  const activeCampaigns = mockCampaigns.filter(c => c.status === 'Active');
+  const { campaigns, loading } = useMarketing();
   
-  const totalLeads = useMemo(() => mockCampaigns.reduce((sum, c) => sum + c.metrics.leadsGenerated, 0), []);
-  const totalSpend = useMemo(() => mockCampaigns.reduce((sum, c) => sum + c.spend, 0), []);
-  const totalRevenue = useMemo(() => mockCampaigns.reduce((sum, c) => sum + c.metrics.revenue, 0), []);
-  const totalAdmissions = useMemo(() => mockCampaigns.reduce((sum, c) => sum + c.metrics.admissions, 0), []);
+  const activeCampaigns = useMemo(() => campaigns.filter(c => c.status === 'Active'), [campaigns]);
+  const totalLeads = useMemo(() => campaigns.reduce((sum, c) => sum + (c.metrics?.leadsGenerated || 0), 0), [campaigns]);
+  const totalSpend = useMemo(() => campaigns.reduce((sum, c) => sum + (c.spend || 0), 0), [campaigns]);
+  const totalRevenue = useMemo(() => campaigns.reduce((sum, c) => sum + (c.metrics?.revenue || 0), 0), [campaigns]);
+  const totalAdmissions = useMemo(() => campaigns.reduce((sum, c) => sum + (c.metrics?.admissions || 0), 0), [campaigns]);
 
   const roas = totalSpend > 0 ? (totalRevenue / totalSpend).toFixed(2) : '0';
   const cpl = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(0) : '0';

@@ -115,7 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const setupRealtime = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        userChannel = supabase.channel(`public:users:id=eq.${session.user.id}`)
+        if (userChannel) supabase.removeChannel(userChannel);
+        userChannel = supabase.channel(`public_users_${session.user.id}_${Date.now()}`)
           .on('postgres_changes', { 
             event: 'UPDATE', 
             schema: 'public', 
