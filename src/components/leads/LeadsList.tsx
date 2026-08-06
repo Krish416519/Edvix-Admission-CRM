@@ -1075,7 +1075,7 @@ export function LeadsList() {
                 </p>
               </div>
               <button
-                onClick={() => { setShowBulkAssign(false); setBulkAssignUserId(''); setBulkAssignSearch(''); }}
+                onClick={() => { setShowBulkAssign(false); setBulkAssignUserIds([]); setBulkAssignSearch(''); }}
                 className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, GraduationCap, 
-  Wallet, BookOpen, LogOut, Landmark
+  Wallet, BookOpen, LogOut, Landmark, FileText, Bell, BarChart2, Bot
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -11,8 +11,12 @@ const navigation = [
   { name: 'Overview', href: '/university', icon: LayoutDashboard },
   { name: 'Interested Leads', href: '/university/leads', icon: Users },
   { name: 'Admissions', href: '/university/admissions', icon: GraduationCap },
+  { name: 'Documents', href: '/university/documents', icon: FileText },
   { name: 'Settlements', href: '/university/finance', icon: Wallet },
   { name: 'Programs', href: '/university/courses', icon: BookOpen },
+  { name: 'Reports', href: '/university/reports', icon: BarChart2 },
+  { name: 'Notifications', href: '/university/notifications', icon: Bell },
+  { name: 'AI Assistant', href: '/university/ai', icon: Bot },
 ];
 
 export function UniversitySidebar({ 

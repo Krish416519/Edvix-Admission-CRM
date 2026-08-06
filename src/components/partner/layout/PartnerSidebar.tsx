@@ -13,6 +13,7 @@ const navigation = [
   { name: 'Admissions', href: '/partner/admissions', icon: GraduationCap },
   { name: 'Commissions', href: '/partner/commissions', icon: IndianRupee },
   { name: 'Reports', href: '/partner/reports', icon: PieChart },
+  { name: 'AI Assistant', href: '/partner/ai', icon: Sparkles },
 ];
 
 export function PartnerSidebar({ 

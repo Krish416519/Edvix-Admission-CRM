@@ -100,7 +100,7 @@ function ImportWizard({ onClose }: { onClose: () => void }) {
 
   const handleSimulateImport = async () => {
     setIsProcessing(true);
-    await simulateCsvImport(file?.name || 'leads.csv', 150);
+    await new Promise(r => setTimeout(r, 1000));
     setIsProcessing(false);
     toast.success('Import completed successfully');
     onClose();

@@ -9,16 +9,13 @@ export function UniversityLeads() {
   const [searchTerm, setSearchTerm] = useState('');
   const { leads, isLoading } = useLeads();
   
-  // Simulate university leads filtering (until RLS enforces this)
-  const myLeads = useMemo(() => leads.filter(l => l.university === 'Amity University' || (typeof l.university === 'string' && l.university.includes('Amity'))), [leads]);
-
   const filteredLeads = useMemo(() => {
-    return myLeads.filter(lead => 
+    return leads.filter(lead => 
       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone.includes(searchTerm)
     );
-  }, [myLeads, searchTerm]);
+  }, [leads, searchTerm]);
 
   if (isLoading) {
     return (

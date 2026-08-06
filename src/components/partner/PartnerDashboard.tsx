@@ -26,11 +26,11 @@ export function PartnerDashboard() {
   const { admissions, isLoading: admissionsLoading } = useAdmissions();
   const { partnerCommissions, isLoading: financeLoading } = useFinance();
 
-  // Simulate partner data (In a real app, this would be fetched based on Partner ID)
-  const myLeads = useMemo(() => leads.slice(0, 45), [leads]);
-  const myAdmissions = useMemo(() => admissions.slice(0, 15), [admissions]);
+  // Leads and admissions are automatically filtered by RLS policies
+  const myLeads = leads;
+  const myAdmissions = admissions;
 
-  const isLoading = leadsLoading || admissionsLoading;
+  const isLoading = leadsLoading || admissionsLoading || financeLoading;
 
   const totalLeads = myLeads.length;
   const activeLeads = myLeads.filter(l => l.status !== 'Lost' && l.status !== 'Admission Done').length;

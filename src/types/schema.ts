@@ -31,6 +31,25 @@ export interface University extends BaseEntity {
   code: string;
   country: string;
   status: 'Active' | 'Inactive';
+  
+  // AI Recommendation Engine Fields
+  ugcApproval?: boolean;
+  debApproval?: boolean;
+  naacGrade?: string;
+  nirfRanking?: number;
+  qsRanking?: number;
+  accreditations?: string[];
+  scholarships?: any[];
+  emiOptions?: any[];
+  admissionProcess?: string;
+  eligibility?: string;
+  placementSupport?: boolean;
+  averageSalary?: number;
+  corporateTieups?: any[];
+  learningPlatform?: string;
+  examPattern?: string;
+  durationMonths?: number;
+  studentReviews?: any[];
 }
 
 export interface Course extends BaseEntity {
@@ -98,6 +117,42 @@ export interface Lead extends BaseEntity {
   aiSuggestedNextAction?: string;
   aiSummary?: string;
 
+  // AI Agent Fields (Phase 1)
+  conversionProbability?: number;
+  temperature?: 'Hot' | 'Warm' | 'Cold';
+  responseSpeedHours?: number;
+  dropOffRisk?: 'Low' | 'Medium' | 'High';
+  paymentProbability?: number;
+
+  // AI Recommendation Profiling Fields (Phase 2)
+  age?: number;
+  gender?: string;
+  education?: string;
+  graduationPercentage?: number;
+  twelfthPercentage?: number;
+  tenthPercentage?: number;
+  currentOccupation?: string;
+  yearsOfExperience?: number;
+  industry?: string;
+  annualIncome?: number;
+  preferredSpecialization?: string;
+  preferredLearningMode?: string;
+  careerGoal?: string;
+  needPlacementSupport?: boolean;
+  needScholarship?: boolean;
+  needEmi?: boolean;
+  preferredIntake?: string;
+
+  deletedAt?: string;
+}
+
+export interface AiRecommendation extends BaseEntity {
+  leadId: string;
+  generatedBy?: string;
+  universitiesRecommended: any[];
+  counselorNotes?: any;
+  status: 'Pending' | 'Accepted' | 'Rejected';
+  selectedUniversityCode?: string;
   deletedAt?: string;
 }
 
@@ -231,6 +286,12 @@ export interface Admission extends BaseEntity {
   admissionStatus: AdmissionStatus;
   currentStage: AdmissionStage;
   progress?: number;
+  
+  // AI Agent Fields
+  healthScore?: number;
+  atRisk?: boolean;
+  riskReason?: string;
+  predictedCompletionDays?: number;
 
   // Application
   applicationNumber?: string;
@@ -403,6 +464,10 @@ export interface Payment extends BaseEntity {
   
   collectedBy?: string;
   remarks?: string;
+
+  // AI Agent Fields
+  lateProbability?: number;
+  collectionUrgency?: 'Low' | 'Medium' | 'High';
 }
 
 export interface Invoice extends BaseEntity {

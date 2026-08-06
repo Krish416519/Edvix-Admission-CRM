@@ -84,7 +84,7 @@ export function LeadWhatsAppChat({ lead }: { lead: Lead }) {
         </h3>
       </div>
       <div className="flex-1 relative overflow-hidden">
-        <WhatsAppChatWindow conversationId={conversationId} />
+        <WhatsAppChatWindow conversationId={conversationId} leadId={lead.id} />
       </div>
     </div>
   );

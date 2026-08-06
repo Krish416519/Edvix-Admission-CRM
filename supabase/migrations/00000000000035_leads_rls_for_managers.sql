@@ -2,6 +2,7 @@
 -- similar to Admins and Super Admins, so they can see assigned leads.
 DROP POLICY IF EXISTS "SuperAdmins and Admins can do everything on leads" ON public.leads;
 
+DROP POLICY IF EXISTS "Admins Managers TLs can do everything on leads" ON public.leads;
 CREATE POLICY "Admins Managers TLs can do everything on leads" ON public.leads
   FOR ALL
   USING (
@@ -13,6 +14,7 @@ CREATE POLICY "Admins Managers TLs can do everything on leads" ON public.leads
 
 -- Also ensure they have access to admissions and documents
 DROP POLICY IF EXISTS "SuperAdmins and Admins can do everything on admissions" ON public.admissions;
+DROP POLICY IF EXISTS "Admins Managers TLs can do everything on admissions" ON public.admissions;
 CREATE POLICY "Admins Managers TLs can do everything on admissions" ON public.admissions
   FOR ALL
   USING (

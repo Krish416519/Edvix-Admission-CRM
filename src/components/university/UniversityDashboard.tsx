@@ -24,16 +24,12 @@ export function UniversityDashboard() {
   const { admissions, isLoading: admissionsLoading } = useAdmissions();
   const { universityPayouts } = useFinance();
 
-  // Simulate university data (In a real app, this would be fetched based on University ID)
-  const myLeads = useMemo(() => leads.filter(l => l.university === 'Amity University' || (typeof l.university === 'string' && l.university.includes('Amity'))), [leads]);
-  const myAdmissions = useMemo(() => admissions.filter(a => a.university === 'Amity University'), [admissions]);
-  const myPayouts = useMemo(() => universityPayouts.filter(p => p.university_name === 'Amity University'), [universityPayouts]);
-
+  // RLS filters the data naturally so we don't need mock JS filters
   const isLoading = leadsLoading || admissionsLoading;
 
-  const activeLeads = myLeads.filter(l => l.status !== 'Lost' && l.status !== 'Admission Done').length;
-  const enrolledStudents = myAdmissions.filter(a => a.stage === 'Admission Completed').length;
-  const pendingVerifications = myAdmissions.filter(a => a.stage === 'Document Verification').length;
+  const activeLeads = leads.filter(l => l.status !== 'Lost' && l.status !== 'Admission Done').length;
+  const enrolledStudents = admissions.filter(a => a.stage === 'Admission Completed').length;
+  const pendingVerifications = admissions.filter(a => a.stage === 'Document Verification').length;
   
   if (isLoading) {
     return (
@@ -50,8 +46,8 @@ export function UniversityDashboard() {
     );
   }
 
-  const totalPayout = myPayouts.reduce((sum, p) => sum + (p.expected_amount || 0), 0);
-  const pendingSettlement = myPayouts.filter(p => p.payout_status === 'Pending').reduce((sum, p) => sum + (p.pending_amount || 0), 0);
+  const totalPayout = universityPayouts.reduce((sum, p) => sum + (p.expected_amount || 0), 0);
+  const pendingSettlement = universityPayouts.filter(p => p.payout_status === 'Pending').reduce((sum, p) => sum + (p.pending_amount || 0), 0);
 
   const stats = [
     { name: 'Enrolled Students', value: enrolledStudents, change: '+24%', trend: 'up', icon: GraduationCap, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -150,7 +146,7 @@ export function UniversityDashboard() {
           <div className="rounded-xl border border-border bg-card shadow-sm p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">Recent Enrollments</h2>
             <div className="space-y-4">
-              {myAdmissions.slice(0, 3).map((adm, i) => (
+              {admissions.slice(0, 3).map((adm, i) => (
                 <div key={i} className="flex gap-4 items-center">
                   <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                     <GraduationCap className="w-4 h-4" />

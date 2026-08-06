@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Search, Filter, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Activity, Search, Filter, ServerCrash, Clock, CheckCircle2 } from 'lucide-react';
 import { useIntegration } from '../../lib/integrationService';
 import { ApiLog } from '../../types/integration';
 import { cn } from '../../lib/utils';

@@ -10,10 +10,16 @@ import { PageLoader } from './components/layout/PageLoader';
 import { Construction } from 'lucide-react';
 
 // Core layout components (loaded eagerly)
+import { CounselorDashboard } from './components/ai/CounselorDashboard';
+import { FounderDashboard } from './components/ai/FounderDashboard';
 import { Layout } from './components/layout/Layout';
 import { Login } from './components/auth/Login';
 import { ForgotPassword } from './components/auth/ForgotPassword';
 import { ResetPassword } from './components/auth/ResetPassword';
+import CallCenterDashboard from './components/telephony/CallCenterDashboard';
+import { DialerWidget } from './components/telephony/DialerWidget';
+import { CommandPalette } from './components/ai/CommandPalette';
+import { ChatWidget } from './components/public/ChatWidget';
 
 // Lazy loaded views
 const Dashboard = React.lazy(() => import('./components/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -51,6 +57,10 @@ const PartnerLeads = React.lazy(() => import('./components/partner/PartnerLeads'
 const PartnerAdmissions = React.lazy(() => import('./components/partner/PartnerAdmissions').then(m => ({ default: m.PartnerAdmissions })));
 const PartnerCommissions = React.lazy(() => import('./components/partner/PartnerCommissions').then(m => ({ default: m.PartnerCommissions })));
 const PartnerReports = React.lazy(() => import('./components/partner/PartnerReports').then(m => ({ default: m.PartnerReports })));
+const PartnerDocuments = React.lazy(() => import('./components/partner/PartnerDocuments').then(m => ({ default: m.PartnerDocuments })));
+const PartnerPayments = React.lazy(() => import('./components/partner/PartnerPayments').then(m => ({ default: m.PartnerPayments })));
+const PartnerNotifications = React.lazy(() => import('./components/partner/PartnerNotifications').then(m => ({ default: m.PartnerNotifications })));
+const PartnerAi = React.lazy(() => import('./components/partner/PartnerAi').then(m => ({ default: m.PartnerAi })));
 
 // University Portal
 const UniversityLayout = React.lazy(() => import('./components/university/UniversityLayout').then(m => ({ default: m.UniversityLayout })));
@@ -59,6 +69,10 @@ const UniversityLeads = React.lazy(() => import('./components/university/Univers
 const UniversityAdmissions = React.lazy(() => import('./components/university/UniversityAdmissions').then(m => ({ default: m.UniversityAdmissions })));
 const UniversityFinance = React.lazy(() => import('./components/university/UniversityFinance').then(m => ({ default: m.UniversityFinance })));
 const UniversityCourses = React.lazy(() => import('./components/university/UniversityCourses').then(m => ({ default: m.UniversityCourses })));
+const UniversityDocuments = React.lazy(() => import('./components/university/UniversityDocuments').then(m => ({ default: m.UniversityDocuments })));
+const UniversityNotifications = React.lazy(() => import('./components/university/UniversityNotifications').then(m => ({ default: m.UniversityNotifications })));
+const UniversityReports = React.lazy(() => import('./components/university/UniversityReports').then(m => ({ default: m.UniversityReports })));
+const UniversityAi = React.lazy(() => import('./components/university/UniversityAi').then(m => ({ default: m.UniversityAi })));
 
 // Marketing Hub
 const MarketingLayout = React.lazy(() => import('./components/marketing/MarketingLayout').then(m => ({ default: m.MarketingLayout })));
@@ -69,6 +83,10 @@ const MarketingJourneys = React.lazy(() => import('./components/marketing/Market
 
 // Backend Status
 const BackendStatus = React.lazy(() => import('./components/admin/BackendStatus').then(m => ({ default: m.BackendStatus })));
+
+// Admission OS
+const LivePipeline = React.lazy(() => import('./components/admissionOS/LivePipeline').then(m => ({ default: m.LivePipeline })));
+const ExecutiveCommandCenter = React.lazy(() => import('./components/admissionOS/ExecutiveCommandCenter').then(m => ({ default: m.ExecutiveCommandCenter })));
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -97,6 +115,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/public/chat" element={<ChatWidget />} />
 
                 {/* Main Application Routes */}
                 <Route element={<ProtectedRoute />}>
@@ -105,8 +124,12 @@ export default function App() {
                     <Route path="leads" element={<LeadsList />} />
                     <Route path="leads/:id" element={<LeadDetails />} />
                     <Route path="applications" element={<PlaceholderPage title="Applications" />} />
-                    <Route path="admissions" element={<AdmissionsList />} />
-                    <Route path="admissions/:id" element={<AdmissionDetails />} />
+                    <Route path="/admissions" element={<AdmissionsList />} />
+                    <Route path="/ai-dashboard" element={<CounselorDashboard />} />
+                    <Route path="/admin/founder" element={<FounderDashboard />} />
+                    <Route path="/admission-os" element={<LivePipeline />} />
+                    <Route path="/admission-os/command-center" element={<ExecutiveCommandCenter />} />
+                    
                     <Route path="tasks" element={<TasksList />} />
                     <Route path="whatsapp" element={<WhatsAppCenter />} />
                     <Route path="email" element={<EmailCenter />} />
@@ -115,6 +138,7 @@ export default function App() {
                     <Route path="analytics" element={<AnalyticsDashboard />} />
                     <Route path="notifications" element={<NotificationsList />} />
                     <Route path="profile" element={<UserProfile />} />
+                    <Route path="call-center" element={<CallCenterDashboard />} />
                     
                     {/* Admin and Super Admin only route */}
                     <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin']} />}>
@@ -157,6 +181,10 @@ export default function App() {
                     <Route path="admissions" element={<PartnerAdmissions />} />
                     <Route path="commissions" element={<PartnerCommissions />} />
                     <Route path="reports" element={<PartnerReports />} />
+                    <Route path="documents" element={<PartnerDocuments />} />
+                    <Route path="payments" element={<PartnerPayments />} />
+                    <Route path="notifications" element={<PartnerNotifications />} />
+                    <Route path="ai" element={<PartnerAi />} />
                   </Route>
                 </Route>
 
@@ -168,6 +196,10 @@ export default function App() {
                     <Route path="admissions" element={<UniversityAdmissions />} />
                     <Route path="finance" element={<UniversityFinance />} />
                     <Route path="courses" element={<UniversityCourses />} />
+                    <Route path="documents" element={<UniversityDocuments />} />
+                    <Route path="notifications" element={<UniversityNotifications />} />
+                    <Route path="reports" element={<UniversityReports />} />
+                    <Route path="ai" element={<UniversityAi />} />
                   </Route>
                 </Route>
 
@@ -188,7 +220,9 @@ export default function App() {
               </Routes>
             </Suspense>
             </AIProvider>
+            <CommandPalette />
           </BrowserRouter>
+          <DialerWidget />
           <Toaster position="top-right" richColors closeButton />
         </NotificationProvider>
       </AuthProvider>

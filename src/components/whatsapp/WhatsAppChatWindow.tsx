@@ -3,13 +3,17 @@ import { Send, Paperclip, Check, CheckCheck, Clock, FileText, Bot, X, AlertCircl
 import { cn } from '../../lib/utils';
 import { useWhatsApp, WAMessage, WATemplate } from '../../hooks/useWhatsApp';
 import { useAuth } from '../../contexts/AuthContext';
+import { ContentGenerator } from '../../lib/ai/ContentGenerator';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-export function WhatsAppChatWindow({ conversationId }: { conversationId: string }) {
+export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId: string, leadId?: string }) {
   const { user } = useAuth();
   const { messages, templates, sendMessage, isSending } = useWhatsApp(conversationId);
   const [inputText, setInputText] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,6 +30,24 @@ export function WhatsAppChatWindow({ conversationId }: { conversationId: string 
   const handleSendTemplate = async (template: WATemplate) => {
     setShowTemplates(false);
     await sendMessage(conversationId, template.content, 'template', false, template.id);
+  };
+
+  const handleAIDraft = async () => {
+    if (!leadId) {
+      toast.error('Lead ID not found');
+      return;
+    }
+    setIsDrafting(true);
+    try {
+      const draft = await ContentGenerator.draftMessage(leadId, 'WhatsApp');
+      setInputText(draft);
+      setIsInternalNote(false);
+      toast.success('AI Draft generated');
+    } catch (e) {
+      toast.error('Failed to generate AI draft');
+    } finally {
+      setIsDrafting(false);
+    }
   };
 
   const StatusIcon = ({ status }: { status: string }) => {
@@ -119,6 +141,14 @@ export function WhatsAppChatWindow({ conversationId }: { conversationId: string 
           title="Templates"
         >
           <Bot className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={handleAIDraft}
+          disabled={isDrafting}
+          className="p-2.5 text-emerald-500 hover:bg-emerald-500/10 rounded-full transition-colors shrink-0"
+          title="AI Draft Message"
+        >
+          {isDrafting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
         </button>
         <button className="p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0">
           <Paperclip className="w-5 h-5" />

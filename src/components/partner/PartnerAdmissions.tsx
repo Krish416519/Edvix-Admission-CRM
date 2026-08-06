@@ -9,8 +9,8 @@ export function PartnerAdmissions() {
   const [searchTerm, setSearchTerm] = useState('');
   const { admissions, isLoading } = useAdmissions();
   
-  // Simulate my admissions
-  const myAdmissions = useMemo(() => admissions.slice(0, 15), [admissions]);
+  // Admissions are filtered via RLS on backend
+  const myAdmissions = admissions;
 
   const filteredAdmissions = useMemo(() => {
     return myAdmissions.filter(adm => 

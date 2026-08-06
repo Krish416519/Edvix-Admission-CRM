@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Lead } from './useLeadActivities';
+import { Lead, LeadStatus, LeadPriority } from '../types/schema';
 import { useAuth } from '../contexts/AuthContext';
-
-export type LeadStatus = 'New' | 'Interested' | 'In Progress' | 'Not Interested' | 'Enrolled';
-export type LeadPriority = 'High' | 'Medium' | 'Low';
 
 export interface UseLeadsOptions {
   page?: number;
@@ -202,31 +199,36 @@ export function useLeads(options?: UseLeadsOptions) {
     };
   }, [user, options?.page, options?.pageSize, options?.search, JSON.stringify(options?.filters), JSON.stringify(options?.sort)]);
 
-  const addLead = async (lead: Partial<Lead>) => {
+  const addLead = async (leadData: Partial<Lead>) => {
     try {
-      const payload = {
-         first_name: lead.firstName || lead.name?.split(' ')[0] || '',
-         last_name: lead.lastName || lead.name?.split(' ').slice(1).join(' ') || '',
-         email: lead.email,
-         phone: lead.phone,
-         alternate_phone: lead.alternatePhone,
-         state: lead.state,
-         city: lead.city,
-         country: lead.country,
-         budget: lead.budget,
-         lead_source: lead.leadSource || lead.source || 'Direct',
-         lead_status: lead.leadStatus || lead.status || 'New',
-         priority: lead.priority || 'Medium',
-         lead_score: lead.leadScore || lead.score || 0,
-         preferred_language: lead.preferredLanguage,
-         counseling_mode: lead.counselingMode,
-         course_id: lead.courseId || null,
-         university_id: lead.universityId || null,
-         assigned_counselor: lead.assignedCounselor || lead.counselorId || user?.id,
+      if (!user) throw new Error('Not authenticated');
+
+      // If user is a Partner, automatically set their ID as the partner_id
+      const newLeadData = {
+        first_name: leadData.firstName || leadData.name?.split(' ')[0] || '',
+        last_name: leadData.lastName || leadData.name?.split(' ').slice(1).join(' ') || '',
+        email: leadData.email,
+        phone: leadData.phone,
+        alternate_phone: leadData.alternatePhone,
+        state: leadData.state,
+        city: leadData.city,
+        country: leadData.country,
+        budget: leadData.budget,
+        lead_source: leadData.leadSource || leadData.source || 'Direct',
+        lead_status: leadData.leadStatus || leadData.status || 'New',
+        priority: leadData.priority || 'Medium',
+        lead_score: leadData.leadScore || leadData.score || 0,
+        preferred_language: leadData.preferredLanguage,
+        counseling_mode: leadData.counselingMode,
+        course_id: leadData.courseId || null,
+        university_id: leadData.universityId || null,
+        assigned_counselor: leadData.assignedCounselor || leadData.counselorId || user?.id,
+        partner_id: user.role === 'Partner' ? user.id : undefined
       };
+
       const { data, error } = await supabase
         .from('leads')
-        .insert([payload])
+        .insert([newLeadData])
         .select()
         .single();
         

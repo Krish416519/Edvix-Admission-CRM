@@ -2,12 +2,14 @@ import React from 'react';
 import { Menu, Sun, Moon, Bell, LogOut, Search } from 'lucide-react';
 import { useTheme } from '../../ThemeProvider';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useNotifications } from '../../../contexts/NotificationContext';
 
 export function UniversityTopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-card/80 backdrop-blur-md px-4 sm:gap-x-6 sm:px-6 lg:px-8">
@@ -47,9 +49,12 @@ export function UniversityTopNav({ setSidebarOpen }: { setSidebarOpen: (open: bo
             )}
           </button>
           
-          <button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground transition-colors relative">
+          <Link to="/university/notifications" className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground transition-colors relative">
             <Bell className="h-5 w-5" aria-hidden="true" />
-          </button>
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-card" />
+            )}
+          </Link>
 
           {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-border" aria-hidden="true" />

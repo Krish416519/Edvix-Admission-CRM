@@ -1,4 +1,4 @@
-export type EntityType = 'Lead' | 'Admission' | 'User' | 'Task' | 'Settings' | 'Note' | 'Document';
+export type EntityType = 'Lead' | 'Admission' | 'User' | 'Task' | 'Settings' | 'Note' | 'Document' | 'Workflow';
 export type ActivityAction = 'Created' | 'Updated' | 'Deleted' | 'Assigned' | 'Status Changed' | 'Completed' | 'Cancelled' | 'Uploaded' | 'Login' | 'Logout';
 
 export interface AuditLog {

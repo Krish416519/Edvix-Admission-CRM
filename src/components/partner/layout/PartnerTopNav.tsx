@@ -47,7 +47,10 @@ export function PartnerTopNav({ setSidebarOpen }: { setSidebarOpen: (open: boole
             )}
           </button>
           
-          <button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground transition-colors relative">
+          <button 
+            onClick={() => navigate('/partner/notifications')}
+            className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground transition-colors relative"
+          >
             <Bell className="h-5 w-5" aria-hidden="true" />
             <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-card"></span>
           </button>

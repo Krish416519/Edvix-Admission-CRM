@@ -1,22 +1,27 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, GraduationCap, FileText, Settings, CheckCircle, X, LogOut, IndianRupee, Bell, PieChart, Workflow, MessageSquare, Mail, Network, ShieldAlert, Megaphone, Server } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, FileText, Settings, CheckCircle, X, LogOut, IndianRupee, Bell, PieChart, Workflow, MessageSquare, Mail, Network, ShieldAlert, Megaphone, Server, Phone, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Admission OS', href: '/admission-os', icon: Sparkles },
+  { name: 'Command Center', href: '/admission-os/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
+  { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
   { name: 'Leads', href: '/leads', icon: Users },
   { name: 'Applications', href: '/applications', icon: FileText },
   { name: 'Admissions', href: '/admissions', icon: GraduationCap },
   { name: 'Tasks', href: '/tasks', icon: CheckCircle },
   { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare },
   { name: 'Email', href: '/email', icon: Mail },
+  { name: 'Call Center', href: '/call-center', icon: Phone },
   { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
   { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
   { name: 'Analytics', href: '/analytics', icon: PieChart, permission: { action: 'View Reports', resource: 'Reports' } },
   { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Admin Console', href: '/admin', icon: ShieldAlert, permission: { action: 'Manage Settings', resource: 'System Settings' } },
+  { name: 'Founder AI Briefing', href: '/admin/founder', icon: Sparkles, roles: ['Super Admin'] },
   { name: 'Backend Status', href: '/admin/backend', icon: Server, permission: { action: 'Manage Settings', resource: 'System Settings' } },
   { name: 'Finance', href: '/finance', icon: IndianRupee, permission: { action: 'Read', resource: 'Finance' } },
   { name: 'Marketing Hub', href: '/marketing', icon: Megaphone, roles: ['Super Admin', 'Admin', 'Marketing'] },

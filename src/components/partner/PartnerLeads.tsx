@@ -12,8 +12,8 @@ export function PartnerLeads() {
   const [searchTerm, setSearchTerm] = useState('');
   const { leads, isLoading, addLead } = useLeads();
   
-  // Simulate my leads (partners only see their own submitted leads)
-  const myLeads = useMemo(() => leads.slice(0, 45), [leads]);
+  // Real data filtered by RLS
+  const myLeads = leads;
 
   const filteredLeads = useMemo(() => {
     return myLeads.filter(lead => 

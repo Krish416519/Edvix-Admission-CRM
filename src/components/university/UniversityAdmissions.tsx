@@ -10,17 +10,14 @@ export function UniversityAdmissions() {
   const [statusFilter, setStatusFilter] = useState('All');
   const { admissions, isLoading } = useAdmissions();
   
-  // Simulate university admissions
-  const myAdmissions = useMemo(() => admissions.filter(a => a.university === 'Amity University'), [admissions]);
-
   const filteredAdmissions = useMemo(() => {
-    return myAdmissions.filter(adm => {
+    return admissions.filter(adm => {
       const matchesSearch = adm.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             adm.id.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'All' || adm.stage === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [myAdmissions, searchTerm, statusFilter]);
+  }, [admissions, searchTerm, statusFilter]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

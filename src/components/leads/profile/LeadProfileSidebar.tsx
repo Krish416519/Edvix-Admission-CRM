@@ -3,8 +3,22 @@ import { Lead } from '../../../types/schema';
 import { Mail, MapPin, Phone, Building, GraduationCap, User, Target, Hash } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { LeadAssignmentPanel } from './LeadAssignmentPanel';
+import { useTelephony } from '../../../hooks/useTelephony';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export function LeadProfileSidebar({ lead }: { lead: Lead }) {
+  const { makeCall } = useTelephony();
+  const { user } = useAuth();
+  
+  const handleCall = () => {
+    if (!user) return;
+    makeCall({
+      to: lead.phone,
+      leadId: lead.id,
+      counselorId: user.id
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'New': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-500';
@@ -118,7 +132,16 @@ export function LeadProfileSidebar({ lead }: { lead: Lead }) {
             <Phone className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
               <p className="text-xs text-muted-foreground font-medium">Phone</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">{lead.phone}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm font-semibold text-foreground">{lead.phone}</p>
+                <button 
+                  onClick={handleCall}
+                  className="bg-primary/10 hover:bg-primary/20 text-primary p-1 rounded-full transition-colors ml-auto"
+                  title="Click to Call"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-start gap-3">

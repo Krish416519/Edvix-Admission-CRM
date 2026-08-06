@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { useEmail } from '../../hooks/useEmail';
 import { toast } from 'sonner';
 import { Lead } from '../../types/schema';
+import { ContentGenerator } from '../../lib/ai/ContentGenerator';
 
 interface EmailComposerProps {
   onClose?: () => void;
@@ -62,6 +63,28 @@ export function EmailComposer({ onClose, lead, defaultRecipient = '', defaultSub
       const improved = await improveTone(body);
       setBody(improved.replace(/<[^>]*>/g, '\n').trim());
       toast.success('Tone improved');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleAIDraft = async () => {
+    if (!lead?.id) return;
+    setIsGenerating(true);
+    try {
+      const draft = await ContentGenerator.draftMessage(lead.id, 'Email');
+      // The instruction said "Include a compelling Subject Line at the top (Subject: ...)."
+      // Let's parse it if present.
+      let newBody = draft;
+      const subjectMatch = draft.match(/^Subject:\s*(.*)/i);
+      if (subjectMatch) {
+        setSubject(subjectMatch[1].trim());
+        newBody = draft.replace(/^Subject:\s*(.*)\n*/i, '').trim();
+      }
+      setBody(newBody);
+      toast.success('AI Draft generated');
+    } catch (e) {
+      toast.error('Failed to generate draft');
     } finally {
       setIsGenerating(false);
     }
@@ -182,6 +205,14 @@ export function EmailComposer({ onClose, lead, defaultRecipient = '', defaultSub
         <button className="p-1.5 text-muted-foreground hover:bg-muted rounded-md"><List className="w-4 h-4" /></button>
         <button className="p-1.5 text-muted-foreground hover:bg-muted rounded-md"><LinkIcon className="w-4 h-4" /></button>
         <div className="w-px h-4 bg-border mx-1"></div>
+        <button 
+          onClick={handleAIDraft}
+          disabled={isGenerating || !lead?.id}
+          className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-md transition-colors disabled:opacity-50"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI Draft
+        </button>
         <button 
           onClick={handleAITone}
           disabled={isGenerating || !body}

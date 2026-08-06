@@ -10,6 +10,7 @@ import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { Skeleton } from '../ui/Skeleton';
+import { AIRecommendationAnalytics } from './AIRecommendationAnalytics';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -19,6 +20,7 @@ export function AnalyticsDashboard() {
   const [selectedUniversity, setSelectedUniversity] = useState('All');
   const [selectedCourse, setSelectedCourse] = useState('All');
   const [isExporting, setIsExporting] = useState(false);
+  const [activeView, setActiveView] = useState<'general' | 'ai'>('general');
 
   const dashboardRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +175,20 @@ export function AnalyticsDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <div className="flex bg-muted rounded-lg p-1 border border-border mr-2">
+            <button
+              onClick={() => setActiveView('general')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeView === 'general' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              General
+            </button>
+            <button
+              onClick={() => setActiveView('ai')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeView === 'ai' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              AI Engine
+            </button>
+          </div>
           <button
             onClick={exportExcel}
             className="flex items-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-4 py-2 rounded-lg font-medium transition-colors text-sm border border-border"
@@ -261,8 +277,12 @@ export function AnalyticsDashboard() {
       <div className="flex-1 overflow-y-auto pb-8 hide-scrollbar" ref={dashboardRef}>
         <div className="bg-background">
 
-          {/* KPIs — Row 1 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+          {activeView === 'ai' ? (
+            <AIRecommendationAnalytics />
+          ) : (
+            <>
+              {/* KPIs — Row 1 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
             <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-medium text-sm text-muted-foreground">Today's Leads</h3>
@@ -578,6 +598,8 @@ export function AnalyticsDashboard() {
               </ResponsiveContainer>
             </div>
           </div>
+          </>
+          )}
 
         </div>
       </div>

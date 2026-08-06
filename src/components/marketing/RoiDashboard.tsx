@@ -109,10 +109,10 @@ export function RoiDashboard() {
             </thead>
             <tbody className="divide-y divide-border">
               {chartData.map((data, i) => {
-                const platformCampaigns = mockCampaigns.filter(c => c.platform === data.name);
-                const leads = platformCampaigns.reduce((sum, c) => sum + c.metrics.leadsGenerated, 0);
+                const platformCampaigns = campaigns.filter(c => c.platform === data.name);
+                const leads = platformCampaigns.reduce((sum, c) => sum + (c.metrics?.leadsGenerated || 0), 0);
                 const cpl = leads > 0 ? (data.spend / leads).toFixed(0) : '0';
-                const admissions = platformCampaigns.reduce((sum, c) => sum + c.metrics.admissions, 0);
+                const admissions = platformCampaigns.reduce((sum, c) => sum + (c.metrics?.admissions || 0), 0);
                 const roas = data.spend > 0 ? (data.revenue / data.spend).toFixed(2) : '0';
                 
                 return (
