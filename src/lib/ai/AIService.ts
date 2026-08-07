@@ -5,7 +5,7 @@ import { PermissionEngine } from './PermissionEngine';
 import { AIContextBuilder } from './ContextBuilder';
 import { AIMessage } from './types';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
 const ai = new GoogleGenAI({ apiKey });
 
 export class AIService {

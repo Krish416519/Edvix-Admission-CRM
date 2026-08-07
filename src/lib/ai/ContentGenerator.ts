@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 import { supabase } from '../supabase';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
+const ai = apiKey !== 'missing_key' ? new GoogleGenAI({ apiKey }) : null;
 
 export class ContentGenerator {
   static async draftMessage(
