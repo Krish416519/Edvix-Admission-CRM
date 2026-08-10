@@ -10,6 +10,16 @@ export interface User {
   department?: string;
   lastLogin?: string;
   isActive?: boolean;
+  activeOrganizationId?: string;
+  organizations?: Organization[];
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string;
+  plan: string;
 }
 
 export interface AuthState {

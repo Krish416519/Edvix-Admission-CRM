@@ -1,8 +1,5 @@
-import { GoogleGenAI } from '@google/genai';
 import { supabase } from '../supabase';
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
-const ai = apiKey !== 'missing_key' ? new GoogleGenAI({ apiKey }) : null;
+import { LLMClient } from './LLMClient';
 
 export class ContentGenerator {
   static async draftMessage(
@@ -10,8 +7,6 @@ export class ContentGenerator {
     channel: 'WhatsApp' | 'Email' | 'Note' | 'Agenda',
     context?: string
   ): Promise<string> {
-    if (!ai) return "Gemini API is not configured.";
-
     // Gather lead context
     const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single();
     if (!lead) return "Lead not found.";
@@ -39,16 +34,8 @@ City: ${lead.city || 'Unknown'}`;
     }
 
     try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: instruction }] }],
-        config: {
-          systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
-          temperature: 0.7
-        }
-      });
-
-      return response.text || '';
+      const response = await LLMClient.generateText(instruction, systemPrompt, 0.7);
+      return response;
     } catch (e: any) {
       console.error(`AI Drafting Error (${channel}):`, e);
       return "Error generating draft. Please try again.";

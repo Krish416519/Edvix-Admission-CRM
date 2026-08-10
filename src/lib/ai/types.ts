@@ -13,6 +13,7 @@ export interface AIMessage {
   role: 'user' | 'model' | 'system' | 'function';
   content: string;
   tool_calls?: any;
+  reasoning_details?: any;
   created_at: string;
 }
 

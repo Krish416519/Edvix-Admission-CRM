@@ -165,14 +165,14 @@ CREATE OR REPLACE FUNCTION public.notify_lead_changes() RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         IF NEW.assigned_counselor IS NOT NULL THEN
-            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'New Lead Assigned', 'Lead ' || NEW.full_name || ' was assigned to you.', 'general', 'High');
+            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'New Lead Assigned', 'Lead ' || NEW.first_name || ' was assigned to you.', 'general', 'High');
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
         IF NEW.assigned_counselor IS DISTINCT FROM OLD.assigned_counselor AND NEW.assigned_counselor IS NOT NULL THEN
-            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'Lead Assigned', 'Lead ' || NEW.full_name || ' was assigned to you.', 'general', 'High');
+            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'Lead Assigned', 'Lead ' || NEW.first_name || ' was assigned to you.', 'general', 'High');
         END IF;
-        IF NEW.status IS DISTINCT FROM OLD.status AND NEW.assigned_counselor IS NOT NULL THEN
-            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'Lead Status Changed', 'Lead ' || NEW.full_name || ' status changed to ' || NEW.status, 'general');
+        IF NEW.lead_status IS DISTINCT FROM OLD.lead_status AND NEW.assigned_counselor IS NOT NULL THEN
+            PERFORM public.insert_notification_if_preferred(NEW.assigned_counselor, 'Leads', NEW.id, 'Lead Status Changed', 'Lead ' || NEW.first_name || ' status changed to ' || NEW.lead_status, 'general');
         END IF;
     END IF;
     RETURN NULL;

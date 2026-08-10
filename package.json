@@ -1,8 +1,20 @@
 {
   "name": "react-example",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
+  "description": "first app",
+  "homepage": "https://github.com/Krish416519/Edvix-Admission-CRM#readme",
+  "bugs": {
+    "url": "https://github.com/Krish416519/Edvix-Admission-CRM/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krish416519/Edvix-Admission-CRM.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "login-super-admin.js",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
@@ -24,6 +36,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "openai": "^7.4.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-router-dom": "^7.18.2",

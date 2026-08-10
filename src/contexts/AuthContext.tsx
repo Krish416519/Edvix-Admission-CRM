@@ -11,6 +11,7 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (roles: Role[]) => boolean;
   hasPermission: (action: string, resource: string) => boolean;
+  switchOrganization: (orgId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,8 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<{ action: string; resource: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Helper to construct our local User object from a Supabase User
-  const parseSupabaseUser = (sbUser: any, profileData?: any): User => {
+  const parseSupabaseUser = (sbUser: any, profileData?: any, orgData?: any[]): User => {
     const email = sbUser.email || '';
     
     // Role is pulled from the live DB (roles table) or falls back to 'Viewer'
@@ -32,6 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const name = profileData?.name || sbUser.user_metadata?.name || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
     const avatar = profileData?.avatar_url || sbUser.user_metadata?.avatar_url || DEFAULT_AVATAR;
+
+    let organizations = [];
+    let activeOrgId = undefined;
+    
+    if (orgData && orgData.length > 0) {
+      organizations = orgData.map(ou => ou.organizations).filter(Boolean);
+      const savedOrgId = localStorage.getItem('activeOrganizationId');
+      if (savedOrgId && organizations.some((org: any) => org.id === savedOrgId)) {
+        activeOrgId = savedOrgId;
+      } else {
+        activeOrgId = organizations[0]?.id;
+        if (activeOrgId) localStorage.setItem('activeOrganizationId', activeOrgId);
+      }
+    }
 
     return {
       id: sbUser.id,
@@ -42,14 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       phone: profileData?.phone,
       department: profileData?.department,
       lastLogin: profileData?.last_login,
-      isActive: profileData?.is_active ?? true
+      isActive: profileData?.is_active ?? true,
+      activeOrganizationId: activeOrgId,
+      organizations
     };
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Fetch user profile from DB
     const fetchUserProfile = async (userId: string) => {
       try {
         const { data: profileData, error: profileError } = await supabase
@@ -62,6 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Error fetching user profile:', profileError);
         }
         
+        // Fetch organizations
+        const { data: orgData, error: orgError } = await supabase
+          .from('organization_users')
+          .select('*, organizations(*)')
+          .eq('user_id', userId)
+          .eq('status', 'Active');
+
+        if (orgError) {
+          console.error('Error fetching organizations:', orgError);
+        }
+
         // Fetch permissions
         const { data: permsData, error: permsError } = await supabase.rpc('get_user_permissions', { p_user_id: userId });
         if (permsError) {
@@ -70,10 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPermissions(permsData);
         }
 
-        return profileData || null;
+        return { profileData: profileData || null, orgData: orgData || [] };
       } catch (err) {
         console.error('Failed to fetch user profile:', err);
-        return null;
+        return { profileData: null, orgData: [] };
       }
     };
 
@@ -85,8 +111,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
         
         if (session?.user && mounted) {
-          const profile = await fetchUserProfile(session.user.id);
-          setUser(parseSupabaseUser(session.user, profile));
+          const { profileData, orgData } = await fetchUserProfile(session.user.id);
+          setUser(parseSupabaseUser(session.user, profileData, orgData));
         }
       } catch (error) {
         console.error('Failed to restore session', error);
@@ -100,8 +126,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        if (mounted) setUser(parseSupabaseUser(session.user, profile));
+        const { profileData, orgData } = await fetchUserProfile(session.user.id);
+        if (mounted) setUser(parseSupabaseUser(session.user, profileData, orgData));
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
       }
@@ -132,8 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               window.location.href = '/login';
             } else {
               // Update local profile since it changed
-              const profile = await fetchUserProfile(session.user.id);
-              setUser(parseSupabaseUser(session.user, profile));
+              const { profileData, orgData } = await fetchUserProfile(session.user.id);
+              setUser(parseSupabaseUser(session.user, profileData, orgData));
             }
           })
           .subscribe();
@@ -166,7 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', data.user.id);
         
         const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).single();
-        setUser(parseSupabaseUser(data.user, profile));
+        const { data: orgData } = await supabase.from('organization_users').select('*, organizations(*)').eq('user_id', data.user.id).eq('status', 'Active');
+        setUser(parseSupabaseUser(data.user, profile, orgData || []));
       }
     } finally {
       setIsLoading(false);
@@ -177,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       await supabase.auth.signOut();
+      localStorage.removeItem('activeOrganizationId');
       setUser(null);
     } catch (error) {
       console.error('Error logging out:', error);
@@ -202,8 +230,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const switchOrganization = (orgId: string) => {
+    if (!user) return;
+    if (user.organizations?.some(org => org.id === orgId)) {
+      localStorage.setItem('activeOrganizationId', orgId);
+      setUser({ ...user, activeOrganizationId: orgId });
+      // Force page reload to clear state cleanly across app
+      window.location.reload();
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission }}>
+    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission, switchOrganization }}>
       {children}
     </AuthContext.Provider>
   );

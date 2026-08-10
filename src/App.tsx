@@ -20,6 +20,11 @@ import CallCenterDashboard from './components/telephony/CallCenterDashboard';
 import { DialerWidget } from './components/telephony/DialerWidget';
 import { CommandPalette } from './components/ai/CommandPalette';
 import { ChatWidget } from './components/public/ChatWidget';
+import AutomationBuilder from './components/admin/AutomationBuilder';
+import { WebhookDashboard } from './components/admin/WebhookDashboard';
+
+// Public API Documentation
+const ApiPortal = React.lazy(() => import('./components/api-docs/ApiPortal').then(m => ({ default: m.ApiPortal })));
 
 // Lazy loaded views
 const Dashboard = React.lazy(() => import('./components/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -49,6 +54,8 @@ const SecurityLogs = React.lazy(() => import('./components/admin/SecurityLogs').
 const BackupRestore = React.lazy(() => import('./components/admin/BackupRestore').then(m => ({ default: m.BackupRestore })));
 const NotificationSettings = React.lazy(() => import('./components/admin/NotificationSettings').then(m => ({ default: m.NotificationSettings })));
 const SystemLogsTab = React.lazy(() => import('./components/admin/SystemLogsTab').then(m => ({ default: m.SystemLogsTab })));
+const TenantBillingDashboard = React.lazy(() => import('./components/billing/TenantBillingDashboard').then(m => ({ default: m.TenantBillingDashboard })));
+const DeveloperSettings = React.lazy(() => import('./components/admin/DeveloperSettings').then(m => ({ default: m.DeveloperSettings })));
 
 // Partner Portal
 const PartnerLayout = React.lazy(() => import('./components/partner/PartnerLayout').then(m => ({ default: m.PartnerLayout })));
@@ -116,6 +123,7 @@ export default function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/public/chat" element={<ChatWidget />} />
+                <Route path="/api-docs" element={<ApiPortal />} />
 
                 {/* Main Application Routes */}
                 <Route element={<ProtectedRoute />}>
@@ -157,6 +165,10 @@ export default function App() {
                         <Route path="backup" element={<BackupRestore />} />
                         <Route path="notifications" element={<NotificationSettings />} />
                         <Route path="logs" element={<SystemLogsTab />} />
+                        <Route path="billing" element={<TenantBillingDashboard />} />
+                        <Route path="developer" element={<DeveloperSettings />} />
+                        <Route path="automation" element={<AutomationBuilder />} />
+                        <Route path="webhooks" element={<WebhookDashboard />} />
                       </Route>
                     </Route>
                     

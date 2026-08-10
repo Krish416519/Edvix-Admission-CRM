@@ -1,9 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import { LLMClient } from './LLMClient';
 import { supabase } from '../supabase';
 import { Lead, University } from '../../types/schema';
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
-const ai = new GoogleGenAI({ apiKey });
 
 export interface AIRecommendationResult {
   topUniversities: Array<{
@@ -145,17 +142,8 @@ Output ONLY a valid JSON object matching this schema exactly, with NO markdown f
 }
       `;
 
-      // 5. Call Gemini
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          temperature: 0.2, // Low temperature for consistent JSON
-          responseMimeType: 'application/json',
-        }
-      });
-
-      const responseText = response.text;
+      const responseText = await LLMClient.generateJson(prompt, "You are a professional JSON output generator.", 0.2);
+      
       if (!responseText) throw new Error('Empty response from AI');
 
       // 6. Parse and Return

@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { GoogleGenAI } from '@google/genai';
 import { toast } from 'sonner';
+import { LLMClient } from '../lib/ai/LLMClient';
 
 export function useCallAi() {
   const processCall = async (callId: string, providerCallId?: string) => {
@@ -25,14 +25,11 @@ Counselor: Absolutely, I'll send an email right away. Let's talk next week on Tu
 User: Sounds good. Bye.`;
 
       // Check if Gemini API key is available
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       
       let aiUpdates: any = { transcript: simulatedTranscript };
       
-      if (apiKey) {
-        // Use Real Gemini API
-        const ai = new GoogleGenAI({ apiKey });
-        
+      try {
+        // Use Real LLM API
         const prompt = `
           Analyze the following call transcript between an admission counselor and a student.
           Provide the output as a JSON object with the following exact keys:
@@ -49,19 +46,13 @@ User: Sounds good. Bye.`;
           ${simulatedTranscript}
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-            }
-        });
-
-        if (response.text) {
-          const parsed = JSON.parse(response.text);
+        const responseText = await LLMClient.generateJson(prompt, "You are a professional call analyzer.", 0.2);
+        
+        if (responseText) {
+          const parsed = JSON.parse(responseText);
           aiUpdates = { ...aiUpdates, ...parsed };
         }
-      } else {
+      } catch (error) {
         // Fallback if no API key is provided
         console.warn('No Gemini API key found, using fallback AI processing');
         await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate delay

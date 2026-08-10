@@ -18,6 +18,9 @@ const ADMIN_TABS = [
   { id: 'backup', label: 'Backup & Restore', icon: Database, path: 'backup' },
   { id: 'notifications', label: 'Notifications', icon: Bell, path: 'notifications' },
   { id: 'logs', label: 'System Logs', icon: Activity, path: 'logs' },
+  { id: 'automation', label: 'Automation Builder', icon: Cpu, path: 'automation' },
+  { id: 'developer', label: 'Developer Settings', icon: Settings, path: 'developer' },
+  { id: 'webhooks', label: 'Webhook Logs', icon: Activity, path: 'webhooks' },
 ];
 
 export function AdminLayout() {

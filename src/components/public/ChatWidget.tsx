@@ -2,11 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, Phone, Mail, User as UserIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
-import { GoogleGenAI } from '@google/genai';
-
-// Initialize Gemini API
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+import { LLMClient } from '../../lib/ai/LLMClient';
 
 interface Message {
   id: string;
@@ -34,25 +30,16 @@ export function ChatWidget() {
   }, [messages, isLoading]);
 
   const extractLeadInfo = async (chatHistory: Message[]) => {
-    if (!ai) return null;
-    
     try {
       const historyText = chatHistory.map(m => `${m.role}: ${m.content}`).join('\n');
       
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: historyText }] }],
-        config: {
-          systemInstruction: { 
-            role: 'system', 
-            parts: [{ text: "You are a data extractor. Analyze the chat history and extract the user's name, email, and phone number. Return ONLY a raw JSON object with keys: name (string or null), email (string or null), phone (string or null). If a field is missing, set it to null." }]
-          },
-          temperature: 0.1
-        }
-      });
+      const responseText = await LLMClient.generateJson(
+        historyText, 
+        "You are a data extractor. Analyze the chat history and extract the user's name, email, and phone number. Return ONLY a raw JSON object with keys: name (string or null), email (string or null), phone (string or null). If a field is missing, set it to null.",
+        0.1
+      );
 
-      const text = response.text || '';
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const data = JSON.parse(jsonMatch[0]);
         return data;
@@ -83,7 +70,7 @@ export function ChatWidget() {
   };
 
   const handleSend = async (text: string) => {
-    if (!text.trim() || !ai) return;
+    if (!text.trim()) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text };
     const newMessages = [...messages, userMsg];
@@ -92,30 +79,18 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
-      const contents = newMessages.map(m => ({
-        role: m.role === 'model' ? 'model' : 'user',
-        parts: [{ text: m.content }]
+      const chatMessages = newMessages.map(m => ({
+        role: m.role === 'model' ? 'assistant' : 'user',
+        content: m.content
       }));
 
-      if (contents.length > 0 && contents[0].role === 'model') {
-        contents.unshift({ role: 'user', parts: [{ text: 'Hello' }] });
-      }
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents,
-        config: {
-          systemInstruction: { 
-            role: 'system', 
-            parts: [{ text: `You are a helpful and persuasive University Admission Assistant for Edvix CRM.
+      const systemInstruction = `You are a helpful and persuasive University Admission Assistant for Edvix CRM.
 Your goal is to answer the student's queries and eventually ask for their Name, Email, and Phone Number so an admission counselor can contact them.
-Once they provide their contact details, thank them and assure them a counselor will reach out shortly. Be friendly, concise, and professional.` }] 
-          },
-          temperature: 0.5
-        }
-      });
+Once they provide their contact details, thank them and assure them a counselor will reach out shortly. Be friendly, concise, and professional.`;
 
-      const responseText = response.text || '';
+      const response = await LLMClient.chat(chatMessages, systemInstruction, 0.5);
+
+      const responseText = response.content || '';
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'model', content: responseText }]);
 
       // Check if we can extract lead info asynchronously
@@ -209,18 +184,12 @@ Once they provide their contact details, thank them and assure them a counselor 
           />
           <button
             onClick={() => handleSend(input)}
-            disabled={!input.trim() || isLoading || !ai}
+            disabled={!input.trim() || isLoading}
             className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Send className="w-5 h-5 -ml-0.5" />
           </button>
         </div>
-        
-        {!ai && (
-           <div className="text-center mt-2 text-xs text-red-500 font-medium">
-             VITE_GEMINI_API_KEY is missing. Chatbot disabled.
-           </div>
-        )}
       </div>
     </div>
   );

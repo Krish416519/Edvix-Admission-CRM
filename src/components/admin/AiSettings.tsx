@@ -73,6 +73,7 @@ export function AiSettings() {
                     <option>OpenAI</option>
                     <option>Anthropic</option>
                     <option>Google Gemini</option>
+                    <option>OpenRouter</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -86,6 +87,7 @@ export function AiSettings() {
                     <option>gpt-3.5-turbo</option>
                     <option>claude-3-opus</option>
                     <option>gemini-1.5-pro</option>
+                    <option>inclusionai/ling-3.0-tiny:free</option>
                   </select>
                 </div>
               </div>

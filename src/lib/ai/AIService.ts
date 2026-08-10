@@ -5,8 +5,8 @@ import { PermissionEngine } from './PermissionEngine';
 import { AIContextBuilder } from './ContextBuilder';
 import { AIMessage } from './types';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
-const ai = new GoogleGenAI({ apiKey });
+import { LLMClient } from './LLMClient';
+import { OpenAI } from 'openai';
 
 export class AIService {
   static async sendMessage(
@@ -16,8 +16,11 @@ export class AIService {
     currentPathname: string,
     conversationId?: string
   ): Promise<string> {
-    if (!apiKey) {
-      throw new Error('Gemini API Key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
+    const config = await LLMClient.getConfig();
+    const apiKey = config.api_key || import.meta.env.VITE_OPENROUTER_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || 'missing_key';
+
+    if (!apiKey || apiKey === 'missing_key') {
+      throw new Error('AI API Key is not configured. Please add it to your settings or .env file.');
     }
 
     const startTime = Date.now();
@@ -39,76 +42,152 @@ CURRENT USER ID: ${userId}
 USER ROLE: ${userRole}
 CURRENT UI CONTEXT: ${JSON.stringify(dynamicContext)}`;
 
-    const contents: any[] = history.map(msg => ({
-      role: msg.role === 'model' || msg.role === 'function' ? 'model' : 'user',
-      parts: msg.tool_calls 
-        ? [{ functionCall: msg.tool_calls }] 
-        : [{ text: msg.content }]
-    }));
-
-    contents.push({ role: 'user', parts: [{ text: prompt }] });
-
     let currentResponseText = '';
 
     try {
-      for (let i = 0; i < 5; i++) {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents,
-          config: {
-            systemInstruction: { role: 'system', parts: [{ text: systemInstruction }] },
-            tools: AI_TOOLS,
+      if (config.provider === 'OpenRouter') {
+        const client = new OpenAI({
+          baseURL: "https://openrouter.ai/api/v1",
+          apiKey,
+          dangerouslyAllowBrowser: true
+        });
+
+        // Convert AI_TOOLS to OpenAI format
+        const openaiTools = AI_TOOLS[0].functionDeclarations?.map(decl => ({
+          type: "function" as const,
+          function: {
+            name: decl.name,
+            description: decl.description,
+            parameters: decl.parameters
+          }
+        }));
+
+        const messages: any[] = [];
+        messages.push({ role: 'system', content: systemInstruction });
+        
+        history.forEach(msg => {
+          messages.push({
+            role: msg.role === 'model' ? 'assistant' : msg.role,
+            content: msg.content,
+            ...(msg.tool_calls && { tool_calls: msg.tool_calls }),
+            ...(msg.reasoning_details && { reasoning_details: msg.reasoning_details })
+          });
+        });
+        messages.push({ role: 'user', content: prompt });
+
+        for (let i = 0; i < 5; i++) {
+          const response = await client.chat.completions.create({
+            model: config.model || "inclusionai/ling-3.0-tiny:free",
+            messages,
+            tools: openaiTools as any,
             temperature: 0.2,
+            extra_body: { reasoning: { enabled: true } }
+          } as any);
+
+          const choice = response.choices[0]?.message;
+          if (choice?.content) {
+            currentResponseText += choice.content;
           }
-        });
 
-        if (response.text) {
-          currentResponseText += response.text;
-        }
+          if (!choice?.tool_calls || choice.tool_calls.length === 0) {
+            break;
+          }
 
-        if (!response.functionCalls || response.functionCalls.length === 0) {
-          break;
-        }
+          messages.push(choice); // Push the assistant's message with tool_calls
 
-        const functionResponses = [];
-        contents.push({
-          role: 'model',
-          parts: response.functionCalls.map(call => ({ functionCall: call }))
-        });
-
-        for (const call of response.functionCalls) {
-          const { name, args } = call;
-          toolsUsed.push(name);
-          actionTaken = `Executed ${name}`;
-          
-          try {
-            console.log(`Executing AI Tool: ${name}`, args);
-            const result = await AIToolHandlers.execute(name, args, { userId, role: userRole });
+          for (const call of choice.tool_calls) {
+            const name = (call as any).function.name;
+            const args = JSON.parse((call as any).function.arguments || '{}');
+            toolsUsed.push(name);
+            actionTaken = `Executed ${name}`;
             
-            // Record some basic affected info
-            if (result.leads) affectedRecords.count = result.leads.length;
-            if (result.task) affectedRecords.taskId = result.task.id;
+            try {
+              console.log(`Executing AI Tool: ${name}`, args);
+              const result = await AIToolHandlers.execute(name, args, { userId, role: userRole });
+              
+              if (result.leads) affectedRecords.count = result.leads.length;
+              if (result.task) affectedRecords.taskId = result.task.id;
 
-            functionResponses.push({
-              functionResponse: {
-                name,
-                response: result
-              }
-            });
-          } catch (e: any) {
-             functionResponses.push({
-              functionResponse: {
-                name,
-                response: { error: e.message }
-              }
-            });
+              messages.push({
+                role: 'tool',
+                tool_call_id: call.id,
+                content: JSON.stringify(result)
+              });
+            } catch (e: any) {
+              messages.push({
+                role: 'tool',
+                tool_call_id: call.id,
+                content: JSON.stringify({ error: e.message })
+              });
+            }
           }
         }
+      } else {
+        // GEMINI FORMAT
+        const ai = new GoogleGenAI({ apiKey });
+        const contents: any[] = history.map(msg => ({
+          role: msg.role === 'model' || msg.role === 'function' ? 'model' : 'user',
+          parts: msg.tool_calls 
+            ? [{ functionCall: msg.tool_calls }] 
+            : [{ text: msg.content }]
+        }));
 
-        contents.push({
-          role: 'user',
-          parts: functionResponses
-        });
+        contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+        for (let i = 0; i < 5; i++) {
+          const response = await ai.models.generateContent({
+            model: config.model || 'gemini-2.5-flash',
+            contents,
+            config: {
+              systemInstruction: { role: 'system', parts: [{ text: systemInstruction }] },
+              tools: AI_TOOLS,
+              temperature: 0.2,
+            }
+          });
+
+          if (response.text) {
+            currentResponseText += response.text;
+          }
+
+          if (!response.functionCalls || response.functionCalls.length === 0) {
+            break;
+          }
+
+          const functionResponses = [];
+          contents.push({
+            role: 'model',
+            parts: response.functionCalls.map(call => ({ functionCall: call }))
+          });
+
+          for (const call of response.functionCalls) {
+            const { name, args } = call;
+            toolsUsed.push(name);
+            actionTaken = `Executed ${name}`;
+            
+            try {
+              console.log(`Executing AI Tool: ${name}`, args);
+              const result = await AIToolHandlers.execute(name, args, { userId, role: userRole });
+              
+              if (result.leads) affectedRecords.count = result.leads.length;
+              if (result.task) affectedRecords.taskId = result.task.id;
+
+              functionResponses.push({
+                functionResponse: {
+                  name,
+                  response: result
+                }
+              });
+            } catch (e: any) {
+               functionResponses.push({
+                functionResponse: {
+                  name,
+                  response: { error: e.message }
+                }
+              });
+            }
+          }
+          contents.push({ role: 'function', parts: functionResponses });
+        }
       }
 
       if (conversationId) {

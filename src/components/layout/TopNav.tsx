@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Sun, Moon, Sparkles, Command, X, User, LogOut } from 'lucide-react';
+import { Menu, Search, Sun, Moon, Sparkles, Command, X, User, LogOut, CreditCard } from 'lucide-react';
 import { useTheme } from '../ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAI } from '../../contexts/AIContext';
@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, switchOrganization, hasRole } = useAuth();
   const { toggleAssistant } = useAI();
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -85,6 +85,23 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
           {/* Separator */}
           <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-border" aria-hidden="true" />
 
+          {/* Organization Switcher */}
+          {user?.organizations && user.organizations.length > 1 && (
+            <div className="hidden lg:flex items-center">
+              <select
+                value={user.activeOrganizationId || ''}
+                onChange={(e) => switchOrganization(e.target.value)}
+                className="bg-muted text-sm border border-border rounded-md px-2 py-1 focus:ring-primary focus:border-primary text-foreground cursor-pointer outline-none transition-colors max-w-[150px] truncate"
+              >
+                {user.organizations.map((org: any) => (
+                  <option key={org.id} value={org.id} className="bg-card">
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Profile dropdown Placeholder */}
           <div className="hidden lg:flex items-center gap-x-4 relative">
              <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="focus:outline-none flex items-center">
@@ -116,6 +133,15 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
                      <User className="w-4 h-4 text-muted-foreground" />
                      My Profile
                    </button>
+                   {hasRole(['Admin', 'Super Admin']) && (
+                     <button
+                       onClick={() => { setShowProfileMenu(false); navigate('/admin/billing'); }}
+                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                     >
+                       <CreditCard className="w-4 h-4 text-muted-foreground" />
+                       Billing
+                     </button>
+                   )}
                    <button
                      onClick={() => { setShowProfileMenu(false); logout(); navigate('/login'); }}
                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-2"
