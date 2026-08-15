@@ -9,9 +9,14 @@ export function ApiKeysTab() {
   const { apiKeys: keys, revokeApiKey, generateApiKey } = useIntegration();
   const [showKeyId, setShowKeyId] = useState<string | null>(null);
 
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+
   const handleCreate = async () => {
     try {
-      await generateApiKey('New Integration Key', ['write']);
+      const result = await generateApiKey('New Integration Key', ['*']);
+      if (result?.rawKey) {
+        setGeneratedKey(result.rawKey);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -48,6 +53,36 @@ export function ApiKeysTab() {
           Generate Key
         </button>
       </div>
+
+      {generatedKey && (
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-400 mb-2">
+                New API Key Generated
+              </h3>
+              <p className="text-sm text-emerald-700 dark:text-emerald-500 mb-4">
+                Please copy this key and store it securely. For security reasons, <strong>we cannot show it to you again</strong>.
+              </p>
+              <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-500/30 rounded-lg p-2">
+                <code className="flex-1 text-sm px-2 font-mono">{generatedKey}</code>
+                <button
+                  onClick={() => copyToClipboard(generatedKey)}
+                  className="p-2 hover:bg-emerald-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                >
+                  <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </button>
+              </div>
+              <button
+                onClick={() => setGeneratedKey(null)}
+                className="mt-4 text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+              >
+                I have saved my key
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
         <table className="w-full text-left text-sm">

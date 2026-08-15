@@ -1,9 +1,11 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 import { ApiKey, WebhookConfig, ApiLog, ImportJob, LeadSourceConfig } from '../types/integration';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useIntegration = () => {
+  const { user } = useAuth();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
@@ -83,11 +85,32 @@ export const useIntegration = () => {
   }, [fetchApiKeys, fetchWebhooks, fetchLogs, fetchImportJobs]);
 
   const generateApiKey = async (name: string, permissions: ('read' | 'write' | 'admin')[]) => {
-    const { data, error } = await supabase.from('api_keys').insert([{
+    if (!user?.activeOrganizationId) {
+      toast.error('No active organization');
+      return;
+    }
+
+    const randomString = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+      
+    const rawKey = `edvix_live_${randomString}`;
+    
+    const encoder = new TextEncoder();
+    const data = encoder.encode(rawKey);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const { data: insertedData, error } = await supabase.from('api_keys').insert([{
+      organization_id: user.activeOrganizationId,
       name,
-      key_prefix: "edvx_live_" + Math.random().toString(36).substring(2, 6),
-      token: 'hidden',
-      permissions
+      key_prefix: 'edvix_live',
+      key_hash: hashHex,
+      permissions,
+      environment: 'Production',
+      rate_limit: 100,
+      created_by: user.id,
+      status: 'Active'
     }]).select().single();
 
     if (error) {
@@ -96,7 +119,7 @@ export const useIntegration = () => {
     }
     toast.success('API Key generated');
     await fetchApiKeys();
-    return data;
+    return { ...insertedData, rawKey };
   };
 
   const revokeApiKey = async (id: string) => {
