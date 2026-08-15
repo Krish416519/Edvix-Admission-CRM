@@ -48,7 +48,7 @@ BEGIN
             'name', TRIM(NEW.first_name || ' ' || COALESCE(NEW.last_name, '')),
             'email', NEW.email,
             'phone', NEW.phone,
-            'course', NEW.course,
+            'course', NEW.course_id,
             'status', NEW.lead_status
         );
 

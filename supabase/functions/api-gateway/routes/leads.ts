@@ -46,7 +46,7 @@ export async function handleLeads(
 
   // Helper to check permission
   const checkPermission = (perm: string) => {
-    if (!permissions.includes(perm)) {
+    if (!permissions.includes(perm) && !permissions.includes('*')) {
       return finalizeRequest(403, { error: { code: 'FORBIDDEN', message: `Missing required permission: ${perm}` } });
     }
     return null;
@@ -62,7 +62,7 @@ export async function handleLeads(
 
       // GET Single Lead
       if (leadId) {
-        const { data, error } = await authClient
+        const { data, error } = await supabaseService
           .from('leads')
           .select('*, lead_activities(*)')
           .eq('id', leadId)
@@ -78,7 +78,7 @@ export async function handleLeads(
       let limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50')));
       const offset = (page - 1) * limit;
 
-      let query = authClient.from('leads').select('*', { count: 'exact' }).eq('organization_id', orgId);
+      let query = supabaseService.from('leads').select('*', { count: 'exact' }).eq('organization_id', orgId);
 
       // Filters
       if (url.searchParams.has('status')) query = query.eq('lead_status', url.searchParams.get('status'));
@@ -124,8 +124,9 @@ export async function handleLeads(
       // Parse Full Name if first_name not provided
       let firstName = body.first_name;
       let lastName = body.last_name;
-      if (!firstName && body.full_name) {
-          const parts = body.full_name.split(' ');
+      const fullName = body.full_name || body.name;
+      if (!firstName && fullName) {
+          const parts = fullName.split(' ');
           firstName = parts[0];
           lastName = parts.slice(1).join(' ');
       }
@@ -134,10 +135,9 @@ export async function handleLeads(
       if (!body.email && !body.phone) return finalizeRequest(422, { error: { code: 'VALIDATION_ERROR', message: 'Either email or phone is required' } });
 
       // Duplicate Detection logic
-      if (body.external_id || body.email || body.phone) {
-         let dupQuery = authClient.from('leads').select('id').eq('organization_id', orgId);
+      if (body.email || body.phone) {
+         let dupQuery = supabaseService.from('leads').select('id').eq('organization_id', orgId);
          const ors = [];
-         if (body.external_id) ors.push(`external_id.eq.${body.external_id}`);
          if (body.email) ors.push(`email.eq.${body.email}`);
          if (body.phone) ors.push(`phone.eq.${body.phone}`);
          
@@ -152,31 +152,20 @@ export async function handleLeads(
 
       const newLead = {
         organization_id: orgId,
-        first_name: firstName,
-        last_name: lastName || null,
+        first_name: fullName.split(' ')[0],
+        last_name: fullName.split(' ').slice(1).join(' ') || null,
         email: body.email || null,
         phone: body.phone || null,
         state: body.state || null,
         city: body.city || null,
         budget: body.budget || null,
         lead_source: body.source || 'API',
-        campaign: body.campaign || null,
-        course: body.course || null,
+        course_id: body.course || null,
         lead_status: 'New',
-        priority: 'Low',
-        external_id: body.external_id || null,
-        medium: body.medium || null,
-        utm_source: body.utm_source || null,
-        utm_medium: body.utm_medium || null,
-        utm_campaign: body.utm_campaign || null,
-        utm_content: body.utm_content || null,
-        utm_term: body.utm_term || null,
-        landing_page: body.landing_page || null,
-        referrer: body.referrer || null,
-        preferred_specialization: body.specialization || null
+        priority: 'Low'
       };
 
-      const { data: lead, error: insertError } = await authClient
+      const { data: lead, error: insertError } = await supabaseService
         .from('leads')
         .insert([newLead])
         .select()
@@ -186,12 +175,12 @@ export async function handleLeads(
          if (insertError.code === '23505') { // Unique violation fallback
              return finalizeRequest(409, { error: { code: 'CONFLICT', message: 'A lead with this external_id already exists.' } });
          }
-         return finalizeRequest(400, { error: { code: 'DATABASE_ERROR', message: insertError.message } });
+         return finalizeRequest(400, { error: { code: 'DATABASE_ERROR', message: insertError.message, details: insertError.details, hint: insertError.hint } });
       }
 
       // Automatically add lead note if provided
       if (body.lead_notes) {
-          await authClient.from('lead_activities').insert([{
+          await supabaseService.from('lead_activities').insert([{
               lead_id: lead.id,
               type: 'Note',
               content: body.lead_notes,
@@ -222,7 +211,7 @@ export async function handleLeads(
           }
       }
 
-      const { data: lead, error: updateError } = await authClient
+      const { data: lead, error: updateError } = await supabaseService
         .from('leads')
         .update(body)
         .eq('id', leadId)
@@ -246,7 +235,7 @@ export async function handleLeads(
       const body = await req.json();
       if (!body.user_id) return finalizeRequest(422, { error: { code: 'VALIDATION_ERROR', message: 'user_id is required' } });
 
-      const { data, error } = await authClient
+      const { data, error } = await supabaseService
         .from('leads')
         .update({ assigned_counselor: body.user_id })
         .eq('id', leadId)
@@ -257,7 +246,7 @@ export async function handleLeads(
       if (error) return finalizeRequest(400, { error: { code: 'DATABASE_ERROR', message: error.message } });
       
       // Log Activity
-      await authClient.from('lead_activities').insert([{
+      await supabaseService.from('lead_activities').insert([{
          lead_id: leadId,
          type: 'Assignment',
          content: `Lead assigned via API`,
@@ -278,7 +267,7 @@ export async function handleLeads(
       const body = await req.json();
       if (!body.status) return finalizeRequest(422, { error: { code: 'VALIDATION_ERROR', message: 'status is required' } });
 
-      const { data, error } = await authClient
+      const { data, error } = await supabaseService
         .from('leads')
         .update({ lead_status: body.status })
         .eq('id', leadId)
@@ -301,7 +290,7 @@ export async function handleLeads(
       const body = await req.json();
       if (!body.type || !body.content) return finalizeRequest(422, { error: { code: 'VALIDATION_ERROR', message: 'type and content are required' } });
 
-      const { data, error } = await authClient
+      const { data, error } = await supabaseService
         .from('lead_activities')
         .insert([{
            lead_id: leadId,
@@ -323,6 +312,6 @@ export async function handleLeads(
 
   } catch (error: any) {
     console.error('Lead API Error:', error);
-    return finalizeRequest(500, { error: { code: 'INTERNAL_ERROR', message: 'Internal server error processing Lead API request' } });
+    return finalizeRequest(500, { error: { code: 'INTERNAL_ERROR', message: 'Internal server error processing Lead API request', detail: error.message, stack: error.stack } });
   }
 }
