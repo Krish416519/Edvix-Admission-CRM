@@ -28,9 +28,10 @@ export function Login() {
       navigate(from, { replace: true });
     } catch (err: any) {
       // Extract specific error message from Supabase
+      console.error('Detailed login error:', err);
       const message = err.message || 'Failed to log in. Please check your credentials.';
       setError(message);
-      toast.error('Login failed');
+      toast.error(`Login failed: ${message}`);
     }
   };
 
