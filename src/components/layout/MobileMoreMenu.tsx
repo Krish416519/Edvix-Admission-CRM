@@ -11,17 +11,20 @@ interface MobileMoreMenuProps {
 
 export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
   const location = useLocation();
-  const { user, logout, hasRole, hasPermission } = useAuth();
+  const { user, logout, hasRole, hasPermission, hasResourceAccess } = useAuth();
 
   const menuItems = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Admission OS', href: '/admission-os', icon: Sparkles },
     { name: 'Command Center', href: '/admission-os/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
     { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
-    { name: 'Applications', href: '/applications', icon: FileText },
-    { name: 'Admissions', href: '/admissions', icon: GraduationCap },
-    { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare },
-    { name: 'Email', href: '/email', icon: Mail },
-    { name: 'Call Center', href: '/call-center', icon: Phone },
+    { name: 'Leads', href: '/leads', icon: Users, resource: 'Lead Management' },
+    { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
+    { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },
+    { name: 'Tasks', href: '/tasks', icon: CheckCircle },
+    { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
+    { name: 'Email', href: '/email', icon: Mail, resource: 'Communication' },
+    { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },
     { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
     { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
     { name: 'Analytics', href: '/analytics', icon: PieChart, permission: { action: 'View Reports', resource: 'Reports' } },
@@ -79,6 +82,9 @@ export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
           <nav className="px-4 py-2 space-y-1">
             {menuItems.map((item) => {
               if (item.roles && !hasRole(item.roles as any)) return null;
+              // Check resource-level access
+              if (item.resource && !hasResourceAccess(item.resource)) return null;
+
               if (item.permission && !hasPermission(item.permission.action, item.permission.resource)) return null;
               
               const isActive = location.pathname === item.href;

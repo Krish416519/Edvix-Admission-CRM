@@ -790,7 +790,7 @@ export function LeadsList() {
 
         {viewMode === 'list' ? (
           <>
-            <div className="md:hidden flex-1 overflow-y-auto px-4 py-2 space-y-3 pb-32">
+            <div className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8">
               {isLoading ? (
                 // Skeleton cards for mobile
                 Array.from({ length: 5 }).map((_, i) => (

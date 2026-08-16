@@ -10,13 +10,13 @@ const navigation = [
   { name: 'Admission OS', href: '/admission-os', icon: Sparkles },
   { name: 'Command Center', href: '/admission-os/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
   { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
-  { name: 'Leads', href: '/leads', icon: Users },
-  { name: 'Applications', href: '/applications', icon: FileText },
-  { name: 'Admissions', href: '/admissions', icon: GraduationCap },
+  { name: 'Leads', href: '/leads', icon: Users, resource: 'Lead Management' },
+  { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
+  { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },
   { name: 'Tasks', href: '/tasks', icon: CheckCircle },
-  { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare },
-  { name: 'Email', href: '/email', icon: Mail },
-  { name: 'Call Center', href: '/call-center', icon: Phone },
+  { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
+  { name: 'Email', href: '/email', icon: Mail, resource: 'Communication' },
+  { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },
   { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
   { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
   { name: 'Analytics', href: '/analytics', icon: PieChart, permission: { action: 'View Reports', resource: 'Reports' } },
@@ -35,7 +35,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
   const location = useLocation();
-  const { user, logout, hasRole, hasPermission } = useAuth();
+  const { user, logout, hasRole, hasPermission, hasResourceAccess } = useAuth();
   const { unreadCount } = useNotifications();
 
   const toggleCollapse = () => {
@@ -85,6 +85,10 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
             {navigation.map((item) => {
               // Backward compatibility for roles, preferred is permissions
               if (item.roles && !hasRole(item.roles as any)) return null;
+              // Check resource-level access (for generic modules like Leads)
+              if (item.resource && !hasResourceAccess(item.resource)) return null;
+
+              // Check specific action permissions
               if (item.permission && !hasPermission(item.permission.action, item.permission.resource)) return null;
               
               const isActive = location.pathname === item.href;

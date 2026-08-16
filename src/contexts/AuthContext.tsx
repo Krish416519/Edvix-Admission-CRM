@@ -8,9 +8,10 @@ interface AuthContextType {
   isLoading: boolean;
   permissions: { action: string; resource: string }[];
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   hasRole: (roles: Role[]) => boolean;
   hasPermission: (action: string, resource: string) => boolean;
+  hasResourceAccess: (resource: string) => boolean;
   switchOrganization: (orgId: string) => void;
 }
 
@@ -230,6 +231,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const hasResourceAccess = (resource: string) => {
+    if (!user) return false;
+    if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
+    
+    return permissions.some(
+      (p) => p.resource.toLowerCase() === resource.toLowerCase()
+    );
+  };
+
   const switchOrganization = (orgId: string) => {
     if (!user) return;
     if (user.organizations?.some(org => org.id === orgId)) {
@@ -241,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission, switchOrganization }}>
+    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission, hasResourceAccess, switchOrganization }}>
       {children}
     </AuthContext.Provider>
   );

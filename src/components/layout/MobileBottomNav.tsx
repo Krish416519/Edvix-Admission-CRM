@@ -7,16 +7,19 @@ import { MobileMoreMenu } from './MobileMoreMenu';
 
 export function MobileBottomNav() {
   const location = useLocation();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasResourceAccess } = useAuth();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   // We can customize the 4th slot based on permissions
   const showAnalytics = hasPermission('View Reports', 'Reports');
+  const showLeads = hasResourceAccess('Lead Management');
 
   const navItems = [
     { name: 'Home', href: '/', icon: LayoutDashboard },
-    { name: 'Leads', href: '/leads', icon: Users },
-    { name: 'Tasks', href: '/tasks', icon: CheckCircle },
+    ...(showLeads ? [
+      { name: 'Leads', href: '/leads', icon: Users },
+      { name: 'Tasks', href: '/tasks', icon: CheckCircle },
+    ] : []),
     showAnalytics 
       ? { name: 'Reports', href: '/analytics', icon: PieChart }
       : { name: 'AI', href: '/ai-dashboard', icon: Sparkles },
