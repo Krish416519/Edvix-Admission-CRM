@@ -5,6 +5,7 @@ import { cn } from '../../../lib/utils';
 import { format, isPast, isToday } from 'date-fns';
 
 interface MobileTaskCardProps {
+  key?: React.Key;
   task: Task;
   onToggleStatus: (task: Task) => void;
   onClick: (task: Task) => void;
@@ -70,8 +71,8 @@ export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCard
       </div>
 
       <div className="flex flex-col gap-2 mb-4 ml-8">
-        {task.notes && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{task.notes}</p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
         )}
       </div>
 

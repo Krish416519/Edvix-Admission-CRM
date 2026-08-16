@@ -1,13 +1,31 @@
-import { useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { CallConfig, TelephonyProviderInterface } from '../lib/telephony/provider';
 import { createTelephonyProvider } from '../lib/telephony/providerFactory';
-import { Call, TelephonyProvider, TelephonyProviderType, CallEventType } from '../types/telephony';
-import { useCallAi } from './useCallAi';
-import { useAuth } from '../contexts/AuthContext';
+import { Call, TelephonyProvider as TelephonyProviderConfig, TelephonyProviderType, CallEventType } from '../types/telephony';
+import { useCallAi } from '../hooks/useCallAi';
+import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 
-export function useTelephony() {
+interface TelephonyContextType {
+  isInitializing: boolean;
+  provider: TelephonyProviderInterface | null;
+  makeCall: (config: CallConfig) => Promise<void>;
+  endCall: (outcome?: string, notes?: string, tags?: string[], nextFollowUp?: string) => Promise<void>;
+  activeCall: Call | null;
+  isDialerOpen: boolean;
+  setIsDialerOpen: (isOpen: boolean) => void;
+  isMuted: boolean;
+  toggleMute: () => Promise<void>;
+  isOnHold: boolean;
+  toggleHold: () => Promise<void>;
+  callDuration: number;
+  fetchCallsForLead: (leadId: string) => Promise<Call[]>;
+}
+
+const TelephonyContext = createContext<TelephonyContextType | undefined>(undefined);
+
+export function TelephonyProvider({ children }: { children: ReactNode }) {
   const { user, hasRole } = useAuth();
   const [provider, setProvider] = useState<TelephonyProviderInterface | null>(null);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -48,7 +66,7 @@ export function useTelephony() {
         }
 
         if (data) {
-          const providerConfig = data as TelephonyProvider;
+          const providerConfig = data as TelephonyProviderConfig;
           const newProvider = createTelephonyProvider(providerConfig.providerType);
           await newProvider.initialize(providerConfig.config);
           setProvider(newProvider);
@@ -295,19 +313,31 @@ export function useTelephony() {
     })) as Call[];
   };
 
-  return {
-    isInitializing,
-    provider,
-    makeCall,
-    endCall,
-    activeCall,
-    isDialerOpen,
-    setIsDialerOpen,
-    isMuted,
-    toggleMute,
-    isOnHold,
-    toggleHold,
-    callDuration,
-    fetchCallsForLead
-  };
+  return (
+    <TelephonyContext.Provider value={{
+      isInitializing,
+      provider,
+      makeCall,
+      endCall,
+      activeCall,
+      isDialerOpen,
+      setIsDialerOpen,
+      isMuted,
+      toggleMute,
+      isOnHold,
+      toggleHold,
+      callDuration,
+      fetchCallsForLead
+    }}>
+      {children}
+    </TelephonyContext.Provider>
+  );
+}
+
+export function useTelephony() {
+  const context = useContext(TelephonyContext);
+  if (context === undefined) {
+    throw new Error('useTelephony must be used within a TelephonyProvider');
+  }
+  return context;
 }

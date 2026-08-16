@@ -4,10 +4,11 @@ import { Phone, MessageCircle, GraduationCap, Building2, Flame } from 'lucide-re
 import { cn } from '../../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { useTelephony } from '../../../hooks/useTelephony';
+import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface MobileLeadCardProps {
+  key?: React.Key;
   lead: Lead;
   onClick?: () => void;
   statusColors: Record<LeadStatus, string>;

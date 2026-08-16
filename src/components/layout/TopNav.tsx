@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Sun, Moon, Sparkles, Command, X, User, LogOut, CreditCard } from 'lucide-react';
+import { Menu, Search, Sun, Moon, Sparkles, Command, X, User, LogOut, CreditCard, Phone } from 'lucide-react';
 import { useTheme } from '../ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAI } from '../../contexts/AIContext';
+import { useTelephony } from '../../contexts/TelephonyContext';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
   const { theme, toggleTheme } = useTheme();
   const { user, logout, switchOrganization, hasRole } = useAuth();
   const { toggleAssistant } = useAI();
+  const { setIsDialerOpen } = useTelephony();
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
@@ -95,6 +97,15 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
             <span className="hidden sm:inline text-sm font-semibold">AI</span>
           </button>
           
+          <button
+            type="button"
+            className="-m-2.5 p-2.5 text-foreground hover:bg-muted rounded-full transition-colors flex items-center justify-center"
+            onClick={() => setIsDialerOpen(true)}
+            title="Open Dialer"
+          >
+            <Phone className="h-5 w-5" />
+          </button>
+
           <NotificationBell />
 
           {/* Separator */}

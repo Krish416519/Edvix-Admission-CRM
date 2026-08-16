@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from './components/ThemeProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { TelephonyProvider } from './contexts/TelephonyContext';
 import { AIProvider } from './contexts/AIContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PageLoader } from './components/layout/PageLoader';
@@ -114,7 +115,8 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <NotificationProvider>
-          <BrowserRouter>
+          <TelephonyProvider>
+            <BrowserRouter>
             <AIProvider>
               <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -236,6 +238,7 @@ export default function App() {
           </BrowserRouter>
           <DialerWidget />
           <Toaster position="top-right" richColors closeButton />
+          </TelephonyProvider>
         </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>

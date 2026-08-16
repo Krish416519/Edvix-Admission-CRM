@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { Phone, PhoneOff, Mic, MicOff, Pause, Play, UserPlus, X, Save, Calendar, Tag, ChevronDown } from 'lucide-react';
-import { useTelephony } from '../../hooks/useTelephony';
+import { useTelephony } from '../../contexts/TelephonyContext';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { CALL_OUTCOMES, CALL_TAGS, CallOutcome, CallTag } from '../../types/telephony';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function DialerWidget() {
-  const { activeCall, isDialerOpen, setIsDialerOpen, isMuted, toggleMute, isOnHold, toggleHold, callDuration, endCall } = useTelephony();
+  const { activeCall, isDialerOpen, setIsDialerOpen, isMuted, toggleMute, isOnHold, toggleHold, callDuration, endCall, makeCall } = useTelephony();
   
   const [outcome, setOutcome] = useState<CallOutcome | ''>('');
   const [notes, setNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<CallTag[]>([]);
   const [nextFollowUp, setNextFollowUp] = useState('');
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
+  const [manualNumber, setManualNumber] = useState('');
+  const { user } = useAuth();
 
   if (!isDialerOpen && !activeCall) return null;
 
@@ -58,6 +61,16 @@ export function DialerWidget() {
     ? activeCall.leadName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : 'L';
 
+  const handleManualCall = () => {
+    if (!manualNumber) return;
+    if (user) {
+      makeCall({
+        to: manualNumber,
+        counselorId: user.id
+      });
+    }
+  };
+
   return (
     <div className="fixed bottom-6 right-6 w-80 bg-card border border-border shadow-2xl rounded-2xl z-50 overflow-visible flex flex-col animate-in slide-in-from-bottom-5">
       {/* Header */}
@@ -83,7 +96,32 @@ export function DialerWidget() {
 
       {/* Body */}
       <div className="p-5 flex flex-col items-center">
-        {activeCall?.status !== 'completed' && activeCall?.status !== 'missed' && activeCall?.status !== 'failed' ? (
+        {!activeCall ? (
+          <div className="w-full flex flex-col items-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 border-2 border-primary/20">
+              <Phone className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-4">Manual Dialer</h3>
+            <div className="w-full space-y-3">
+              <input 
+                type="tel" 
+                placeholder="Enter phone number..." 
+                value={manualNumber}
+                onChange={e => setManualNumber(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-center text-lg font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
+                autoFocus
+              />
+              <button 
+                onClick={handleManualCall}
+                disabled={!manualNumber}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
+              >
+                <Phone className="w-5 h-5 fill-current" />
+                Call Number
+              </button>
+            </div>
+          </div>
+        ) : activeCall.status !== 'completed' && activeCall.status !== 'missed' && activeCall.status !== 'failed' ? (
           <>
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3 border-2 border-primary/20">
               <span className="text-xl font-bold text-primary">
@@ -91,10 +129,10 @@ export function DialerWidget() {
               </span>
             </div>
             <h3 className="text-lg font-bold text-foreground mb-1 text-center truncate w-full">
-              {activeCall?.leadName || 'Unknown Lead'}
+              {activeCall.leadName || 'Unknown Lead'}
             </h3>
             <p className="text-xs text-muted-foreground mb-4 font-medium">
-              {activeCall?.leadPhone || 'Unknown Number'}
+              {activeCall.leadPhone || 'Unknown Number'}
             </p>
             
             <p className="text-muted-foreground font-mono text-xl mb-6 bg-muted px-4 py-1.5 rounded-full font-semibold">

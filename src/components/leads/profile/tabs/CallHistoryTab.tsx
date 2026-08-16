@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Lead } from '../../../../types/schema';
 import { Call } from '../../../../types/telephony';
-import { useTelephony } from '../../../../hooks/useTelephony';
+import { useTelephony } from '../../../../contexts/TelephonyContext';
 import { CallHistoryPanel } from '../../../telephony/CallHistoryPanel';
 
 export function CallHistoryTab({ lead }: { lead: Lead }) {

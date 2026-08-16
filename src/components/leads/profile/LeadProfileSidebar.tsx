@@ -3,7 +3,7 @@ import { Lead } from '../../../types/schema';
 import { Mail, MapPin, Phone, Building, GraduationCap, User, Target, Hash, Calendar } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { LeadAssignmentPanel } from './LeadAssignmentPanel';
-import { useTelephony } from '../../../hooks/useTelephony';
+import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { format } from 'date-fns';
 

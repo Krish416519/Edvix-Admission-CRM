@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, MessageCircle, MoreHorizontal } from 'lucide-react';
-import { useTelephony } from '../../../hooks/useTelephony';
+import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface MobileActionBarProps {

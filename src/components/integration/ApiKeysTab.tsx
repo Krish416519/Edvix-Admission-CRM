@@ -13,7 +13,7 @@ export function ApiKeysTab() {
 
   const handleCreate = async () => {
     try {
-      const result = await generateApiKey('New Integration Key', ['*']);
+      const result = await generateApiKey('New Integration Key', ['read', 'write']);
       if (result?.rawKey) {
         setGeneratedKey(result.rawKey);
       }
