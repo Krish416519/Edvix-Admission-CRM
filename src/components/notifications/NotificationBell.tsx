@@ -37,11 +37,19 @@ export function NotificationBell() {
     }
   };
 
-  const handleNotificationClick = (id: string, link?: string) => {
-    markAsRead(id);
-    if (link) {
-      navigate(link);
+  const handleNotificationClick = (notification: AppNotification) => {
+    markAsRead(notification.id);
+    if (notification.metadata?.link) {
+      navigate(notification.metadata.link);
       setIsOpen(false);
+      return;
+    }
+
+    // Direct routing for Leads
+    if (notification.module === 'Leads' && notification.moduleRecordId) {
+      navigate(`/leads/${notification.moduleRecordId}`);
+      setIsOpen(false);
+      return;
     }
   };
 
@@ -96,7 +104,7 @@ export function NotificationBell() {
                       "p-4 hover:bg-muted/50 transition-colors cursor-pointer group flex gap-3",
                       notification.status === 'Unread' ? "bg-primary/5" : ""
                     )}
-                    onClick={() => handleNotificationClick(notification.id, notification.metadata?.link)}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className={cn(
                       "mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center border shadow-sm",
