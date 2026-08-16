@@ -178,13 +178,31 @@ export async function handleLeads(
          return finalizeRequest(400, { error: { code: 'DATABASE_ERROR', message: insertError.message, details: insertError.details, hint: insertError.hint } });
       }
 
-      // Automatically add lead note if provided
-      if (body.lead_notes) {
+      // Automatically capture any extra fields sent from the website form into a CRM Note
+      const standardKeys = [
+        'first_name', 'last_name', 'full_name', 'name', 'email', 'phone', 
+        'state', 'city', 'budget', 'source', 'course', 'lead_notes'
+      ];
+      
+      let generatedNote = body.lead_notes ? `${body.lead_notes}\n\n` : '';
+      const extraFields = Object.keys(body).filter(key => !standardKeys.includes(key));
+      
+      if (extraFields.length > 0) {
+          generatedNote += `**Additional Lead Details:**\n`;
+          extraFields.forEach(key => {
+              // Format the key to be readable (e.g. business_type -> Business Type)
+              const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              generatedNote += `- **${formattedKey}:** ${body[key]}\n`;
+          });
+      }
+
+      if (generatedNote.trim().length > 0) {
           await supabaseService.from('lead_activities').insert([{
+              organization_id: orgId,
               lead_id: lead.id,
               type: 'Note',
-              content: body.lead_notes,
-              author: 'API',
+              content: generatedNote.trim(),
+              author: 'Website Form',
               metadata: { source: 'API Payload' }
           }]);
       }
