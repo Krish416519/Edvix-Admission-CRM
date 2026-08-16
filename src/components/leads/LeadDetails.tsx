@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Phone, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { mockActivities } from '../../data/mockActivities';
 import { Lead, LeadStatus, LeadActivity } from '../../types/schema';
 import { toast } from 'sonner';
@@ -87,58 +87,97 @@ export function LeadDetails() {
   };
 
   const handleStatusChange = async (newStatus: LeadStatus) => {
-    if (newStatus === lead.status) return;
+    const currentStatus = lead.leadStatus || lead.status;
+    if (newStatus === currentStatus) return;
     
-    await updateLead({ status: newStatus });
+    await updateLead({ leadStatus: newStatus, status: newStatus });
     
     addAuditLog({
       action: 'Status Changed',
       entityType: 'Lead',
       entityId: lead.id,
       title: 'Lead Status Changed',
-      description: `Status changed from ${lead.status} to ${newStatus}.`,
-      previousValue: lead.status,
+      description: `Status changed from ${currentStatus} to ${newStatus}.`,
+      previousValue: currentStatus,
       newValue: newStatus,
       userName: 'Current User',
       leadId: lead.id
     });
     
-    // Fire Automation Engine Event
     automationService.triggerEvent('Lead Status Changed', { 
-      lead: { ...lead, status: newStatus },
-      oldStatus: lead.status,
+      lead: { ...lead, leadStatus: newStatus, status: newStatus },
+      oldStatus: currentStatus,
       newStatus
     });
     
     toast.success(`Status updated to ${newStatus}`);
   };
 
+  const displayName = lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown';
+  const displayStatus = (lead.leadStatus || lead.status || 'New') as LeadStatus;
+
+  const handleCall = () => {
+    if (lead.phone) {
+      window.location.href = `tel:${lead.phone}`;
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (lead.phone) {
+      let clean = lead.phone.replace(/[^0-9]/g, '');
+      if (clean.length === 10) clean = '91' + clean;
+      window.open(`https://wa.me/${clean}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 h-[calc(100vh-4rem)] pt-2 pb-6 px-4 sm:px-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-4">
-          <button 
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => navigate('/leads')}
             className="p-2 -ml-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{lead.name}'s Profile</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">{displayName}'s Profile</h1>
+            <p className="text-xs text-muted-foreground">{lead.leadNumber || lead.id?.slice(0,8)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setShowDisposition(!showDisposition)}
-            className="hidden sm:inline-flex px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors"
-          >
-            Update Disposition
-          </button>
-          <select 
-            value={lead.status}
+
+        {/* Desktop Action Bar — all actions visible on desktop, hidden on mobile (mobile uses bottom bar) */}
+        <div className="hidden sm:flex items-center gap-2 flex-wrap">
+          {/* WhatsApp */}
+          {lead.phone && (
+            <button
+              onClick={handleWhatsApp}
+              title="Send WhatsApp"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-semibold text-sm hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </button>
+          )}
+
+          {/* Call */}
+          {lead.phone && (
+            <button
+              onClick={handleCall}
+              title={`Call ${lead.phone}`}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors"
+            >
+              <Phone className="w-4 h-4 fill-current" />
+              Call
+            </button>
+          )}
+
+          {/* Status quick-change */}
+          <select
+            value={displayStatus}
             onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
-            className="bg-card border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+            className="bg-card border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
           >
             <option value="New">New</option>
             <option value="Attempted">Attempted</option>
@@ -150,9 +189,34 @@ export function LeadDetails() {
             <option value="Admission Done">Admission Done</option>
             <option value="Lost">Lost</option>
           </select>
-          <button className="p-2 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors shadow-sm">
-            <MoreHorizontal className="w-5 h-5" />
+
+          {/* Update Disposition */}
+          <button
+            onClick={() => setShowDisposition(!showDisposition)}
+            className="flex items-center gap-2 px-3 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors text-sm"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            {showDisposition ? 'Close' : 'Disposition'}
           </button>
+        </div>
+
+        {/* Mobile: just the status selector + disposition toggle (mobile bar handles call/whatsapp) */}
+        <div className="sm:hidden flex items-center gap-2">
+          <select
+            value={displayStatus}
+            onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
+            className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+          >
+            <option value="New">New</option>
+            <option value="Attempted">Attempted</option>
+            <option value="Connected">Connected</option>
+            <option value="Interested">Interested</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Application Started">Application Started</option>
+            <option value="Documents Pending">Documents Pending</option>
+            <option value="Admission Done">Admission Done</option>
+            <option value="Lost">Lost</option>
+          </select>
         </div>
       </div>
 
