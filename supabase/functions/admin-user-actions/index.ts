@@ -19,8 +19,8 @@ Deno.serve(async (req: Request) => {
     // 1. Verify the caller is an authenticated user with Super Admin role
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Missing Authorization header' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -42,8 +42,8 @@ Deno.serve(async (req: Request) => {
     // Get the caller's identity
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-        status: 401,
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Invalid token' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -56,16 +56,16 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (callerError || !callerData) {
-      return new Response(JSON.stringify({ success: false, error: 'Could not verify role' }), {
-        status: 403,
+      return new Response(JSON.stringify({ success: false, error: 'Could not verify your role' }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const callerRole = (callerData.role as any)?.name;
     if (!['Super Admin', 'Admin'].includes(callerRole)) {
-      return new Response(JSON.stringify({ success: false, error: 'Insufficient permissions' }), {
-        status: 403,
+      return new Response(JSON.stringify({ success: false, error: `Insufficient permissions: You are a ${callerRole}` }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -252,7 +252,7 @@ Deno.serve(async (req: Request) => {
     console.error('Edge function error:', err);
     return new Response(
       JSON.stringify({ success: false, error: err.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
