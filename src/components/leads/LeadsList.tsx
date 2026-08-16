@@ -353,15 +353,15 @@ export function LeadsList() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const statusColors: Record<LeadStatus, string> = {
-    'New': 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-500',
-    'Attempted': 'bg-gray-100 text-gray-700 dark:bg-gray-500/10 dark:text-gray-500',
-    'Connected': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-500',
-    'Interested': 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-500',
-    'Qualified': 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-500',
-    'Application Started': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-500',
-    'Documents Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500',
-    'Admission Done': 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500',
-    'Lost': 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500',
+    'New': 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+    'Attempted': 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400',
+    'Connected': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+    'Interested': 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400',
+    'Qualified': 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400',
+    'Application Started': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400',
+    'Documents Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+    'Admission Done': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
+    'Lost': 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
   };
 
   const priorityColors: Record<LeadPriority, string> = {
@@ -444,10 +444,13 @@ export function LeadsList() {
     }
   };
 
-  // Summary Stats (Currently based on the paginated response context, but ideally a separate API call for total stats)
   const totalLeads = totalCount;
-  const newLeadsCount = paginatedLeads.filter(l => l.status === 'New').length; // Local approx
-  const admissionsCount = paginatedLeads.filter(l => l.status === 'Admission Done').length; // Local approx
+  // Use leadStatus which is the canonical field
+  const newLeadsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'New').length;
+  const admissionsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Admission Done').length;
+  const qualifiedCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Qualified').length;
+  const lostCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Lost').length;
+  const hotLeadsCount = paginatedLeads.filter(l => (l.leadScore ?? l.score ?? 0) >= 61).length;
   const conversionRate = paginatedLeads.length ? Math.round((admissionsCount / paginatedLeads.length) * 100) : 0;
 
   return (
@@ -590,6 +593,22 @@ export function LeadsList() {
         </div>
       </div>
 
+      {/* Mobile KPI horizontal scroll */}
+      <div className="md:hidden flex gap-3 px-1 mb-3 overflow-x-auto hide-scrollbar pb-1">
+        {[
+          { label: 'Total', value: totalLeads, color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10' },
+          { label: 'New', value: newLeadsCount, color: 'text-violet-600 bg-violet-50 dark:bg-violet-500/10' },
+          { label: 'Qualified', value: qualifiedCount, color: 'text-teal-600 bg-teal-50 dark:bg-teal-500/10' },
+          { label: '🔥 Hot', value: hotLeadsCount, color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' },
+          { label: 'Lost', value: lostCount, color: 'text-red-600 bg-red-50 dark:bg-red-500/10' },
+        ].map(kpi => (
+          <div key={kpi.label} className={cn('shrink-0 px-3.5 py-2 rounded-xl flex flex-col items-center', kpi.color)}>
+            <span className="text-[11px] font-semibold whitespace-nowrap">{kpi.label}</span>
+            <span className="text-lg font-black">{kpi.value}</span>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col flex-1 overflow-hidden -mx-4 sm:mx-0">
         
         {/* Toolbar */}
@@ -689,32 +708,69 @@ export function LeadsList() {
 
         {viewMode === 'list' ? (
           <>
-            {/* Mobile Lead Cards (hidden on desktop) */}
-            <div className="md:hidden flex-1 overflow-y-auto px-4 py-2 space-y-3">
-              {paginatedLeads.map((lead) => (
-                <MobileLeadCard 
-                  key={lead.id} 
-                  lead={lead} 
-                  statusColors={statusColors} 
-                />
-              ))}
-              {paginatedLeads.length === 0 && (
-                <EmptyState 
+            <div className="md:hidden flex-1 overflow-y-auto px-4 py-2 space-y-3 pb-32">
+              {isLoading ? (
+                // Skeleton cards for mobile
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse">
+                    <div className="flex gap-3 mb-3">
+                      <div className="w-8 h-8 bg-muted rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-2/3" />
+                        <div className="h-3 bg-muted rounded w-1/3" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-muted rounded w-full" />
+                      <div className="h-3 bg-muted rounded w-4/5" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                paginatedLeads.map((lead) => (
+                  <MobileLeadCard
+                    key={lead.id}
+                    lead={lead}
+                    statusColors={statusColors}
+                  />
+                ))
+              )}
+              {!isLoading && paginatedLeads.length === 0 && (
+                <EmptyState
                   icon={Users}
                   title="No leads found"
                   description="We couldn't find any leads matching your current filters."
                   action={
-                    <button 
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('All');
-                      }}
+                    <button
+                      onClick={() => { setSearchTerm(''); setStatusFilter('All'); }}
                       className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                       Clear Filters
                     </button>
                   }
                 />
+              )}
+              {/* Mobile pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 border border-border rounded-xl font-semibold text-sm disabled:opacity-40 hover:bg-muted transition-colors"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-sm text-muted-foreground">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 border border-border rounded-xl font-semibold text-sm disabled:opacity-40 hover:bg-muted transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
               )}
             </div>
 
@@ -791,26 +847,26 @@ export function LeadsList() {
                         <div className="flex flex-col gap-1.5 w-32">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className={cn("h-full rounded-full transition-all duration-500", 
-                                  lead.score >= 91 ? "bg-rose-500" : 
-                                  lead.score >= 61 ? "bg-orange-500" : 
-                                  lead.score >= 31 ? "bg-amber-500" : 
-                                  "bg-blue-500"
+                              <div
+                                className={cn('h-full rounded-full transition-all duration-500',
+                                  (lead.leadScore ?? lead.score ?? 0) >= 81 ? 'bg-orange-500' :
+                                  (lead.leadScore ?? lead.score ?? 0) >= 61 ? 'bg-amber-500' :
+                                  (lead.leadScore ?? lead.score ?? 0) >= 31 ? 'bg-sky-500' :
+                                  'bg-blue-400'
                                 )}
-                                style={{ width: `${Math.min(lead.score || 0, 100)}%` }}
+                                style={{ width: `${Math.min(lead.leadScore ?? lead.score ?? 0, 100)}%` }}
                               />
                             </div>
-                            <span className="text-xs font-semibold">{lead.score || 0}</span>
+                            <span className="text-xs font-semibold">{lead.leadScore ?? lead.score ?? 0}</span>
                           </div>
-                          <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit", getTemperature(lead.score || 0).color)}>
-                            {getTemperature(lead.score || 0).label}
+                          <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit', getTemperature(lead.leadScore ?? lead.score ?? 0).color)}>
+                            {getTemperature(lead.leadScore ?? lead.score ?? 0).label}
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className={cn("px-2.5 py-1 rounded-full text-xs font-semibold", statusColors[lead.status])}>
-                          {lead.status}
+                        <span className={cn('px-2.5 py-1 rounded-full text-xs font-semibold', statusColors[(lead.leadStatus || lead.status) as LeadStatus] || 'bg-gray-100 text-gray-600')}>
+                          {lead.leadStatus || lead.status || 'New'}
                         </span>
                       </td>
                       <td className="px-4 py-4">

@@ -70,6 +70,14 @@ CREATE TABLE public.lead_disposition_history (
 );
 
 -- Add updated_at trigger logic
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER set_disposition_categories_updated_at
 BEFORE UPDATE ON public.disposition_categories
 FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();

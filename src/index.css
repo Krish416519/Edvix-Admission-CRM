@@ -12,6 +12,15 @@
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 }
 
 @layer base {
@@ -23,6 +32,16 @@
     --border: #e4e4e7;
     --muted: #f4f4f5;
     --muted-foreground: #71717a;
+    
+    /* Semantic Colors */
+    --success: #10b981;
+    --success-foreground: #ffffff;
+    --warning: #f59e0b;
+    --warning-foreground: #ffffff;
+    --danger: #ef4444;
+    --danger-foreground: #ffffff;
+    --info: #3b82f6;
+    --info-foreground: #ffffff;
   }
 
   .dark {
@@ -33,6 +52,16 @@
     --border: #27272a;
     --muted: #27272a;
     --muted-foreground: #a1a1aa;
+
+    /* Semantic Colors */
+    --success: #059669;
+    --success-foreground: #ffffff;
+    --warning: #d97706;
+    --warning-foreground: #ffffff;
+    --danger: #dc2626;
+    --danger-foreground: #ffffff;
+    --info: #2563eb;
+    --info-foreground: #ffffff;
   }
 
   * {
@@ -45,10 +74,33 @@
     font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS text size adjust on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Enable momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+
+  /* Remove iOS tap delay globally */
+  a, button, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Remove iOS callout (long press menu) on UI elements */
+  button, a, [role="button"] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Keep selection available for text inputs */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: auto;
+    user-select: auto;
   }
 }
 
@@ -60,4 +112,28 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* iOS momentum scrolling for scroll containers */
+  .scroll-ios {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+
+  /* Minimum 44×44pt touch target (Apple HIG recommendation) */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Safe area padding utilities */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .pt-safe {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
 }
+

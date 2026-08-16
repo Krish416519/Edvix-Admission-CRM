@@ -171,14 +171,22 @@ export function LeadDetails() {
         </div>
       )}
 
-      {/* Main 3-Column Layout */}
-      <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0 xl:overflow-hidden overflow-y-auto pb-20 xl:pb-0">
+      {/* Main 3-Column Layout — pb-28 on mobile to clear the action bar */}
+      <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0 xl:overflow-hidden overflow-y-auto pb-28 xl:pb-0">
         <LeadProfileSidebar lead={lead} />
         <LeadProfileTabs lead={lead} onUpdateLead={handleUpdateLead} activities={activities} setActivities={setActivities} />
         <LeadAI_Sidebar lead={lead} />
       </div>
 
-      <MobileActionBar leadId={lead.id} phone={lead.phone} />
+      <MobileActionBar
+        leadId={lead.id}
+        phone={lead.phone}
+        leadStatus={lead.leadStatus || lead.status || 'New'}
+        onDispositionSaved={() => {
+          // Refresh lead data after disposition is saved from mobile bar
+          updateLead({ id: lead.id } as any);
+        }}
+      />
     </div>
   );
 }
