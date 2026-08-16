@@ -226,8 +226,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
     
     return permissions.some(
-      (p) => p.action.toLowerCase() === action.toLowerCase() && 
-             p.resource.toLowerCase() === resource.toLowerCase()
+      (p) => p.action?.toLowerCase() === action.toLowerCase() && 
+             p.resource?.toLowerCase() === resource.toLowerCase()
     );
   };
 
@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
     
     return permissions.some(
-      (p) => p.resource.toLowerCase() === resource.toLowerCase()
+      (p) => p.resource?.toLowerCase() === resource.toLowerCase()
     );
   };
 
