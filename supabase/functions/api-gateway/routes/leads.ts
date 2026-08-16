@@ -152,8 +152,8 @@ export async function handleLeads(
 
       const newLead = {
         organization_id: orgId,
-        first_name: fullName.split(' ')[0],
-        last_name: fullName.split(' ').slice(1).join(' ') || null,
+        first_name: firstName,
+        last_name: lastName || null,
         email: body.email || null,
         phone: body.phone || null,
         state: body.state || null,
