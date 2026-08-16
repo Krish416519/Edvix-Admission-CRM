@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { supabase } from '../lib/supabase';
 import { CallConfig, TelephonyProviderInterface } from '../lib/telephony/provider';
 import { createTelephonyProvider } from '../lib/telephony/providerFactory';
-import { Call, TelephonyProvider as TelephonyProviderConfig, TelephonyProviderType, CallEventType } from '../types/telephony';
+import { Call, TelephonyProvider as TelephonyProviderConfig, TelephonyProviderType, CallEventType, CallStatus } from '../types/telephony';
 import { useCallAi } from '../hooks/useCallAi';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -159,26 +159,44 @@ export function TelephonyProvider({ children }: { children: ReactNode }) {
 
       await logCallEvent(callState.id, 'initiated', { to: config.to });
 
-      const res = await provider.makeCall({ ...config, to: leadPhone });
+      const res = await provider.makeCall({ ...config, to: leadPhone, counselorPhone: user.phone });
       
+      const initialStatus = res.status as CallStatus;
+
       // Update with provider ID
-      const updatedCall = { ...callState, providerCallId: res.providerCallId, status: 'ringing' as const };
+      const updatedCall = { ...callState, providerCallId: res.providerCallId, status: initialStatus };
       setActiveCall(updatedCall);
       
       await supabase.from('calls').update({ 
         provider_call_id: res.providerCallId,
-        status: 'ringing' 
+        status: initialStatus 
       }).eq('id', updatedCall.id);
       
-      await logCallEvent(updatedCall.id, 'ringing', { providerCallId: res.providerCallId });
+      await logCallEvent(updatedCall.id, initialStatus === 'ringing_counselor' ? 'ringing_counselor' : 'ringing', { providerCallId: res.providerCallId });
 
-      // In a real integration, webhooks/websockets from the provider would update this state.
-      // For now, we simulate the other party picking up after 3 seconds.
-      setTimeout(async () => {
-        setActiveCall(prev => prev ? { ...prev, status: 'in-progress' } : null);
-        await supabase.from('calls').update({ status: 'in-progress' }).eq('id', updatedCall.id);
-        await logCallEvent(updatedCall.id, 'answered');
-      }, 3000);
+      if (initialStatus === 'ringing_counselor') {
+        // Simulate counselor picking up after 2 seconds
+        setTimeout(async () => {
+          setActiveCall(prev => prev ? { ...prev, status: 'ringing_lead' } : null);
+          await supabase.from('calls').update({ status: 'ringing_lead' }).eq('id', updatedCall.id);
+          await logCallEvent(updatedCall.id, 'ringing_lead');
+
+          // Simulate lead picking up after 3 more seconds
+          setTimeout(async () => {
+             setActiveCall(prev => prev ? { ...prev, status: 'in-progress' } : null);
+             await supabase.from('calls').update({ status: 'in-progress' }).eq('id', updatedCall.id);
+             await logCallEvent(updatedCall.id, 'answered');
+          }, 3000);
+        }, 2000);
+      } else {
+        // In a real integration, webhooks/websockets from the provider would update this state.
+        // For now, we simulate the other party picking up after 3 seconds.
+        setTimeout(async () => {
+          setActiveCall(prev => prev ? { ...prev, status: 'in-progress' } : null);
+          await supabase.from('calls').update({ status: 'in-progress' }).eq('id', updatedCall.id);
+          await logCallEvent(updatedCall.id, 'answered');
+        }, 3000);
+      }
 
     } catch (err) {
       console.error('Failed to make call', err);

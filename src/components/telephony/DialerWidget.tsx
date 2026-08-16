@@ -77,7 +77,7 @@ export function DialerWidget() {
       <div className={cn(
         "px-4 py-3 flex justify-between items-center text-white rounded-t-2xl",
         activeCall?.status === 'in-progress' ? "bg-emerald-600" :
-        activeCall?.status === 'ringing' || activeCall?.status === 'initiated' ? "bg-blue-600 animate-pulse" :
+        activeCall?.status === 'ringing_counselor' || activeCall?.status === 'ringing_lead' || activeCall?.status === 'ringing' || activeCall?.status === 'initiated' ? "bg-blue-600 animate-pulse" :
         activeCall?.status === 'failed' ? "bg-red-600" :
         "bg-primary"
       )}>
@@ -85,7 +85,9 @@ export function DialerWidget() {
           <Phone className="w-4 h-4" />
           <span className="font-semibold text-sm">
             {activeCall?.status === 'in-progress' ? 'Active Call' : 
-             activeCall?.status === 'ringing' ? 'Calling...' : 
+             activeCall?.status === 'ringing_counselor' ? 'Ringing Your Phone...' :
+             activeCall?.status === 'ringing_lead' ? 'Connecting to Lead...' :
+             activeCall?.status === 'ringing' || activeCall?.status === 'initiated' ? 'Calling...' : 
              activeCall?.status === 'completed' || activeCall?.status === 'missed' ? 'Call Ended' : 'Dialer'}
           </span>
         </div>

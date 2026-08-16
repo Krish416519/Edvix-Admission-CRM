@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface MobileLeadCardProps {
   key?: React.Key;
@@ -31,6 +32,13 @@ export function MobileLeadCard({ lead, onClick, statusColors }: MobileLeadCardPr
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (user && lead.phone) {
+      if (!user.phone) {
+        toast.warning('Personal phone number not set. Call tracking will be disabled.', {
+          description: 'Please update your profile to enable call recording and automatic tracking.'
+        });
+        window.location.href = `tel:${lead.phone}`;
+        return;
+      }
       makeCall({
         to: lead.phone,
         leadId: lead.id,

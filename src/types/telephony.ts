@@ -10,9 +10,9 @@ export interface TelephonyProvider {
   updatedAt: string;
 }
 
-export type CallStatus = 'initiated' | 'ringing' | 'in-progress' | 'completed' | 'missed' | 'failed' | 'voicemail' | 'busy' | 'no-answer';
+export type CallStatus = 'initiated' | 'ringing_counselor' | 'ringing_lead' | 'ringing' | 'in-progress' | 'completed' | 'missed' | 'failed' | 'voicemail' | 'busy' | 'no-answer';
 export type CallDirection = 'inbound' | 'outbound';
-export type CallEventType = 'initiated' | 'ringing' | 'answered' | 'hold' | 'unhold' | 'mute' | 'unmute' | 'transfer' | 'conference_join' | 'conference_leave' | 'disconnect' | 'failed';
+export type CallEventType = 'initiated' | 'ringing_counselor' | 'ringing_lead' | 'ringing' | 'answered' | 'hold' | 'unhold' | 'mute' | 'unmute' | 'transfer' | 'conference_join' | 'conference_leave' | 'disconnect' | 'failed';
 export type RecordingAccessLevel = 'admin' | 'manager' | 'counselor' | 'all';
 export type TranscriptionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 

@@ -21,6 +21,7 @@ export interface User extends BaseEntity {
   roleId: string; // FK to Role
   role?: RoleType | string; // legacy support
   avatar?: string;
+  phone?: string; // For two-legged telephony routing
   isActive: boolean;
 }
 

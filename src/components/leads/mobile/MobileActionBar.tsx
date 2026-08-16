@@ -2,6 +2,7 @@ import React from 'react';
 import { Phone, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface MobileActionBarProps {
   leadId?: string;
@@ -15,6 +16,13 @@ export function MobileActionBar({ leadId, phone, onMoreClick }: MobileActionBarP
 
   const handleCall = () => {
     if (phone && leadId && user) {
+      if (!user.phone) {
+        toast.warning('Personal phone number not set. Call tracking will be disabled.', {
+          description: 'Please update your profile to enable call recording and automatic tracking.'
+        });
+        window.location.href = `tel:${phone}`;
+        return;
+      }
       makeCall({
         to: phone,
         leadId: leadId,
