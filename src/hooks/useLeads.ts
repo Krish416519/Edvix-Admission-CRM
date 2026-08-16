@@ -164,6 +164,13 @@ export function useLeads(options?: UseLeadsOptions) {
         universityId: d.university_id,
         courseId: d.course_id,
         
+        // Command Center Fields
+        temperature: d.temperature,
+        tags: d.tags || [],
+        latestDispositionId: d.latest_disposition_id,
+        latestSubDispositionId: d.latest_sub_disposition_id,
+        nextActionDate: d.next_action_date,
+        
         createdAt: d.created_at,
         deletedAt: d.deleted_at,
         counselorName: d.counselor?.name,

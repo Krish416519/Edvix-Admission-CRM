@@ -89,6 +89,13 @@ export interface Lead extends BaseEntity {
   tasksCount: number;
   admissionStatus?: string;
   
+  // Command Center Fields
+  temperature?: string;
+  tags?: string[];
+  latestDispositionId?: string;
+  latestSubDispositionId?: string;
+  nextActionDate?: string;
+  
   // Legacy UI Fields (mapped in useLeads)
   name?: string;
   source?: string;
