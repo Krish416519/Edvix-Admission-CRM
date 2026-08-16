@@ -241,9 +241,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return false;
     if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
     
-    // Fallback: Always grant Counselors access to Lead Management if the Admin forgot to set it up
-    if (user.role === 'Counselor' && resource.toLowerCase() === 'lead management') return true;
-    
     return permissions.some(
       (p) => p.action?.toLowerCase() === action.toLowerCase() && 
              p.resource?.toLowerCase() === resource.toLowerCase()
