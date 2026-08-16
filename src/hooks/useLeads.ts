@@ -69,7 +69,11 @@ export function useLeads(options?: UseLeadsOptions) {
         if (options?.filters?.source && options.filters.source !== 'All') {
           query = query.eq('lead_source', options.filters.source);
         }
-        if (options?.filters?.counselorId && options.filters.counselorId !== 'All') {
+        // Apply Role-Based Data Isolation
+        if (user.role !== 'Super Admin' && user.role !== 'Admin') {
+          query = query.eq('assigned_counselor', user.id);
+        } else if (options?.filters?.counselorId && options.filters.counselorId !== 'All') {
+          // Only Admins can filter by other counselors
           query = query.eq('assigned_counselor', options.filters.counselorId);
         }
         if (options?.filters?.universityId && options.filters.universityId !== 'All') {

@@ -126,7 +126,14 @@ export function useAdmissions(options: UseAdmissionsOptions = {}) {
       if (status && status !== 'All') query = query.eq('admission_status', status);
       if (universityId) query = query.eq('university_id', universityId);
       if (courseId)     query = query.eq('course_id', courseId);
-      if (counselorId)  query = query.eq('assigned_counselor', counselorId);
+      
+      // Role-based data isolation
+      if (user.role !== 'Super Admin' && user.role !== 'Admin') {
+        query = query.eq('assigned_counselor', user.id);
+      } else if (counselorId) {
+        query = query.eq('assigned_counselor', counselorId);
+      }
+
       if (intake)       query = query.eq('intake', intake);
       if (dateFrom)     query = query.gte('created_at', dateFrom);
       if (dateTo)       query = query.lte('created_at', dateTo);

@@ -54,7 +54,13 @@ export function useTasks(options: UseTasksOptions = {}) {
       if (status && status !== 'All') query = query.eq('status', status);
       if (priority) query = query.eq('priority', priority);
       if (type) query = query.eq('task_type', type);
-      if (assignedUser) query = query.eq('assigned_user', assignedUser);
+      
+      // Role-based data isolation
+      if (user.role !== 'Super Admin' && user.role !== 'Admin') {
+        query = query.eq('assigned_user', user.id);
+      } else if (assignedUser && assignedUser !== 'All') {
+        query = query.eq('assigned_user', assignedUser);
+      }
       if (searchTerm) {
         query = query.or(`title.ilike.%${searchTerm}%,task_number.ilike.%${searchTerm}%`);
       }
