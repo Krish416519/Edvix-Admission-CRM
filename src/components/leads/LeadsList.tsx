@@ -123,6 +123,7 @@ export function LeadsList() {
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
 
   // ── CSV Import State ──────────────────────────────────────────────────────
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -655,7 +656,21 @@ export function LeadsList() {
               </>
             )}
 
-            <div className="flex items-center p-1 bg-muted rounded-lg border border-border mr-2">
+            <button 
+              onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors",
+                isAdvancedFiltersOpen ? "bg-primary/10 text-primary border-primary/30" : "bg-card text-foreground border-border hover:bg-muted"
+              )}
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || showDeleted) && (
+                <span className="w-2 h-2 rounded-full bg-primary" />
+              )}
+            </button>
+
+            <div className="flex items-center p-1 bg-muted rounded-lg border border-border">
               <button 
                 onClick={() => setViewMode('list')}
                 className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
@@ -669,42 +684,109 @@ export function LeadsList() {
                 <KanbanSquare className="w-4 h-4" />
               </button>
             </div>
-            <div className="relative inline-block w-full sm:w-auto">
-              <select 
-                value={statusFilter}
-                onChange={e => {
-                  setStatusFilter(e.target.value as any);
-                  setCurrentPage(1);
-                }}
-                className="appearance-none w-full sm:w-40 bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-              >
-                <option value="All">All Statuses</option>
-                <option value="New">New</option>
-                <option value="Attempted">Attempted</option>
-                <option value="Connected">Connected</option>
-                <option value="Interested">Interested</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Application Started">Application Started</option>
-                <option value="Documents Pending">Documents Pending</option>
-                <option value="Admission Done">Admission Done</option>
-                <option value="Lost">Lost</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Advanced Filters Panel */}
+        {isAdvancedFiltersOpen && (
+          <div className="hidden md:flex p-4 border-b border-border bg-muted/5 gap-4 items-end animate-in slide-in-from-top-2 duration-200 flex-wrap">
+            <div className="flex flex-col gap-1.5 w-48">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Status</label>
+              <div className="relative">
+                <select 
+                  value={statusFilter}
+                  onChange={e => {
+                    setStatusFilter(e.target.value as any);
+                    setCurrentPage(1);
+                  }}
+                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="New">New</option>
+                  <option value="Attempted">Attempted</option>
+                  <option value="Connected">Connected</option>
+                  <option value="Interested">Interested</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Application Started">Application Started</option>
+                  <option value="Documents Pending">Documents Pending</option>
+                  <option value="Admission Done">Admission Done</option>
+                  <option value="Lost">Lost</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2 px-2">
-              <label className="text-sm text-muted-foreground font-medium flex items-center gap-2 cursor-pointer select-none">
+
+            <div className="flex flex-col gap-1.5 w-48">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Source</label>
+              <div className="relative">
+                <select 
+                  value={sourceFilter}
+                  onChange={e => {
+                    setSourceFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
+                >
+                  <option value="All">All Sources</option>
+                  <option value="Meta">Meta</option>
+                  <option value="Google">Google</option>
+                  <option value="Website">Website</option>
+                  <option value="Referral">Referral</option>
+                  <option value="Walk-in">Walk-in</option>
+                  <option value="Other">Other</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-48">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Counselor</label>
+              <div className="relative">
+                <select 
+                  value={counselorFilter}
+                  onChange={e => {
+                    setCounselorFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
+                >
+                  <option value="All">All Counselors</option>
+                  <option value="Unassigned">Unassigned</option>
+                  {allUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-foreground font-semibold flex items-center gap-2 cursor-pointer select-none border border-border bg-card px-3 py-2 rounded-lg hover:bg-muted transition-colors h-[38px]">
                 <input 
                   type="checkbox" 
                   checked={showDeleted} 
                   onChange={e => { setShowDeleted(e.target.checked); setCurrentPage(1); }} 
                   className="rounded border-border text-primary focus:ring-primary h-4 w-4"
                 />
-                Show Deleted
+                Show Deleted Leads
               </label>
             </div>
+            
+            <div className="ml-auto">
+               <button 
+                 onClick={() => {
+                   setStatusFilter('All');
+                   setSourceFilter('All');
+                   setCounselorFilter('All');
+                   setShowDeleted(false);
+                 }}
+                 className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 h-[38px]"
+               >
+                 Clear All
+               </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {viewMode === 'list' ? (
           <>
