@@ -100,6 +100,8 @@ export function LeadsList() {
   const [showDeleted, setShowDeleted] = useState(false);
   const [counselorFilter, setCounselorFilter] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
+  const [dispositionFilter, setDispositionFilter] = useState('All');
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
   // Sorting
@@ -173,6 +175,7 @@ export function LeadsList() {
       status: statusFilter,
       source: sourceFilter,
       counselorId: counselorFilter,
+      dispositionCategory: dispositionFilter,
       showDeleted: showDeleted
     },
     sort: { field: sortField as string, direction: sortDirection }
@@ -677,7 +680,7 @@ export function LeadsList() {
             >
               <Filter className="w-4 h-4" />
               Filters
-              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || showDeleted) && (
+              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted) && (
                 <span className="w-2 h-2 rounded-full bg-primary" />
               )}
             </button>
@@ -772,6 +775,36 @@ export function LeadsList() {
               </div>
             </div>
 
+            <div className="flex flex-col gap-1.5 w-48">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Disposition</label>
+              <div className="relative">
+                <select 
+                  value={dispositionFilter}
+                  onChange={e => {
+                    setDispositionFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
+                >
+                  <option value="All">All Dispositions</option>
+                  {[
+                    'CONTACTED',
+                    'INTEREST / INTENT',
+                    'QUALIFICATION',
+                    'OBJECTION / BARRIER',
+                    'NOT INTERESTED',
+                    'FOLLOW-UP REQUIRED',
+                    'PARTNER ONBOARDING',
+                    'CONVERTED',
+                    'LOST / CLOSED'
+                  ].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <label className="text-sm text-foreground font-semibold flex items-center gap-2 cursor-pointer select-none border border-border bg-card px-3 py-2 rounded-lg hover:bg-muted transition-colors h-[38px]">
                 <input 
@@ -790,6 +823,7 @@ export function LeadsList() {
                    setStatusFilter('All');
                    setSourceFilter('All');
                    setCounselorFilter('All');
+                   setDispositionFilter('All');
                    setShowDeleted(false);
                  }}
                  className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 h-[38px]"

@@ -16,6 +16,7 @@ export interface UseLeadsOptions {
     courseId?: string;
     state?: string;
     city?: string;
+    dispositionCategory?: string;
     showDeleted?: boolean;
     dateRange?: { start: Date; end: Date } | null;
   };
@@ -35,29 +36,59 @@ export function useLeads(options?: UseLeadsOptions) {
       return;
     }
     
-    try {
-      setIsLoading(true);
-      
-      const buildQuery = () => {
-        let query = supabase
-          .from('leads')
-          .select(`
-            *,
-            counselor:users!leads_counselor_id_fkey(name),
-            university:universities(name),
-            course:courses(name)
-          `, { count: 'exact' });
-  
-        if (options?.filters?.showDeleted) {
-          query = query.not('deleted_at', 'is', null);
-        } else {
-          query = query.is('deleted_at', null);
+      try {
+        setIsLoading(true);
+
+        let matchingDispositionIds: string[] | null = null;
+        if (options?.filters?.dispositionCategory && options.filters.dispositionCategory !== 'All') {
+          const { data: catData } = await supabase
+            .from('disposition_categories')
+            .select('id')
+            .eq('name', options.filters.dispositionCategory)
+            .maybeSingle();
+            
+          if (catData) {
+            const { data: dispData } = await supabase.from('dispositions').select('id').eq('category_id', catData.id);
+            if (dispData && dispData.length > 0) {
+              matchingDispositionIds = dispData.map(d => d.id);
+            } else {
+              matchingDispositionIds = []; // No dispositions found for this category
+            }
+          } else {
+            matchingDispositionIds = [];
+          }
         }
-  
-        // Apply Search
-        if (options?.search) {
-          query = query.or(`first_name.ilike.%${options.search}%,last_name.ilike.%${options.search}%,email.ilike.%${options.search}%,phone.ilike.%${options.search}%,lead_number.ilike.%${options.search}%`);
-        }
+        
+        const buildQuery = () => {
+          let query = supabase
+            .from('leads')
+            .select(`
+              *,
+              counselor:users!leads_counselor_id_fkey(name),
+              university:universities(name),
+              course:courses(name)
+            `, { count: 'exact' });
+    
+          if (options?.filters?.showDeleted) {
+            query = query.not('deleted_at', 'is', null);
+          } else {
+            query = query.is('deleted_at', null);
+          }
+    
+          // Apply Search
+          if (options?.search) {
+            query = query.or(`first_name.ilike.%${options.search}%,last_name.ilike.%${options.search}%,email.ilike.%${options.search}%,phone.ilike.%${options.search}%,lead_number.ilike.%${options.search}%`);
+          }
+          
+          // Apply Disposition Category Filter
+          if (matchingDispositionIds !== null) {
+            if (matchingDispositionIds.length > 0) {
+               query = query.in('latest_disposition_id', matchingDispositionIds);
+            } else {
+               // Force empty result since category has no dispositions or category not found
+               query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+            }
+          }
   
         // Apply Filters
         if (options?.filters?.status && options.filters.status !== 'All') {
