@@ -16,6 +16,7 @@ import { MobileLeadCard } from './mobile/MobileLeadCard';
 import { LeadFiltersSheet } from './mobile/LeadFiltersSheet';
 import { LeadSortSheet } from './mobile/LeadSortSheet';
 import { useLeadAssignment } from '../../hooks/useLeadAssignment';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
@@ -178,6 +179,11 @@ export function LeadsList() {
   });
 
   const { allUsers, assignLead, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
+  const { hasPermission } = useAuth();
+  
+  const canDelete = hasPermission('Delete Leads', 'Lead Management');
+  const canAssign = hasPermission('Edit Leads', 'Lead Management');
+  const canUpdate = hasPermission('Edit Leads', 'Lead Management');
 
   const handleBulkAssign = async () => {
     if (bulkAssignUserIds.length === 0) {
@@ -632,27 +638,33 @@ export function LeadsList() {
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {selectedIds.size > 0 && (
               <>
-                <button 
-                  onClick={handleDeleteSelected}
-                  className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete ({selectedIds.size})
-                </button>
-                <button 
-                  onClick={() => setShowBulkAssign(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Assign ({selectedIds.size})
-                </button>
-                <button 
-                  onClick={() => setShowBulkUpdate(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Update ({selectedIds.size})
-                </button>
+                {canDelete && (
+                  <button 
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete ({selectedIds.size})
+                  </button>
+                )}
+                {canAssign && (
+                  <button 
+                    onClick={() => setShowBulkAssign(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary border border-primary/30 rounded-lg text-sm font-semibold hover:bg-primary/20 transition-colors"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Assign ({selectedIds.size})
+                  </button>
+                )}
+                {canUpdate && (
+                  <button 
+                    onClick={() => setShowBulkUpdate(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Update ({selectedIds.size})
+                  </button>
+                )}
               </>
             )}
 
