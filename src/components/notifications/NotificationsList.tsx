@@ -20,10 +20,17 @@ export function NotificationsList() {
     }
   };
 
-  const handleNotificationClick = (id: string, link?: string) => {
-    markAsRead(id);
-    if (link) {
-      navigate(link);
+  const handleNotificationClick = (notification: AppNotification) => {
+    markAsRead(notification.id);
+    if (notification.metadata?.link) {
+      navigate(notification.metadata.link);
+      return;
+    }
+    
+    // Direct routing for Leads
+    if (notification.module === 'Leads' && notification.moduleRecordId) {
+      navigate(`/leads/${notification.moduleRecordId}`);
+      return;
     }
   };
 
@@ -66,7 +73,7 @@ export function NotificationsList() {
                     "p-4 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer group flex gap-4",
                     notification.status === 'Unread' ? "bg-primary/5" : ""
                   )}
-                  onClick={() => handleNotificationClick(notification.id, notification.metadata?.link)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className={cn(
                     "mt-1 shrink-0 w-10 h-10 rounded-full flex items-center justify-center border shadow-sm",
