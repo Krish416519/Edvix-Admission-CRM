@@ -6,6 +6,7 @@ import {
 import { cn } from '../../../lib/utils';
 import { useLeadAssignment, AssignableUser } from '../../../hooks/useLeadAssignment';
 import { Lead } from '../../../types/schema';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ROLE_ORDER = ['Admin', 'Manager', 'Team Leader', 'Counselor'];
 
@@ -168,13 +169,16 @@ export function LeadAssignmentPanel({ lead, onAssigned }: LeadAssignmentPanelPro
     isLoadingUsers, isLoadingHistory, isAssigning,
     assignLead, removeAssignment, getUsersByRole,
   } = useLeadAssignment(lead.id);
+  const { hasPermission, user } = useAuth();
+  
+  const canAssign = hasPermission('Assign', 'Lead Management');
 
+  const [selectedRole, setSelectedRole] = useState<string>('All');
   const [selectedUserId, setSelectedUserId] = useState<string>(
     (lead as any).assignedCounselor || ''
   );
   const [notes, setNotes] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>('All');
 
   // Sync selected user when lead prop changes
   useEffect(() => {
@@ -240,8 +244,10 @@ export function LeadAssignmentPanel({ lead, onAssigned }: LeadAssignmentPanelPro
       )}
 
       {/* Role Filter Tabs */}
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assign To</p>
+      {canAssign && (
+        <>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Assign To</p>
         <div className="flex flex-wrap gap-1 mb-3">
           {['All', ...ROLE_ORDER].map(role => (
             <button
@@ -303,7 +309,7 @@ export function LeadAssignmentPanel({ lead, onAssigned }: LeadAssignmentPanelPro
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-2">
         <button
           onClick={handleAssign}
           disabled={isAssigning}
@@ -334,6 +340,8 @@ export function LeadAssignmentPanel({ lead, onAssigned }: LeadAssignmentPanelPro
           </button>
         )}
       </div>
+      </>
+      )}
 
       {/* Assignment History */}
       {showHistory && (
