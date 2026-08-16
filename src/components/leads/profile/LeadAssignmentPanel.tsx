@@ -171,7 +171,8 @@ export function LeadAssignmentPanel({ lead, onAssigned }: LeadAssignmentPanelPro
   } = useLeadAssignment(lead.id);
   const { hasPermission, user } = useAuth();
   
-  const canAssign = hasPermission('Assign', 'Lead Management');
+  // Checking 'Edit Leads' because there is no explicit 'Assign' permission in the DB
+  const canAssign = hasPermission('Edit Leads', 'Lead Management');
 
   const [selectedRole, setSelectedRole] = useState<string>('All');
   const [selectedUserId, setSelectedUserId] = useState<string>(
