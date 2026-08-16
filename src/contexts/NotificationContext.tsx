@@ -81,10 +81,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         if (payload.eventType === 'INSERT' && 'Notification' in window && Notification.permission === 'granted') {
            const newRow = payload.new;
            try {
-             new Notification(newRow.title, {
+             const notification = new Notification(newRow.title, {
                body: newRow.message,
                icon: '/favicon.ico'
              });
+             
+             notification.onclick = () => {
+               window.focus();
+               if (newRow.module === 'Leads' && newRow.module_record_id) {
+                 window.location.href = `/leads/${newRow.module_record_id}`;
+               } else {
+                 window.location.href = '/notifications';
+               }
+             };
            } catch (e) {
              console.error('Failed to show browser notification', e);
            }
