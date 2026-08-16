@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { supabase } from '../lib/supabase';
 import { CallConfig, TelephonyProviderInterface } from '../lib/telephony/provider';
 import { createTelephonyProvider } from '../lib/telephony/providerFactory';
-import { Call, TelephonyProvider as TelephonyProviderConfig, TelephonyProviderType, CallEventType, CallStatus } from '../types/telephony';
+import { Call, TelephonyProvider as TelephonyProviderConfig, TelephonyProviderType, CallEventType } from '../types/telephony';
 import { useCallAi } from '../hooks/useCallAi';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -105,106 +105,8 @@ export function TelephonyProvider({ children }: { children: ReactNode }) {
   };
 
   const makeCall = async (config: CallConfig) => {
-    if (!provider) {
-      toast.error('Telephony provider not configured.');
-      return;
-    }
     if (!user) return;
-
-    setIsDialerOpen(true);
-    setCallDuration(0);
-    setIsMuted(false);
-    setIsOnHold(false);
-    
-    // Fetch lead details for the UI and DB
-    let leadName = 'Unknown';
-    let leadPhone = config.to;
-    try {
-      const { data: leadData } = await supabase.from('leads').select('first_name, last_name, phone').eq('id', config.leadId).single();
-      if (leadData) {
-        leadName = `${leadData.first_name} ${leadData.last_name || ''}`.trim();
-        leadPhone = leadData.phone || config.to;
-      }
-    } catch (e) {}
-    
-    // Optimistic UI state
-    const callState: Call = {
-      id: crypto.randomUUID(),
-      leadId: config.leadId,
-      counselorId: config.counselorId,
-      direction: 'outbound',
-      status: 'initiated',
-      durationSeconds: 0,
-      leadName,
-      leadPhone,
-      counselorName: user.name,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    setActiveCall(callState);
-
-    try {
-      // Create initial DB record
-      await supabase.from('calls').insert({
-        id: callState.id,
-        lead_id: callState.leadId,
-        counselor_id: callState.counselorId,
-        direction: callState.direction,
-        status: callState.status,
-        lead_name: leadName,
-        lead_phone: leadPhone,
-        counselor_name: user.name
-      });
-
-      await logCallEvent(callState.id, 'initiated', { to: config.to });
-
-      const res = await provider.makeCall({ ...config, to: leadPhone, counselorPhone: user.phone });
-      
-      const initialStatus = res.status as CallStatus;
-
-      // Update with provider ID
-      const updatedCall = { ...callState, providerCallId: res.providerCallId, status: initialStatus };
-      setActiveCall(updatedCall);
-      
-      await supabase.from('calls').update({ 
-        provider_call_id: res.providerCallId,
-        status: initialStatus 
-      }).eq('id', updatedCall.id);
-      
-      await logCallEvent(updatedCall.id, initialStatus === 'ringing_counselor' ? 'ringing_counselor' : 'ringing', { providerCallId: res.providerCallId });
-
-      if (initialStatus === 'ringing_counselor') {
-        // Simulate counselor picking up after 2 seconds
-        setTimeout(async () => {
-          setActiveCall(prev => prev ? { ...prev, status: 'ringing_lead' } : null);
-          await supabase.from('calls').update({ status: 'ringing_lead' }).eq('id', updatedCall.id);
-          await logCallEvent(updatedCall.id, 'ringing_lead');
-
-          // Simulate lead picking up after 3 more seconds
-          setTimeout(async () => {
-             setActiveCall(prev => prev ? { ...prev, status: 'in-progress' } : null);
-             await supabase.from('calls').update({ status: 'in-progress' }).eq('id', updatedCall.id);
-             await logCallEvent(updatedCall.id, 'answered');
-          }, 3000);
-        }, 2000);
-      } else {
-        // In a real integration, webhooks/websockets from the provider would update this state.
-        // For now, we simulate the other party picking up after 3 seconds.
-        setTimeout(async () => {
-          setActiveCall(prev => prev ? { ...prev, status: 'in-progress' } : null);
-          await supabase.from('calls').update({ status: 'in-progress' }).eq('id', updatedCall.id);
-          await logCallEvent(updatedCall.id, 'answered');
-        }, 3000);
-      }
-
-    } catch (err) {
-      console.error('Failed to make call', err);
-      setActiveCall(prev => prev ? { ...prev, status: 'failed' } : null);
-      await supabase.from('calls').update({ status: 'failed' }).eq('id', callState.id);
-      await logCallEvent(callState.id, 'failed', { error: String(err) });
-      toast.error('Failed to initiate call');
-    }
+    window.location.href = `tel:${config.to}`;
   };
 
   const endCall = async (outcome?: string, notes?: string, tags?: string[], nextFollowUp?: string) => {

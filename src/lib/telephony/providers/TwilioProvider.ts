@@ -10,16 +10,11 @@ export class TwilioProvider implements TelephonyProviderInterface {
   }
 
   async makeCall(params: CallConfig): Promise<{ providerCallId: string; status: string }> {
-    if (params.counselorPhone) {
-      console.log(`[TwilioProvider] Initiating Two-Legged Call: Bridging ${params.counselorPhone} -> ${params.to}`);
-      // In production: Create a call to counselorPhone, which executes TwiML to <Dial> params.to
-    } else {
-      console.log(`[TwilioProvider] Dialing ${params.to} directly (browser WebRTC)...`);
-    }
-    
+    console.log(`[TwilioProvider] Dialing ${params.to}...`);
+    // In production: Use Twilio REST API to initiate call
     return {
       providerCallId: `tw-${Date.now()}`,
-      status: params.counselorPhone ? 'ringing_counselor' : 'initiated'
+      status: 'initiated'
     };
   }
 

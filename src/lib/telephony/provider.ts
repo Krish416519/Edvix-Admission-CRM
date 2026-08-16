@@ -3,7 +3,6 @@ export interface CallConfig {
   from?: string; // Optional, defaults to provider config
   leadId: string;
   counselorId: string;
-  counselorPhone?: string;
 }
 
 export interface TelephonyProviderInterface {
