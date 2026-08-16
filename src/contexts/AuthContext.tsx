@@ -128,9 +128,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const { profileData, orgData } = await fetchUserProfile(session.user.id);
+        
+        // Fetch permissions on auth state change
+        const { data: permsData } = await supabase.rpc('get_user_permissions', { p_user_id: session.user.id });
+        if (permsData && mounted) {
+          setPermissions(permsData);
+        }
+
         if (mounted) setUser(parseSupabaseUser(session.user, profileData, orgData));
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setPermissions([]);
       }
       setIsLoading(false);
     });
@@ -194,6 +202,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).single();
         const { data: orgData } = await supabase.from('organization_users').select('*, organizations(*)').eq('user_id', data.user.id).eq('status', 'Active');
+        
+        // Fetch permissions during login
+        const { data: permsData } = await supabase.rpc('get_user_permissions', { p_user_id: data.user.id });
+        if (permsData) {
+          setPermissions(permsData);
+        }
+
         setUser(parseSupabaseUser(data.user, profile, orgData || []));
       }
     } finally {
@@ -207,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       localStorage.removeItem('activeOrganizationId');
       setUser(null);
+      setPermissions([]);
     } catch (error) {
       console.error('Error logging out:', error);
       toast.error('Failed to log out securely');
