@@ -8,6 +8,7 @@ import { LeadProfileSidebar } from './profile/LeadProfileSidebar';
 import { addAuditLog } from '../../data/mockAuditLogs';
 import { LeadProfileTabs } from './profile/LeadProfileTabs';
 import { LeadAI_Sidebar } from './profile/LeadAI_Sidebar';
+import { MobileActionBar } from './mobile/MobileActionBar';
 import { automationService } from '../../lib/automationService';
 
 import { useLead } from '../../hooks/useLead';
@@ -137,11 +138,13 @@ export function LeadDetails() {
       </div>
 
       {/* Main 3-Column Layout */}
-      <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0">
+      <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0 xl:overflow-hidden overflow-y-auto pb-20 xl:pb-0">
         <LeadProfileSidebar lead={lead} />
         <LeadProfileTabs lead={lead} onUpdateLead={handleUpdateLead} activities={activities} setActivities={setActivities} />
         <LeadAI_Sidebar lead={lead} />
       </div>
+
+      <MobileActionBar phone={lead.phone} />
     </div>
   );
 }

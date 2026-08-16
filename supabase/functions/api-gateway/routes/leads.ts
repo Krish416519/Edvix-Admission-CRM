@@ -189,6 +189,42 @@ export async function handleLeads(
           }]);
       }
 
+      // ---- EMAIL NOTIFICATION FOR ADMINS ----
+      try {
+        const resendApiKey = Deno.env.get('RESEND_API_KEY') || Deno.env.get('VITE_RESEND_API_KEY');
+        if (resendApiKey) {
+          // Fetch Admin users to notify
+          const { data: adminUsers } = await supabaseService
+            .from('users')
+            .select('email, name, role_id')
+            .not('email', 'is', null);
+
+          if (adminUsers && adminUsers.length > 0) {
+            for (const admin of adminUsers) {
+              const { data: roleData } = await supabaseService.from('roles').select('name').eq('id', admin.role_id).single();
+              if (roleData && (roleData.name === 'Super Admin' || roleData.name === 'Admin')) {
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${resendApiKey}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    from: 'Edvix CRM <noreply@edvix.in>',
+                    to: admin.email,
+                    subject: 'New Lead Captured: ' + (lead.first_name || 'Student'),
+                    html: `<p>Hi ${admin.name},</p><p>A new lead <strong>${lead.first_name} ${lead.last_name || ''}</strong> has just been captured in the system via API.</p><p>Source: ${lead.lead_source}</p><p>Please log in to the CRM to view the details.</p>`
+                  })
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send admin email notification via API Gateway:', e);
+      }
+      // ---------------------------------------
+
       const successPayload = { data: lead, meta: { created: true } };
       await saveIdempotency(idempotencyKey, 201, successPayload);
       return finalizeRequest(201, successPayload);

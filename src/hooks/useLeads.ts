@@ -233,6 +233,43 @@ export function useLeads(options?: UseLeadsOptions) {
         .single();
         
       if (error) throw error;
+
+      // ---- EMAIL NOTIFICATION FOR ADMINS ----
+      try {
+        const { emailCoreService } = await import('../lib/email/EmailService');
+        
+        // Fetch Admin users to notify
+        const { data: admins } = await supabase
+          .from('users')
+          .select('id, email, name, role_id')
+          .not('email', 'is', null);
+
+        // We filter manually here just in case RLS or join syntax has issues
+        // Assuming we want to notify all admins
+        if (admins && admins.length > 0) {
+          for (const admin of admins) {
+            // Ideally we check role here, but we will send to all known admins. 
+            // If the user's role_id matches an admin role, send it. 
+            // Let's rely on a simpler approach: if they have an email, we send it.
+            // Actually, we should fetch roles to be safe.
+            const { data: roleData } = await supabase.from('roles').select('id, name').eq('id', admin.role_id).single();
+            if (roleData && (roleData.name === 'Super Admin' || roleData.name === 'Admin')) {
+              await emailCoreService.sendEmail({
+                recipientEmail: admin.email,
+                recipientName: admin.name,
+                subject: 'New Lead Captured: ' + (data.first_name || 'Student'),
+                body: `<p>Hi ${admin.name},</p><p>A new lead <strong>${data.first_name} ${data.last_name || ''}</strong> has just been captured in the system.</p><p>Source: ${data.lead_source}</p><p>Please log in to the CRM to view the details.</p>`,
+                folder: 'Sent',
+                trackingEnabled: false
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send admin email notification:', e);
+      }
+      // ---------------------------------------
+
       await fetchLeads(); // Refetch to get populated relations
       return { success: true, data };
     } catch (err: any) {

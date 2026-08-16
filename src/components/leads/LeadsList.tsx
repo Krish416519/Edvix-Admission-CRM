@@ -12,6 +12,9 @@ import { LeadsKanban } from './LeadsKanban';
 import { EmptyState } from '../ui/EmptyState';
 import { LeadFormModal } from './LeadFormModal';
 import { MergeLeadsModal } from './MergeLeadsModal';
+import { MobileLeadCard } from './mobile/MobileLeadCard';
+import { LeadFiltersSheet } from './mobile/LeadFiltersSheet';
+import { LeadSortSheet } from './mobile/LeadSortSheet';
 import { useLeadAssignment } from '../../hooks/useLeadAssignment';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -116,6 +119,10 @@ export function LeadsList() {
   const [bulkUpdateField, setBulkUpdateField] = useState<'status' | 'priority' | 'source' | ''>('');
   const [bulkUpdateValue, setBulkUpdateValue] = useState('');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+  // Mobile State
+  const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
+  const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
 
   // ── CSV Import State ──────────────────────────────────────────────────────
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -446,8 +453,55 @@ export function LeadsList() {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500">
       
-      {/* Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between mb-4 mt-2 px-1">
+        <div>
+          <h1 className="text-2xl font-black text-foreground leading-tight">Leads</h1>
+          <p className="text-xs text-muted-foreground font-medium">{totalLeads} Total Leads</p>
+        </div>
+        <button 
+          onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
+          className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg font-bold transition-all text-sm shadow-sm active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          Lead
+        </button>
+      </div>
+
+      {/* Mobile Search & Filter Bar */}
+      <div className="md:hidden flex items-center gap-2 mb-4 px-1">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input 
+            type="text" 
+            placeholder="Search leads..." 
+            value={searchTerm}
+            onChange={e => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          />
+        </div>
+        <button 
+          onClick={() => setIsFiltersSheetOpen(true)}
+          className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 relative shrink-0"
+        >
+          <Filter className="w-5 h-5" />
+          {(statusFilter !== 'All' || showDeleted) && (
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full" />
+          )}
+        </button>
+        <button 
+          onClick={() => setIsSortSheetOpen(true)}
+          className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 shrink-0"
+        >
+          <ArrowUpDown className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Desktop Header & Actions */}
+      <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Leads Management</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage and track your admission pipeline efficiently.</p>
@@ -493,7 +547,7 @@ export function LeadsList() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground font-medium">Total Leads</p>
@@ -536,10 +590,10 @@ export function LeadsList() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl shadow-sm flex flex-col flex-1 overflow-hidden">
+      <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col flex-1 overflow-hidden -mx-4 sm:mx-0">
         
         {/* Toolbar */}
-        <div className="p-4 border-b border-border flex flex-col md:flex-row gap-4 justify-between items-center bg-muted/20">
+        <div className="hidden md:flex p-4 border-b border-border flex-col md:flex-row gap-4 justify-between items-center bg-muted/20">
           <div className="flex items-center gap-2 w-full md:w-auto">
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -635,7 +689,37 @@ export function LeadsList() {
 
         {viewMode === 'list' ? (
           <>
-            <div className="flex-1 overflow-auto">
+            {/* Mobile Lead Cards (hidden on desktop) */}
+            <div className="md:hidden flex-1 overflow-y-auto px-4 py-2 space-y-3">
+              {paginatedLeads.map((lead) => (
+                <MobileLeadCard 
+                  key={lead.id} 
+                  lead={lead} 
+                  statusColors={statusColors} 
+                />
+              ))}
+              {paginatedLeads.length === 0 && (
+                <EmptyState 
+                  icon={Users}
+                  title="No leads found"
+                  description="We couldn't find any leads matching your current filters."
+                  action={
+                    <button 
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('All');
+                      }}
+                      className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  }
+                />
+              )}
+            </div>
+
+            {/* Desktop Table (hidden on mobile) */}
+            <div className="hidden md:block flex-1 overflow-auto">
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50 sticky top-0 z-10 border-b border-border">
                   <tr>
@@ -1305,6 +1389,26 @@ export function LeadsList() {
           </div>
         </div>
       )}
+
+      <LeadFiltersSheet 
+        isOpen={isFiltersSheetOpen}
+        onClose={() => setIsFiltersSheetOpen(false)}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        showDeleted={showDeleted}
+        setShowDeleted={setShowDeleted}
+      />
+
+      <LeadSortSheet 
+        isOpen={isSortSheetOpen}
+        onClose={() => setIsSortSheetOpen(false)}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={(f, d) => {
+          setSortField(f);
+          setSortDirection(d);
+        }}
+      />
     </div>
   );
 }
