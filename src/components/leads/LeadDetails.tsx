@@ -144,7 +144,7 @@ export function LeadDetails() {
         <LeadAI_Sidebar lead={lead} />
       </div>
 
-      <MobileActionBar phone={lead.phone} />
+      <MobileActionBar leadId={lead.id} phone={lead.phone} />
     </div>
   );
 }

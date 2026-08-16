@@ -4,6 +4,8 @@ import { Phone, MessageCircle, GraduationCap, Building2, Flame } from 'lucide-re
 import { cn } from '../../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useTelephony } from '../../../hooks/useTelephony';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface MobileLeadCardProps {
   lead: Lead;
@@ -13,6 +15,8 @@ interface MobileLeadCardProps {
 
 export function MobileLeadCard({ lead, onClick, statusColors }: MobileLeadCardProps) {
   const navigate = useNavigate();
+  const { makeCall } = useTelephony();
+  const { user } = useAuth();
 
   const getTemperature = (score: number) => {
     if (score >= 91) return { label: 'Ready', color: 'text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400' };
@@ -25,7 +29,15 @@ export function MobileLeadCard({ lead, onClick, statusColors }: MobileLeadCardPr
 
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
-    window.location.href = `tel:${lead.phone}`;
+    if (user && lead.phone) {
+      makeCall({
+        to: lead.phone,
+        leadId: lead.id,
+        counselorId: user.id
+      });
+    } else if (lead.phone) {
+      window.location.href = `tel:${lead.phone}`;
+    }
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {

@@ -1,14 +1,29 @@
 import React from 'react';
 import { Phone, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { useTelephony } from '../../../hooks/useTelephony';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface MobileActionBarProps {
+  leadId?: string;
   phone?: string;
   onMoreClick?: () => void;
 }
 
-export function MobileActionBar({ phone, onMoreClick }: MobileActionBarProps) {
+export function MobileActionBar({ leadId, phone, onMoreClick }: MobileActionBarProps) {
+  const { makeCall } = useTelephony();
+  const { user } = useAuth();
+
   const handleCall = () => {
-    if (phone) window.location.href = `tel:${phone}`;
+    if (phone && leadId && user) {
+      makeCall({
+        to: phone,
+        leadId: leadId,
+        counselorId: user.id
+      });
+    } else if (phone) {
+      // Fallback if no user/leadId context
+      window.location.href = `tel:${phone}`;
+    }
   };
 
   const handleWhatsApp = () => {
