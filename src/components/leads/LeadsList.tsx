@@ -16,6 +16,7 @@ import { useLeadAssignment } from '../../hooks/useLeadAssignment';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
+import { format } from 'date-fns';
 
 import { addAuditLog } from '../../data/mockAuditLogs';
 
@@ -662,6 +663,9 @@ export function LeadsList() {
                        <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
                     <th scope="col" className="px-4 py-3 font-semibold">Counselor</th>
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('createdAt')}>
+                      <div className="flex items-center gap-1">Captured On <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
                     <th scope="col" className="px-4 py-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
@@ -733,6 +737,16 @@ export function LeadsList() {
                       <td className="px-4 py-4 text-muted-foreground font-medium text-sm">
                         {lead.counselor || 'Unassigned'}
                       </td>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-medium text-foreground text-sm">
+                            {lead.createdAt ? format(new Date(lead.createdAt), 'dd MMM yyyy') : 'N/A'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {lead.createdAt ? format(new Date(lead.createdAt), 'hh:mm a') : ''}
+                          </span>
+                        </div>
+                      </td>
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button 
@@ -796,7 +810,7 @@ export function LeadsList() {
                   ))}
                   {paginatedLeads.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-0">
+                      <td colSpan={9} className="p-0">
                         <EmptyState 
                           icon={Users}
                           title="No leads found"
