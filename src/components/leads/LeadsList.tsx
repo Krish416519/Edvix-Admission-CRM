@@ -176,7 +176,7 @@ export function LeadsList() {
     sort: { field: sortField as string, direction: sortDirection }
   });
 
-  const { allUsers, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
+  const { allUsers, assignLead, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
 
   const handleBulkAssign = async () => {
     if (bulkAssignUserIds.length === 0) {
@@ -454,7 +454,7 @@ export function LeadsList() {
   const conversionRate = paginatedLeads.length ? Math.round((admissionsCount / paginatedLeads.length) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500">
+    <div className="flex flex-col animate-in fade-in duration-500 pb-10">
       
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between mb-4 mt-2 px-1">
@@ -609,7 +609,7 @@ export function LeadsList() {
         ))}
       </div>
 
-      <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col flex-1 overflow-hidden -mx-4 sm:mx-0">
+      <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col -mx-4 sm:mx-0">
         
         {/* Toolbar */}
         <div className="hidden md:flex p-4 border-b border-border flex-col md:flex-row gap-4 justify-between items-center bg-muted/20">
@@ -775,7 +775,7 @@ export function LeadsList() {
             </div>
 
             {/* Desktop Table (hidden on mobile) */}
-            <div className="hidden md:block flex-1 overflow-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50 sticky top-0 z-10 border-b border-border">
                   <tr>
@@ -874,8 +874,23 @@ export function LeadsList() {
                           {lead.priority || 'Medium'}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-muted-foreground font-medium text-sm">
-                        {lead.counselor || 'Unassigned'}
+                      <td className="px-4 py-4 font-medium text-sm" onClick={e => e.stopPropagation()}>
+                        <select
+                          value={lead.assignedCounselor || lead.counselorId || ''}
+                          onChange={async (e) => {
+                            const newAssigneeId = e.target.value;
+                            if (newAssigneeId) {
+                               await assignLead(lead.id, newAssigneeId);
+                               refresh();
+                            }
+                          }}
+                          className="bg-transparent border border-border rounded-lg text-sm px-2 py-1.5 outline-none focus:ring-1 focus:ring-primary w-[140px] text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                        >
+                          <option value="">Unassigned</option>
+                          {allUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.name}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
