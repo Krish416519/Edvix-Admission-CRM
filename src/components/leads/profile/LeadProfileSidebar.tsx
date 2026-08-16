@@ -44,7 +44,7 @@ export function LeadProfileSidebar({ lead }: { lead: Lead }) {
   };
 
   return (
-    <div className="w-full xl:w-72 shrink-0 flex flex-col gap-4">
+    <div className="w-full xl:w-72 shrink-0 flex flex-col gap-4 xl:overflow-y-auto hide-scrollbar xl:pb-6">
       {/* Profile Card */}
       <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
         <div className="flex flex-col items-center text-center">
