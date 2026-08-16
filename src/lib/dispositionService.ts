@@ -91,7 +91,7 @@ export const dispositionService = {
     if (disp.requires_follow_up && !followUpAt) throw new Error('Follow-up date/time is required for this disposition.');
     if (disp.requires_note && (!notes || notes.trim() === '')) throw new Error('Notes are required for this disposition.');
 
-    const previousStatus = lead.lead_status;
+    const previousStatus = lead.status;
     const newStatus = disp.target_status || previousStatus;
 
     // 3. Begin Transaction-like operations
@@ -105,7 +105,7 @@ export const dispositionService = {
     };
 
     if (disp.target_status) {
-      leadUpdatePayload.lead_status = disp.target_status;
+      leadUpdatePayload.status = disp.target_status;
     }
 
     const { error: leadUpdateError } = await supabase
