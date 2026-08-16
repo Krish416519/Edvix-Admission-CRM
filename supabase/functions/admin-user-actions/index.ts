@@ -39,15 +39,23 @@ Deno.serve(async (req: Request) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Get the caller's identity
-    const token = authHeader.replace('Bearer ', '').trim();
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !user) {
-      return new Response(JSON.stringify({ success: false, error: `Unauthorized: Invalid token (${userError?.message || 'no user'})` }), {
+    // Get the caller's identity via direct REST call to bypass local session issues
+    const userRes = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, {
+      headers: {
+        Authorization: authHeader,
+        apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      },
+    });
+    
+    if (!userRes.ok) {
+      const errText = await userRes.text();
+      return new Response(JSON.stringify({ success: false, error: `Unauthorized: Invalid token (${errText})` }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    
+    const user = await userRes.json();
 
     // Check caller's role in public.users
     const { data: callerData, error: callerError } = await supabaseAdmin
