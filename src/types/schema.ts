@@ -90,7 +90,6 @@ export interface Lead extends BaseEntity {
   admissionStatus?: string;
   
   // Command Center Fields
-  temperature?: string;
   tags?: string[];
   latestDispositionId?: string;
   latestSubDispositionId?: string;
@@ -126,7 +125,7 @@ export interface Lead extends BaseEntity {
 
   // AI Agent Fields (Phase 1)
   conversionProbability?: number;
-  temperature?: 'Hot' | 'Warm' | 'Cold';
+  temperature?: 'Hot' | 'Warm' | 'Cold' | string;
   responseSpeedHours?: number;
   dropOffRisk?: 'Low' | 'Medium' | 'High';
   paymentProbability?: number;

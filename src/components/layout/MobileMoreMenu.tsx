@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Sparkles, FileText, GraduationCap, MessageSquare, Mail, Phone, Network, Workflow, PieChart, ShieldAlert, Server, IndianRupee, Megaphone, LogOut } from 'lucide-react';
+import { X, Sparkles, FileText, GraduationCap, MessageSquare, Mail, Phone, Network, Workflow, PieChart, ShieldAlert, Server, IndianRupee, Megaphone, LogOut, LayoutDashboard, Users, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 

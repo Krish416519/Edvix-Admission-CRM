@@ -11,6 +11,7 @@ interface MobileLeadCardProps {
   lead: Lead;
   statusColors: Record<LeadStatus, string>;
   onClick?: () => void;
+  key?: React.Key;
 }
 
 function getTemperature(score: number) {
@@ -103,16 +104,16 @@ export function MobileLeadCard({ lead, statusColors, onClick }: MobileLeadCardPr
               <span className="text-sm font-semibold text-foreground">{lead.phone}</span>
             </div>
           )}
-          {(lead.courseName || (lead as any).course) && (
+          {(typeof lead.course === 'object' ? lead.course?.name : lead.course) && (
             <div className="flex items-center gap-2">
               <GraduationCap className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">{lead.courseName || (lead as any).course}</span>
+              <span className="text-xs text-muted-foreground truncate">{typeof lead.course === 'object' ? lead.course?.name : lead.course}</span>
             </div>
           )}
-          {(lead.universityName || (lead as any).university) && (
+          {(typeof lead.university === 'object' ? lead.university?.name : lead.university) && (
             <div className="flex items-center gap-2">
               <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground truncate">{lead.universityName || (lead as any).university}</span>
+              <span className="text-xs text-muted-foreground truncate">{typeof lead.university === 'object' ? lead.university?.name : lead.university}</span>
             </div>
           )}
           {lead.nextActionDate && (
