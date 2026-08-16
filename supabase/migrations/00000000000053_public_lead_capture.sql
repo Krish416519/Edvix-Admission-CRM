@@ -21,15 +21,17 @@ BEGIN
 
     -- Insert the lead
     INSERT INTO public.leads (
-        name,
+        first_name,
+        last_name,
         email,
         phone,
-        source,
-        status,
+        lead_source,
+        lead_status,
         priority,
         score
     ) VALUES (
-        p_name,
+        split_part(p_name, ' ', 1),
+        substring(p_name from position(' ' in p_name) + 1),
         p_email,
         p_phone,
         'AI Chatbot',
