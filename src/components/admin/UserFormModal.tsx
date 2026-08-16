@@ -68,7 +68,7 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center items-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-md bg-card border-border shadow-2xl md:rounded-2xl rounded-t-3xl overflow-hidden animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 ease-out flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-semibold text-foreground">
