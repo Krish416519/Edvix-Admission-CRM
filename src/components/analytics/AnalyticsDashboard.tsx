@@ -11,6 +11,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { Skeleton } from '../ui/Skeleton';
 import { AIRecommendationAnalytics } from './AIRecommendationAnalytics';
+import { DispositionAnalytics } from './DispositionAnalytics';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -20,7 +21,7 @@ export function AnalyticsDashboard() {
   const [selectedUniversity, setSelectedUniversity] = useState('All');
   const [selectedCourse, setSelectedCourse] = useState('All');
   const [isExporting, setIsExporting] = useState(false);
-  const [activeView, setActiveView] = useState<'general' | 'ai'>('general');
+  const [activeView, setActiveView] = useState<'general' | 'ai' | 'dispositions'>('general');
 
   const dashboardRef = useRef<HTMLDivElement>(null);
 
@@ -188,6 +189,12 @@ export function AnalyticsDashboard() {
             >
               AI Engine
             </button>
+            <button
+              onClick={() => setActiveView('dispositions')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeView === 'dispositions' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Dispositions
+            </button>
           </div>
           <button
             onClick={exportExcel}
@@ -277,7 +284,9 @@ export function AnalyticsDashboard() {
       <div className="flex-1 overflow-y-auto pb-8 hide-scrollbar" ref={dashboardRef}>
         <div className="bg-background">
 
-          {activeView === 'ai' ? (
+          {activeView === 'dispositions' ? (
+            <DispositionAnalytics />
+          ) : activeView === 'ai' ? (
             <AIRecommendationAnalytics />
           ) : (
             <>

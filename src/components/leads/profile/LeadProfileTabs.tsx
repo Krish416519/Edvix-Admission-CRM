@@ -13,8 +13,9 @@ import { LeadWhatsAppChat } from '../../whatsapp/LeadWhatsAppChat';
 import { LeadEmailTab } from '../../email/LeadEmailTab';
 import { CallHistoryTab } from './tabs/CallHistoryTab';
 import { AIRecommendationTab } from './tabs/AIRecommendationTab';
+import { DispositionHistory } from './DispositionHistory';
 
-type Tab = 'Overview' | 'Timeline' | 'AI Engine' | 'Notes' | 'Tasks' | 'Calls' | 'Documents' | 'Admission' | 'Payments' | 'WhatsApp' | 'Email' | 'Communication';
+type Tab = 'Overview' | 'Timeline' | 'AI Engine' | 'Notes' | 'Tasks' | 'Calls' | 'Dispositions' | 'Documents' | 'Admission' | 'Payments' | 'WhatsApp' | 'Email' | 'Communication';
 
 const tabs: Tab[] = [
   'Overview',
@@ -23,6 +24,7 @@ const tabs: Tab[] = [
   'Notes',
   'Tasks',
   'Calls',
+  'Dispositions',
   'Documents',
   'Admission',
   'Payments',
@@ -69,6 +71,7 @@ export function LeadProfileTabs({ lead, onUpdateLead, activities, setActivities 
         {activeTab === 'Notes' && <NotesTab lead={lead} />}
         {activeTab === 'Tasks' && <TasksTab lead={lead} />}
         {activeTab === 'Calls' && <CallHistoryTab lead={lead} />}
+        {activeTab === 'Dispositions' && <div className="p-4 h-full"><DispositionHistory leadId={lead.id} /></div>}
         {activeTab === 'Documents' && <DocumentsTab lead={lead} />}
         {activeTab === 'Admission' && <AdmissionTab lead={lead} />}
         {activeTab === 'Payments' && <PaymentsTab lead={lead} />}

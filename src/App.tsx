@@ -57,6 +57,7 @@ const NotificationSettings = React.lazy(() => import('./components/admin/Notific
 const SystemLogsTab = React.lazy(() => import('./components/admin/SystemLogsTab').then(m => ({ default: m.SystemLogsTab })));
 const TenantBillingDashboard = React.lazy(() => import('./components/billing/TenantBillingDashboard').then(m => ({ default: m.TenantBillingDashboard })));
 const DeveloperSettings = React.lazy(() => import('./components/admin/DeveloperSettings').then(m => ({ default: m.DeveloperSettings })));
+const DispositionManagement = React.lazy(() => import('./components/admin/dispositions/DispositionManagement').then(m => ({ default: m.DispositionManagement })));
 
 // Partner Portal
 const PartnerLayout = React.lazy(() => import('./components/partner/PartnerLayout').then(m => ({ default: m.PartnerLayout })));
@@ -160,6 +161,7 @@ export default function App() {
                         <Route path="users" element={<UserManagement />} />
                         <Route path="roles" element={<RoleManagement />} />
                         <Route path="settings" element={<SystemSettings />} />
+                        <Route path="dispositions" element={<DispositionManagement />} />
                         <Route path="universities" element={<MasterDataManagement />} />
                         <Route path="courses" element={<MasterDataManagement />} />
                         <Route path="ai" element={<AiSettings />} />

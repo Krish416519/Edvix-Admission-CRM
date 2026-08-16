@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { mockActivities } from '../../data/mockActivities';
@@ -10,6 +10,7 @@ import { LeadProfileTabs } from './profile/LeadProfileTabs';
 import { LeadAI_Sidebar } from './profile/LeadAI_Sidebar';
 import { MobileActionBar } from './mobile/MobileActionBar';
 import { automationService } from '../../lib/automationService';
+import { DispositionWidget } from './profile/DispositionWidget';
 
 import { useLead } from '../../hooks/useLead';
 import { Skeleton } from '../ui/Skeleton';
@@ -18,6 +19,7 @@ export function LeadDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   
+  const [showDisposition, setShowDisposition] = useState(false);
   const { lead, isLoading, updateLead } = useLead(id);
   
   // Activities state (temporarily keeping mock activities until migrated)
@@ -25,6 +27,17 @@ export function LeadDetails() {
   const [activities, setActivities] = useState<LeadActivity[]>(
     initialActivities.length > 0 ? initialActivities : mockActivities
   );
+
+  useEffect(() => {
+    const handleOpenDisposition = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail.leadId === lead?.id) {
+        setShowDisposition(true);
+      }
+    };
+    window.addEventListener('open-disposition', handleOpenDisposition);
+    return () => window.removeEventListener('open-disposition', handleOpenDisposition);
+  }, [lead?.id]);
 
   if (isLoading) {
     return (
@@ -116,6 +129,12 @@ export function LeadDetails() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setShowDisposition(!showDisposition)}
+            className="hidden sm:inline-flex px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors"
+          >
+            Update Disposition
+          </button>
           <select 
             value={lead.status}
             onChange={(e) => handleStatusChange(e.target.value as LeadStatus)}
@@ -136,6 +155,21 @@ export function LeadDetails() {
           </button>
         </div>
       </div>
+
+      {showDisposition && (
+        <div className="mb-2 shrink-0 animate-in fade-in slide-in-from-top-2">
+          <DispositionWidget 
+            leadId={lead.id} 
+            currentStatus={lead.status} 
+            onSaved={() => {
+              setShowDisposition(false);
+              // Trigger reload of lead to show new status
+              updateLead({ id: lead.id });
+            }}
+            onCancel={() => setShowDisposition(false)}
+          />
+        </div>
+      )}
 
       {/* Main 3-Column Layout */}
       <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0 xl:overflow-hidden overflow-y-auto pb-20 xl:pb-0">

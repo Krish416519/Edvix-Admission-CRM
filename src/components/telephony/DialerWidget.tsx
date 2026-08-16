@@ -72,7 +72,7 @@ export function DialerWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 w-80 bg-card border border-border shadow-2xl rounded-2xl z-50 overflow-visible flex flex-col animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-0 sm:bottom-6 left-0 right-0 sm:left-auto sm:right-6 w-full sm:w-80 bg-card border border-border shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-2xl rounded-t-3xl sm:rounded-2xl z-[60] overflow-visible flex flex-col animate-in slide-in-from-bottom-5">
       {/* Header */}
       <div className={cn(
         "px-4 py-3 flex justify-between items-center text-white rounded-t-2xl",

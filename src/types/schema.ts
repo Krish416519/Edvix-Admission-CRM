@@ -592,5 +592,6 @@ export * from './automation';
 export * from './whatsapp';
 export * from './email';
 export * from './integration';
+export * from './marketing';
+export * from './disposition';
 export * from './admin';
-

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { Phone, MessageCircle, MoreHorizontal, CheckCircle2 } from 'lucide-react';
 import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -53,10 +53,14 @@ export function MobileActionBar({ leadId, phone, onMoreClick }: MobileActionBarP
         Call
       </button>
       <button 
-        onClick={onMoreClick}
-        className="w-12 h-12 flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors active:scale-95"
+        onClick={() => {
+          // Open disposition modal or trigger
+          window.dispatchEvent(new CustomEvent('open-disposition', { detail: { leadId } }));
+        }}
+        className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors shadow-sm active:scale-95"
       >
-        <MoreHorizontal className="w-6 h-6" />
+        <CheckCircle2 className="w-5 h-5" />
+        Update
       </button>
     </div>
   );
