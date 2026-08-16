@@ -100,8 +100,7 @@ export const dispositionService = {
       latest_disposition_id: dispositionId,
       latest_sub_disposition_id: subDispositionId || null,
       next_action_date: followUpAt || null,
-      updated_at: new Date().toISOString(),
-      updated_by: userId
+      updated_at: new Date().toISOString()
     };
 
     if (disp.target_status) {
