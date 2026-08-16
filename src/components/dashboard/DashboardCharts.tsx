@@ -59,7 +59,7 @@ export function RevenueChart() {
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Monthly Revenue</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Revenue generated from admissions over time.</p>
       </div>
-      <div className="flex-1 min-h-[300px]">
+      <div className="flex-1 min-h-[220px] md:min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
@@ -92,7 +92,7 @@ export function LeadsSourceChart() {
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Leads by Source</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Acquisition channels.</p>
       </div>
-      <div className="flex-1 min-h-[300px] relative">
+      <div className="flex-1 min-h-[220px] md:min-h-[300px] relative">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -133,7 +133,7 @@ export function AdmissionsByUniChart() {
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Admissions by University</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Comparing UG and PG enrollments.</p>
       </div>
-      <div className="flex-1 min-h-[300px]">
+      <div className="flex-1 min-h-[220px] md:min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={uniData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />

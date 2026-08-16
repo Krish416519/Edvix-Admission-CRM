@@ -42,7 +42,7 @@ export function LeadProfileTabs({ lead, onUpdateLead, activities, setActivities 
   const [activeTab, setActiveTab] = useState<Tab>('Overview');
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-card border border-border rounded-xl shadow-sm h-full max-h-[85vh] overflow-hidden">
+    <div className="flex-1 flex flex-col min-w-0 bg-card border border-border rounded-xl shadow-sm xl:h-full xl:max-h-[85vh] xl:overflow-hidden min-h-[500px]">
       {/* Tab Navigation */}
       <div className="flex items-center overflow-x-auto border-b border-border hide-scrollbar shrink-0 bg-muted/10">
         {tabs.map((tab) => (

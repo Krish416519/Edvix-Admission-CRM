@@ -68,8 +68,8 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-md bg-card border-border shadow-2xl md:rounded-2xl rounded-t-3xl overflow-hidden animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 ease-out flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-semibold text-foreground">
             {initialData ? 'Edit User' : 'Add New User'}
@@ -79,8 +79,9 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
+        <div className="overflow-y-auto flex-1 hide-scrollbar">
+          <form id="user-form" onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Full Name</label>
             <input
               type="text"
@@ -188,24 +189,26 @@ export function UserFormModal({ isOpen, onClose, onSubmit, initialData }: UserFo
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-border">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {isSubmitting ? 'Saving...' : (initialData ? 'Save Changes' : 'Create User')}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+        <div className="flex justify-end gap-3 p-6 border-t border-border bg-muted/10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="user-form"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {isSubmitting ? 'Saving...' : (initialData ? 'Save' : 'Create')}
+          </button>
+        </div>
       </div>
     </div>
   );

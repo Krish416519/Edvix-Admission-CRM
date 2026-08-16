@@ -40,8 +40,8 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
   const statuses: LeadStatus[] = ['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost'];
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-card border border-border shadow-lg rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex flex-col justify-end md:justify-center p-0 md:p-4 animate-in fade-in duration-200">
+      <div className="bg-card md:border md:border-border shadow-2xl md:rounded-xl rounded-t-3xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 ease-out">
         <div className="p-5 border-b border-border flex items-center justify-between bg-primary/5">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
@@ -125,7 +125,7 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
           </form>
         </div>
 
-        <div className="p-5 border-t border-border flex items-center justify-end gap-3 bg-muted/20">
+        <div className="p-5 border-t border-border flex items-center justify-end gap-3 bg-muted/20 pb-[calc(1.25rem+env(safe-area-inset-bottom))] md:pb-5">
           <button 
             type="button" 
             onClick={onClose}

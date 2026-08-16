@@ -13,6 +13,7 @@ import { TasksDashboard } from './components/TasksDashboard';
 import { TasksCalendar } from './components/TasksCalendar';
 import { TaskFormDialog } from './components/TaskFormDialog';
 import { TaskFollowUpDialog } from './components/TaskFollowUpDialog';
+import { MobileTaskCard } from './mobile/MobileTaskCard';
 import { toast } from 'sonner';
 
 import { useTasks } from '../../hooks/useTasks';
@@ -245,8 +246,22 @@ export function TasksList() {
                 description="Try adjusting your search or filters to find what you're looking for."
               />
             ) : (
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
+              <>
+                {/* Mobile View */}
+                <div className="md:hidden p-4 bg-muted/5">
+                  {filteredTasks.map((task) => (
+                    <MobileTaskCard 
+                      key={task.id} 
+                      task={task} 
+                      onToggleStatus={toggleTaskStatus}
+                      onClick={(t) => { setEditingTask(t); setIsFormOpen(true); }}
+                    />
+                  ))}
+                </div>
+
+                {/* Desktop View */}
+                <table className="hidden md:table w-full text-sm text-left">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
                     <th className="px-6 py-4 font-semibold w-12"></th>
                     <th className="px-6 py-4 font-semibold">Task</th>
@@ -342,6 +357,7 @@ export function TasksList() {
                   ))}
                 </tbody>
               </table>
+              </>
             )}
           </div>
         )}

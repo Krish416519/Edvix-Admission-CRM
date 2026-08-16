@@ -148,13 +148,23 @@ export function Dashboard() {
 
       <AIDailyBriefing />
 
-      {/* KPI Cards — powered by server-side COUNT queries */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard title="Total Leads" value={stats.total.toString()} icon={Users} trend="up" trendValue="12%" subtitle="All time" />
-        <StatCard title="New Leads" value={stats.newLeads.toString()} icon={UserPlus} trend="up" trendValue="5%" subtitle="All time" />
-        <StatCard title="Admissions Done" value={stats.admissionsDone.toString()} icon={GraduationCap} trend="up" trendValue="2" subtitle="All time" />
-        <StatCard title="Revenue (MTD)" value="₹12.4L" icon={IndianRupee} trend="up" trendValue="18%" subtitle="vs last month" />
-        <StatCard title="Conversion Rate" value={`${stats.conversionRate}%`} icon={Percent} trend="up" trendValue="1.2%" subtitle="All time" />
+      {/* KPI Cards — powered by server-side COUNT queries. Horizontally scrollable on mobile */}
+      <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+          <StatCard title="Total Leads" value={stats.total.toString()} icon={Users} trend="up" trendValue="12%" subtitle="All time" />
+        </div>
+        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+          <StatCard title="New Leads" value={stats.newLeads.toString()} icon={UserPlus} trend="up" trendValue="5%" subtitle="All time" />
+        </div>
+        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+          <StatCard title="Admissions Done" value={stats.admissionsDone.toString()} icon={GraduationCap} trend="up" trendValue="2" subtitle="All time" />
+        </div>
+        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+          <StatCard title="Revenue (MTD)" value="₹12.4L" icon={IndianRupee} trend="up" trendValue="18%" subtitle="vs last month" />
+        </div>
+        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+          <StatCard title="Conversion Rate" value={`${stats.conversionRate}%`} icon={Percent} trend="up" trendValue="1.2%" subtitle="All time" />
+        </div>
       </div>
 
       {/* Charts Row 1 */}
