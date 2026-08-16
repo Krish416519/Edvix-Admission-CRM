@@ -101,7 +101,12 @@ Deno.serve(async (req: Request) => {
       }
 
       const { error } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes('Database error deleting user')) {
+          throw new Error('Cannot delete user: They have historical leads or activities attached. Please Deactivate the user instead to preserve records.');
+        }
+        throw error;
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -171,9 +176,23 @@ Deno.serve(async (req: Request) => {
 
       const failed = results.filter(r => r.status === 'rejected').length;
       const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      
+      // Extract the first failure reason for context, specifically mapping the generic constraint error
+      let errorReason = null;
+      if (failed > 0) {
+        const firstError = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
+        errorReason = firstError.reason?.message;
+        if (errorReason?.includes('Database error deleting user')) {
+          errorReason = 'Some users have historical records attached and cannot be permanently deleted. Please Deactivate them instead.';
+        }
+      }
+
+      if (failed > 0 && succeeded === 0) {
+          throw new Error(errorReason || 'Bulk delete failed');
+      }
 
       return new Response(
-        JSON.stringify({ success: true, deleted: succeeded, failed, total: safeIds.length }),
+        JSON.stringify({ success: true, deleted: succeeded, failed, total: safeIds.length, error: errorReason }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
