@@ -126,8 +126,6 @@ export function LeadsList() {
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
-
   // ── CSV Import State ──────────────────────────────────────────────────────
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
