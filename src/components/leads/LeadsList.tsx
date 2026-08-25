@@ -1010,7 +1010,7 @@ export function LeadsList() {
                                refresh();
                             }
                           }}
-                          className="bg-transparent border border-border rounded-lg text-sm px-2 py-1.5 outline-none focus:ring-1 focus:ring-primary w-[140px] text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                          className="bg-background border border-border rounded-lg text-sm px-2 py-1.5 outline-none focus:ring-1 focus:ring-primary w-[140px] text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                         >
                           <option value="">Unassigned</option>
                           {allUsers.map(u => (

@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const role: Role = (profileData?.roles?.name as Role) || (sbUser.user_metadata?.role as Role) || 'Viewer';
     
     const name = profileData?.name || sbUser.user_metadata?.name || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
-    const avatar = profileData?.avatar_url || sbUser.user_metadata?.avatar_url || DEFAULT_AVATAR;
+    const avatar = sbUser.user_metadata?.avatar_url || profileData?.avatar_url || DEFAULT_AVATAR;
 
     let organizations = [];
     let activeOrgId = undefined;

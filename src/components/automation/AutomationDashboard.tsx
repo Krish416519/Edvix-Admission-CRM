@@ -7,12 +7,14 @@ import {
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { WorkflowBuilder } from './WorkflowBuilder';
+import { ExecutionHistory } from './ExecutionHistory';
 import { useAutomations } from '../../hooks/useAutomations';
 import { Skeleton } from '../ui/Skeleton';
 
 export function AutomationDashboard() {
   const { workflows, logs, isLoading, toggleWorkflowStatus, deleteWorkflow } = useAutomations();
   const [isCreating, setIsCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'workflows' | 'history'>('workflows');
 
   if (isCreating) {
     return <WorkflowBuilder onBack={() => setIsCreating(false)} />;
@@ -89,9 +91,31 @@ export function AutomationDashboard() {
           </p>
         </div>
       </div>
+      
+      <div className="flex items-center gap-4 border-b border-border mb-6">
+        <button 
+          onClick={() => setActiveTab('workflows')}
+          className={cn(
+            "pb-3 text-sm font-medium transition-colors border-b-2",
+            activeTab === 'workflows' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          My Workflows
+        </button>
+        <button 
+          onClick={() => setActiveTab('history')}
+          className={cn(
+            "pb-3 text-sm font-medium transition-colors border-b-2",
+            activeTab === 'workflows' ? "border-transparent text-muted-foreground hover:text-foreground" : "border-primary text-primary"
+          )}
+        >
+          Execution History
+        </button>
+      </div>
 
-      <div className="flex-1 bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col min-h-0">
-        <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
+      {activeTab === 'workflows' ? (
+        <div className="flex-1 bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col min-h-0">
+          <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
           <h2 className="font-semibold text-foreground">All Workflows</h2>
           <div className="flex items-center gap-2">
             <input 
@@ -182,6 +206,9 @@ export function AutomationDashboard() {
           </div>
         </div>
       </div>
+      ) : (
+        <ExecutionHistory />
+      )}
     </div>
   );
 }

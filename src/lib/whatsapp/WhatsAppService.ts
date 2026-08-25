@@ -90,6 +90,28 @@ export class WhatsAppService {
     senderId?: string,
     templateId?: string
   ): Promise<string> {
+    
+    // Check communication preferences first (unless internal note)
+    if (!isInternalNote) {
+      const { data: conv } = await supabase
+        .from('whatsapp_conversations')
+        .select('lead_id')
+        .eq('id', conversationId)
+        .single();
+
+      if (conv?.lead_id) {
+        const { data: pref } = await supabase
+          .from('communication_preferences')
+          .select('is_allowed')
+          .eq('lead_id', conv.lead_id)
+          .eq('channel', 'whatsapp')
+          .maybeSingle();
+
+        if (pref && pref.is_allowed === false) {
+          throw new Error('User has opted out of WhatsApp communication.');
+        }
+      }
+    }
     // 1. Insert message with 'queued' status
     const { data: msg, error } = await supabase
       .from('whatsapp_messages')

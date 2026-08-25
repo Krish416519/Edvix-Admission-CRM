@@ -49,7 +49,7 @@ export function CounselorPerformance() {
   );
 }
 
-export function RecentActivities() {
+export function RecentActivities({ onViewAll }: { onViewAll?: () => void }) {
   const activities = [
     { title: 'Application submitted', desc: 'Rahul Verma submitted PG MBA app', time: '10 mins ago', type: 'app', icon: FileText },
     { title: 'New lead assigned', desc: 'Priya Singh added to your queue', time: '1 hour ago', type: 'lead', icon: User },
@@ -61,7 +61,7 @@ export function RecentActivities() {
     <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Recent Activities</h2>
-        <button className="text-sm text-primary hover:text-primary-hover font-medium transition-colors">View all</button>
+        <button onClick={onViewAll} className="text-sm text-primary hover:text-primary-hover font-medium transition-colors">View all</button>
       </div>
       <div className="flex-1">
         <div className="space-y-6">
@@ -89,7 +89,7 @@ export function RecentActivities() {
 import { useTasks } from '../../hooks/useTasks';
 import { Skeleton } from '../ui/Skeleton';
 
-export function UpcomingTasks() {
+export function UpcomingTasks({ onNavigate }: { onNavigate?: () => void }) {
   const { tasks, isLoading } = useTasks();
   const pendingTasks = tasks.filter(t => t.status === 'Pending').slice(0, 4);
 
@@ -97,7 +97,7 @@ export function UpcomingTasks() {
     <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Pending Tasks</h2>
-        <button className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors">
+        <button onClick={onNavigate} className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors" title="View all tasks">
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

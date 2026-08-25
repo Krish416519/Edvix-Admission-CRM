@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, Target, AlertCircle, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Skeleton } from '../ui/Skeleton';
@@ -7,6 +8,7 @@ import { Skeleton } from '../ui/Skeleton';
 export function AIDailyBriefing() {
   const [isVisible, setIsVisible] = useState(false);
   const { leads, isLoading } = useLeads();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // delay for streaming effect
@@ -54,7 +56,7 @@ export function AIDailyBriefing() {
             <h3 className="text-sm font-semibold">Today's Priorities</h3>
           </div>
           <p className="text-sm text-foreground">Call {hotLeadsCount || 4} Hot Leads who are interested in Online MBA.</p>
-          <div className="mt-auto pt-2 flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
+          <div onClick={() => navigate('/leads?filter=hot')} className="mt-auto pt-2 flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform cursor-pointer">
             View Leads <ArrowRight className="w-3 h-3 ml-1" />
           </div>
         </div>
@@ -66,7 +68,7 @@ export function AIDailyBriefing() {
             <h3 className="text-sm font-semibold">Urgent Follow-ups</h3>
           </div>
           <p className="text-sm text-foreground">{pendingDocsCount || 3} Leads have pending documents for more than 48 hours.</p>
-          <div className="mt-auto pt-2 flex items-center text-xs font-semibold text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform">
+          <div onClick={() => navigate('/leads?filter=docs_pending')} className="mt-auto pt-2 flex items-center text-xs font-semibold text-red-600 dark:text-red-400 group-hover:translate-x-1 transition-transform cursor-pointer">
             Action Now <ArrowRight className="w-3 h-3 ml-1" />
           </div>
         </div>
@@ -78,7 +80,7 @@ export function AIDailyBriefing() {
             <h3 className="text-sm font-semibold">High-Conversion</h3>
           </div>
           <p className="text-sm text-foreground">{highConversionLeads.length > 0 ? highConversionLeads.map(l => (l.name || 'Student').split(' ')[0]).join(' and ') : 'Rahul and Priya'} have &gt;85% probability to convert today.</p>
-          <div className="mt-auto pt-2 flex items-center text-xs font-semibold text-green-600 dark:text-green-500 group-hover:translate-x-1 transition-transform">
+          <div onClick={() => navigate('/leads?filter=high_conversion')} className="mt-auto pt-2 flex items-center text-xs font-semibold text-green-600 dark:text-green-500 group-hover:translate-x-1 transition-transform cursor-pointer">
             Contact Now <ArrowRight className="w-3 h-3 ml-1" />
           </div>
         </div>
@@ -90,7 +92,7 @@ export function AIDailyBriefing() {
             <h3 className="text-sm font-semibold">Overdue Admissions</h3>
           </div>
           <p className="text-sm text-foreground">2 fee links expired yesterday. Needs immediate attention.</p>
-          <div className="mt-auto pt-2 flex items-center text-xs font-semibold text-orange-600 dark:text-orange-500 group-hover:translate-x-1 transition-transform">
+          <div onClick={() => navigate('/admissions')} className="mt-auto pt-2 flex items-center text-xs font-semibold text-orange-600 dark:text-orange-500 group-hover:translate-x-1 transition-transform cursor-pointer">
             Resend Links <ArrowRight className="w-3 h-3 ml-1" />
           </div>
         </div>

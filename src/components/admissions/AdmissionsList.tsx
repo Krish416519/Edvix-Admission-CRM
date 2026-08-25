@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, ChevronRight, GraduationCap, Calendar, Building, BookOpen, User } from 'lucide-react';
+import { Search, Filter, ChevronRight, GraduationCap, Calendar, Building, User, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAdmissions } from '../../hooks/useAdmissions';
 import { Admission, AdmissionStage } from '../../types/admission';
 import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
 import { AdmissionsDashboardWidgets } from './AdmissionsDashboardWidgets';
+import { toast } from 'sonner';
 
 const stages: AdmissionStage[] = [
   'Inquiry',
@@ -31,23 +32,51 @@ export function AdmissionsList() {
   const [universityFilter, setUniversityFilter] = useState('All');
   const [intakeFilter, setIntakeFilter] = useState('All');
   const [counselorFilter, setCounselorFilter] = useState('All');
+  const [deleteTarget, setDeleteTarget] = useState<Admission | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { admissions, isLoading } = useAdmissions({
+  const { admissions, isLoading, deleteAdmission } = useAdmissions({
     stage: stageFilter === 'All' ? undefined : stageFilter,
     searchTerm: searchTerm || undefined,
   });
+
+  const [localAdmissions, setLocalAdmissions] = useState<typeof admissions>([]);
+
+  // Keep local state in sync with hook data (e.g. after filters change)
+  useEffect(() => {
+    setLocalAdmissions(admissions);
+  }, [admissions]);
 
   const universities = Array.from(new Set(admissions.map(a => a.university).filter(Boolean)));
   const intakes = Array.from(new Set(admissions.map(a => a.intake).filter(Boolean)));
   const counselors = Array.from(new Set(admissions.map(a => a.counselorName).filter(Boolean)));
 
   // Client-side filter for university/intake/counselor (these are display filters on already-fetched data)
-  const filteredAdmissions = admissions.filter(adm => {
+  const filteredAdmissions = localAdmissions.filter(adm => {
     const matchesUniv = universityFilter === 'All' || adm.university === universityFilter;
     const matchesIntake = intakeFilter === 'All' || adm.intake === intakeFilter;
     const matchesCounselor = counselorFilter === 'All' || adm.counselorName === counselorFilter;
     return matchesUniv && matchesIntake && matchesCounselor;
   });
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    // Optimistically remove from local state immediately
+    setLocalAdmissions(prev => prev.filter(a => a.id !== deleteTarget.id));
+    try {
+      const result = await deleteAdmission(deleteTarget.id);
+      if (result && result.success === false) throw new Error(result.error || 'Delete failed');
+      toast.success(`Admission for ${deleteTarget.studentName} deleted successfully`);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      // Rollback on failure
+      setLocalAdmissions(admissions);
+      toast.error(err.message || 'Failed to delete admission');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500">
@@ -80,7 +109,7 @@ export function AdmissionsList() {
               <select 
                 value={stageFilter}
                 onChange={e => setStageFilter(e.target.value as any)}
-                className="w-full bg-transparent text-sm focus:outline-none truncate"
+                className="w-full bg-background text-foreground text-sm focus:outline-none truncate"
               >
                 <option value="All">All Stages</option>
                 {stages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
@@ -92,7 +121,7 @@ export function AdmissionsList() {
               <select 
                 value={universityFilter}
                 onChange={e => setUniversityFilter(e.target.value)}
-                className="w-full bg-transparent text-sm focus:outline-none truncate"
+                className="w-full bg-background text-foreground text-sm focus:outline-none truncate"
               >
                 <option value="All">All Universities</option>
                 {universities.map(u => <option key={u} value={u}>{u}</option>)}
@@ -104,7 +133,7 @@ export function AdmissionsList() {
               <select 
                 value={intakeFilter}
                 onChange={e => setIntakeFilter(e.target.value)}
-                className="w-full bg-transparent text-sm focus:outline-none truncate"
+                className="w-full bg-background text-foreground text-sm focus:outline-none truncate"
               >
                 <option value="All">All Intakes</option>
                 {intakes.map(i => <option key={i} value={i}>{i}</option>)}
@@ -116,7 +145,7 @@ export function AdmissionsList() {
               <select 
                 value={counselorFilter}
                 onChange={e => setCounselorFilter(e.target.value)}
-                className="w-full bg-transparent text-sm focus:outline-none truncate"
+                className="w-full bg-background text-foreground text-sm focus:outline-none truncate"
               >
                 <option value="All">All Counselors</option>
                 {counselors.map(c => <option key={c} value={c}>{c}</option>)}
@@ -149,7 +178,7 @@ export function AdmissionsList() {
               {filteredAdmissions.map((adm) => (
                 <tr 
                   key={adm.id} 
-                  onClick={() => navigate(`/admissions/${adm.id}`)}
+                  onClick={() => navigate(`/applications/${adm.id}`)}
                   className="hover:bg-muted/30 transition-colors cursor-pointer group"
                 >
                   <td className="px-6 py-4">
@@ -178,9 +207,18 @@ export function AdmissionsList() {
                     <span className="font-medium">{adm.counselorName || 'Unassigned'}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(adm); }}
+                        className="p-1.5 rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete admission"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -214,6 +252,40 @@ export function AdmissionsList() {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-sm rounded-2xl shadow-xl border border-border p-6 animate-in zoom-in-95 duration-200 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">Delete Admission?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete the admission for{' '}
+              <strong className="text-foreground">{deleteTarget.studentName}</strong>?
+              This action can be undone by an administrator.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full flex justify-center items-center gap-2 px-4 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-all disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {isDeleting ? 'Deleting...' : 'Yes, delete it'}
+              </button>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="w-full px-4 py-2.5 bg-transparent border border-border text-foreground font-medium rounded-xl hover:bg-muted transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

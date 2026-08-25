@@ -1,16 +1,25 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, CheckCircle2, AlertCircle, FileText, ArrowUpDown } from 'lucide-react';
 import { useAdmissions } from '../../hooks/useAdmissions';
+import { useLeads } from '../../hooks/useLeads';
+import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
 import { format } from 'date-fns';
 
 export function PartnerAdmissions() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const { admissions, isLoading } = useAdmissions();
+  const { admissions, isLoading: admissionsLoading } = useAdmissions();
+  const { leads, isLoading: leadsLoading } = useLeads();
   
-  // Admissions are filtered via RLS on backend
-  const myAdmissions = admissions;
+  // Filter for Super Admins testing the view: only show admissions linked to their partner leads
+  const myLeads = leads.filter(l => l.partner_id === user?.id);
+  const myAdmissions = admissions.filter(a => a.lead_id && myLeads.find(l => l.id === a.lead_id));
+
+  const isLoading = admissionsLoading || leadsLoading;
 
   const filteredAdmissions = useMemo(() => {
     return myAdmissions.filter(adm => 
@@ -68,7 +77,11 @@ export function PartnerAdmissions() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredAdmissions.map((adm) => (
-                  <tr key={adm.id} className="hover:bg-muted/30 transition-colors">
+                  <tr 
+                    key={adm.id} 
+                    onClick={() => navigate(`/applications/${adm.id}`)}
+                    className="hover:bg-muted/30 transition-colors cursor-pointer"
+                  >
                     <td className="px-6 py-4">
                       <div className="font-medium text-foreground">{adm.id}</div>
                       <div className="text-xs text-muted-foreground">{adm.createdAt ? format(new Date(adm.createdAt), 'MMM d, yyyy') : 'Recently'}</div>

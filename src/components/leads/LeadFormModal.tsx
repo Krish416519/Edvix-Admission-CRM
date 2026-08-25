@@ -66,7 +66,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 required
                 value={formData.name || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="John Doe"
               />
             </div>
@@ -79,7 +79,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 required
                 value={formData.phone || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="+91 9876543210"
               />
             </div>
@@ -92,7 +92,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 required
                 value={formData.email || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="john@example.com"
               />
             </div>
@@ -105,7 +105,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                   name="state"
                   value={formData.state || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                   placeholder="State"
                 />
                 <input
@@ -113,7 +113,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                   name="city"
                   value={formData.city || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                   placeholder="City"
                 />
               </div>
@@ -126,7 +126,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 name="course"
                 value={formData.course || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="e.g. MBA"
               />
             </div>
@@ -138,7 +138,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 name="university"
                 value={formData.university || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="Target University"
               />
             </div>
@@ -149,7 +149,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 name="source"
                 value={formData.source || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
               >
                 <option value="Organic">Organic</option>
                 <option value="Google Ads">Google Ads</option>
@@ -165,7 +165,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 name="priority"
                 value={formData.priority || ''}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
               >
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>

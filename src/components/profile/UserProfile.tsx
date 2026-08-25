@@ -1,16 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User, Mail, Phone, Building2, Shield, Calendar, Clock, Activity, Camera } from 'lucide-react';
+import { User, Mail, Phone, Building2, Shield, Calendar, Clock, Activity, Camera, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 
 export function UserProfile() {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [phone, setPhone] = useState(user?.phone || '');
   const [department, setDepartment] = useState(user?.department || '');
   const [name, setName] = useState(user?.name || '');
+
+  /** Resize image using Canvas and return a base64 JPEG string */
+  const resizeImageToBase64 = (file: File, maxSize = 256): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (ev) => {
+        img.src = ev.target?.result as string;
+      };
+      reader.onerror = reject;
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = reject;
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be smaller than 10MB');
+      return;
+    }
+
+    // Show instant local preview
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarPreview(previewUrl);
+    setIsUploadingAvatar(true);
+
+    try {
+      // Resize to 256×256 max and compress to JPEG base64
+      const base64 = await resizeImageToBase64(file, 256);
+
+      // Save directly to Supabase Auth user metadata — no DB column needed
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { avatar_url: base64 }
+      });
+
+      if (authError) throw authError;
+
+      setAvatarPreview(base64);
+      toast.success('Profile photo updated!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload photo');
+      setAvatarPreview(user.avatar || null);
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,10 +128,10 @@ export function UserProfile() {
         {/* Left Column - Profile Card */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-card border border-border rounded-xl p-6 shadow-sm text-center">
-            <div className="relative inline-block mb-4">
-              {user.avatar ? (
+            <div className="relative inline-block mb-4 group">
+              {avatarPreview ? (
                 <img
-                  src={user.avatar}
+                  src={avatarPreview}
                   alt={user.name}
                   className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-md mx-auto"
                 />
@@ -70,10 +140,37 @@ export function UserProfile() {
                   {user.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <button className="absolute bottom-0 right-0 p-1.5 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors">
-                <Camera className="w-4 h-4" />
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+
+              {/* Camera button triggers the hidden input */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute bottom-0 right-0 p-1.5 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-70"
+                title="Change profile photo"
+              >
+                {isUploadingAvatar
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Camera className="w-4 h-4" />}
               </button>
+
+              {/* Hover overlay */}
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-white animate-spin" />
+                </div>
+              )}
             </div>
+            <p className="text-xs text-muted-foreground mb-2">JPG, PNG, GIF or WebP · Max 5MB</p>
             
             <h2 className="text-xl font-semibold text-foreground">{user.name}</h2>
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5 mt-1">

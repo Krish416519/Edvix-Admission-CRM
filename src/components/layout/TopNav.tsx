@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAI } from '../../contexts/AIContext';
 import { useTelephony } from '../../contexts/TelephonyContext';
 import { NotificationBell } from '../notifications/NotificationBell';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => void }) {
   const { theme, toggleTheme } = useTheme();
@@ -42,12 +42,12 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
       </button>
 
       {/* Mobile App Title/Logo */}
-      <div className="flex md:hidden items-center gap-2 mr-auto">
+      <Link to="/" className="flex md:hidden items-center gap-2 mr-auto hover:opacity-90 transition-opacity">
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white font-bold shadow-sm text-xs">
           E
         </div>
         <span className="text-[15px] font-bold tracking-tight">Edvix CRM</span>
-      </div>
+      </Link>
 
       <div className="flex flex-1 gap-x-2 md:gap-x-4 self-stretch justify-end md:justify-between items-center">
         {/* Desktop Search */}

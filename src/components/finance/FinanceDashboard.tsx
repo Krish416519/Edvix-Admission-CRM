@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { IndianRupee, PieChart, Receipt, Building, Percent, FileText, FileDown } from 'lucide-react';
+import { IndianRupee, PieChart, Receipt, Building, Percent, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DashboardTab } from './tabs/DashboardTab';
 import { PaymentsTab } from './tabs/PaymentsTab';
 import { UniversityPayoutsTab, CommissionsTab, LedgerTab, InvoicesTab } from './FinanceTabs';
+import { CommissionRulesTab } from './tabs/CommissionRulesTab';
+import { PayoutManagerTab } from './tabs/PayoutManagerTab';
+import { DisputeManagerTab } from './tabs/DisputeManagerTab';
+import { ReconciliationTab } from './tabs/ReconciliationTab';
+import { Settings, FileDown, MessageSquare, ShieldAlert } from 'lucide-react';
 
-type FinanceTab = 'dashboard' | 'payments' | 'payouts' | 'commissions' | 'ledger' | 'invoices';
+type FinanceTab = 'dashboard' | 'payments' | 'payouts' | 'commissions' | 'ledger' | 'invoices' | 'rules' | 'payout_batches' | 'disputes' | 'reconciliation';
 
 export function FinanceDashboard() {
   const [activeTab, setActiveTab] = useState<FinanceTab>('dashboard');
@@ -13,10 +18,14 @@ export function FinanceDashboard() {
   const tabs: { id: FinanceTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <PieChart className="w-4 h-4" /> },
     { id: 'payments', label: 'Student Payments', icon: <IndianRupee className="w-4 h-4" /> },
-    { id: 'payouts', label: 'University Payouts', icon: <Building className="w-4 h-4" /> },
-    { id: 'commissions', label: 'Partner Commission', icon: <Percent className="w-4 h-4" /> },
     { id: 'ledger', label: 'General Ledger', icon: <FileText className="w-4 h-4" /> },
+    { id: 'commissions', label: 'Partner Commission', icon: <Percent className="w-4 h-4" /> },
+    { id: 'payouts', label: 'University Payouts', icon: <Building className="w-4 h-4" /> },
+    { id: 'payout_batches', label: 'Payout Batches', icon: <FileDown className="w-4 h-4" /> },
+    { id: 'rules', label: 'Commission Rules', icon: <Settings className="w-4 h-4" /> },
     { id: 'invoices', label: 'Invoices', icon: <Receipt className="w-4 h-4" /> },
+    { id: 'disputes', label: 'Disputes', icon: <MessageSquare className="w-4 h-4" /> },
+    { id: 'reconciliation', label: 'Reconciliation', icon: <ShieldAlert className="w-4 h-4" /> },
   ];
 
   return (
@@ -48,10 +57,14 @@ export function FinanceDashboard() {
       <div className="flex-1 overflow-hidden">
         {activeTab === 'dashboard' && <DashboardTab />}
         {activeTab === 'payments' && <PaymentsTab />}
-        {activeTab === 'payouts' && <UniversityPayoutsTab />}
-        {activeTab === 'commissions' && <CommissionsTab />}
         {activeTab === 'ledger' && <LedgerTab />}
+        {activeTab === 'commissions' && <CommissionsTab />}
+        {activeTab === 'payouts' && <UniversityPayoutsTab />}
+        {activeTab === 'payout_batches' && <PayoutManagerTab />}
+        {activeTab === 'rules' && <CommissionRulesTab />}
         {activeTab === 'invoices' && <InvoicesTab />}
+        {activeTab === 'disputes' && <DisputeManagerTab />}
+        {activeTab === 'reconciliation' && <ReconciliationTab />}
       </div>
     </div>
   );

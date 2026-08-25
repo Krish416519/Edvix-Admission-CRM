@@ -2,18 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { Search, Plus, FileSpreadsheet, ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Lead } from '../../types/schema';
+import { useAuth } from '../../contexts/AuthContext';
 import { EmptyState } from '../ui/EmptyState';
 import { LeadFormModal } from '../leads/LeadFormModal';
 import { Skeleton } from '../ui/Skeleton';
 import { format } from 'date-fns';
+import { partnerService } from '../../lib/partner/PartnerService';
 
 export function PartnerLeads() {
+  const { user } = useAuth();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { leads, isLoading, addLead } = useLeads();
   
-  // Real data filtered by RLS
-  const myLeads = leads;
+  // Real data filtered by RLS (and explicitly by user id for Super Admins testing the view)
+  const myLeads = leads.filter(l => l.partner_id === user?.id);
 
   const filteredLeads = useMemo(() => {
     return myLeads.filter(lead => 
@@ -153,8 +156,14 @@ export function PartnerLeads() {
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
           onSubmit={async (data) => {
-            await addLead(data);
-            setIsFormOpen(false);
+            try {
+              await partnerService.submitLead(data);
+              setIsFormOpen(false);
+              alert('Lead submitted successfully.');
+              // We could force a reload here if needed, but RLS and Realtime generally handle it
+            } catch (error: any) {
+              alert(error.message || 'Failed to submit lead.');
+            }
           }}
         />
       )}

@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, GraduationCap, 
-  Wallet, BookOpen, LogOut, Landmark, FileText, Bell, BarChart2, Bot
+  Wallet, BookOpen, LogOut, Landmark, FileText, Bell, BarChart2, Bot, ArrowLeft
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -26,7 +26,7 @@ export function UniversitySidebar({
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }) {
-  const { logout } = useAuth();
+  const { logout, hasRole } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -116,7 +116,16 @@ export function UniversitySidebar({
                 </ul>
               </li>
               
-              <li className="mt-auto -mx-2">
+              <li className="mt-auto -mx-2 flex flex-col gap-2">
+                {hasRole(['Super Admin', 'Admin']) && (
+                  <Link
+                    to="/"
+                    className="w-full flex items-center gap-x-3 rounded-lg p-2.5 text-sm leading-6 font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors group"
+                  >
+                    <ArrowLeft className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:-translate-x-1" />
+                    Back to CRM
+                  </Link>
+                )}
                  <button
                     onClick={() => {
                       logout();

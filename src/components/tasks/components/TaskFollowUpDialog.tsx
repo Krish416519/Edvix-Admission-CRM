@@ -40,7 +40,7 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
   const statuses: LeadStatus[] = ['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost'];
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex flex-col justify-end md:justify-center p-0 md:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex flex-col items-center justify-end md:justify-center p-0 md:p-4 animate-in fade-in duration-200">
       <div className="bg-card md:border md:border-border shadow-2xl md:rounded-xl rounded-t-3xl w-full max-w-lg max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-8 md:slide-in-from-bottom-0 md:zoom-in-95 duration-300 ease-out">
         <div className="p-5 border-b border-border flex items-center justify-between bg-primary/5">
           <div className="flex items-center gap-3">

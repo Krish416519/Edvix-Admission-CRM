@@ -20,6 +20,38 @@ export const dispositionService = {
     return data || [];
   },
 
+  async createCategory(name: string, orderIndex: number = 0): Promise<DispositionCategory> {
+    const { data, error } = await supabase
+      .from('disposition_categories')
+      .insert({ name, order_index: orderIndex, is_active: true })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateCategory(id: string, updates: Partial<DispositionCategory>): Promise<DispositionCategory> {
+    const { data, error } = await supabase
+      .from('disposition_categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('disposition_categories')
+      .update({ is_active: false })
+      .eq('id', id);
+      
+    if (error) throw error;
+  },
+
   async getDispositions(categoryId?: string): Promise<Disposition[]> {
     let query = supabase
       .from('dispositions')
@@ -34,6 +66,46 @@ export const dispositionService = {
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
+  },
+
+  async createDisposition(categoryId: string, name: string, payload: Partial<Disposition> = {}): Promise<Disposition> {
+    const { data, error } = await supabase
+      .from('dispositions')
+      .insert({ 
+        category_id: categoryId, 
+        name, 
+        is_active: true, 
+        requires_follow_up: payload.requires_follow_up || false, 
+        requires_note: payload.requires_note || false,
+        target_status: payload.target_status || null,
+        order_index: payload.order_index || 0
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateDisposition(id: string, updates: Partial<Disposition>): Promise<Disposition> {
+    const { data, error } = await supabase
+      .from('dispositions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteDisposition(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('dispositions')
+      .update({ is_active: false })
+      .eq('id', id);
+      
+    if (error) throw error;
   },
 
   async getSubDispositions(dispositionId: string): Promise<SubDisposition[]> {

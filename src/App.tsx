@@ -6,12 +6,14 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TelephonyProvider } from './contexts/TelephonyContext';
 import { AIProvider } from './contexts/AIContext';
+import { BIProvider } from './contexts/BIContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PageLoader } from './components/layout/PageLoader';
 import { Construction } from 'lucide-react';
 
 // Core layout components (loaded eagerly)
 import { CounselorDashboard } from './components/ai/CounselorDashboard';
+import { ManagerDashboard } from './components/ai/ManagerDashboard';
 import { FounderDashboard } from './components/ai/FounderDashboard';
 import { Layout } from './components/layout/Layout';
 import { Login } from './components/auth/Login';
@@ -31,6 +33,7 @@ const ApiPortal = React.lazy(() => import('./components/api-docs/ApiPortal').the
 const Dashboard = React.lazy(() => import('./components/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
 const LeadsList = React.lazy(() => import('./components/leads/LeadsList').then(m => ({ default: m.LeadsList })));
 const LeadDetails = React.lazy(() => import('./components/leads/LeadDetails').then(m => ({ default: m.LeadDetails })));
+const ApplicationPage = React.lazy(() => import('./pages/ApplicationPage').then(m => ({ default: m.ApplicationPage })));
 const AdmissionsList = React.lazy(() => import('./components/admissions/AdmissionsList').then(m => ({ default: m.AdmissionsList })));
 const AdmissionDetails = React.lazy(() => import('./components/admissions/AdmissionDetails').then(m => ({ default: m.AdmissionDetails })));
 const TasksList = React.lazy(() => import('./components/tasks/TasksList').then(m => ({ default: m.TasksList })));
@@ -59,6 +62,14 @@ const TenantBillingDashboard = React.lazy(() => import('./components/billing/Ten
 const DeveloperSettings = React.lazy(() => import('./components/admin/DeveloperSettings').then(m => ({ default: m.DeveloperSettings })));
 const DispositionManagement = React.lazy(() => import('./components/admin/dispositions/DispositionManagement').then(m => ({ default: m.DispositionManagement })));
 
+// BI Command Center
+const BILayout = React.lazy(() => import('./components/bi/BILayout').then(m => ({ default: m.BILayout })));
+const ExecutiveDashboard = React.lazy(() => import('./components/bi/ExecutiveDashboard').then(m => ({ default: m.ExecutiveDashboard })));
+const FunnelAnalytics = React.lazy(() => import('./components/bi/FunnelAnalytics').then(m => ({ default: m.FunnelAnalytics })));
+const RevenueAnalytics = React.lazy(() => import('./components/bi/RevenueAnalytics').then(m => ({ default: m.RevenueAnalytics })));
+const PerformanceAnalytics = React.lazy(() => import('./components/bi/PerformanceAnalytics').then(m => ({ default: m.PerformanceAnalytics })));
+const ReportBuilder = React.lazy(() => import('./components/bi/ReportBuilder').then(m => ({ default: m.ReportBuilder })));
+
 // Partner Portal
 const PartnerLayout = React.lazy(() => import('./components/partner/PartnerLayout').then(m => ({ default: m.PartnerLayout })));
 const PartnerDashboard = React.lazy(() => import('./components/partner/PartnerDashboard').then(m => ({ default: m.PartnerDashboard })));
@@ -70,6 +81,10 @@ const PartnerDocuments = React.lazy(() => import('./components/partner/PartnerDo
 const PartnerPayments = React.lazy(() => import('./components/partner/PartnerPayments').then(m => ({ default: m.PartnerPayments })));
 const PartnerNotifications = React.lazy(() => import('./components/partner/PartnerNotifications').then(m => ({ default: m.PartnerNotifications })));
 const PartnerAi = React.lazy(() => import('./components/partner/PartnerAi').then(m => ({ default: m.PartnerAi })));
+const PartnerCatalog = React.lazy(() => import('./components/partner/PartnerCatalog').then(m => ({ default: m.PartnerCatalog })));
+const PartnerStudents = React.lazy(() => import('./components/partner/PartnerStudents').then(m => ({ default: m.PartnerStudents })));
+const PartnerProfile = React.lazy(() => import('./components/partner/PartnerProfile').then(m => ({ default: m.PartnerProfile })));
+const PartnerSupport = React.lazy(() => import('./components/partner/PartnerSupport').then(m => ({ default: m.PartnerSupport })));
 
 // University Portal
 const UniversityLayout = React.lazy(() => import('./components/university/UniversityLayout').then(m => ({ default: m.UniversityLayout })));
@@ -82,6 +97,16 @@ const UniversityDocuments = React.lazy(() => import('./components/university/Uni
 const UniversityNotifications = React.lazy(() => import('./components/university/UniversityNotifications').then(m => ({ default: m.UniversityNotifications })));
 const UniversityReports = React.lazy(() => import('./components/university/UniversityReports').then(m => ({ default: m.UniversityReports })));
 const UniversityAi = React.lazy(() => import('./components/university/UniversityAi').then(m => ({ default: m.UniversityAi })));
+
+// University Operations Hub
+const UniversityOpsLayout = React.lazy(() => import('./components/universityOps/UniversityOpsLayout').then(m => ({ default: m.UniversityOpsLayout })));
+const UniversityOpsDashboard = React.lazy(() => import('./components/universityOps/UniversityOpsDashboard').then(m => ({ default: m.UniversityOpsDashboard })));
+const SubmissionQueue = React.lazy(() => import('./components/universityOps/SubmissionQueue').then(m => ({ default: m.SubmissionQueue })));
+const UniversityResponseInbox = React.lazy(() => import('./components/universityOps/UniversityResponseInbox').then(m => ({ default: m.UniversityResponseInbox })));
+const UniversityContactDirectory = React.lazy(() => import('./components/universityOps/UniversityContactDirectory').then(m => ({ default: m.UniversityContactDirectory })));
+const SLATracker = React.lazy(() => import('./components/universityOps/SLATracker').then(m => ({ default: m.SLATracker })));
+const UniversityOpsAnalytics = React.lazy(() => import('./components/universityOps/UniversityOpsAnalytics').then(m => ({ default: m.UniversityOpsAnalytics })));
+const IntegrationConfig = React.lazy(() => import('./components/universityOps/IntegrationConfig').then(m => ({ default: m.IntegrationConfig })));
 
 // Marketing Hub
 const MarketingLayout = React.lazy(() => import('./components/marketing/MarketingLayout').then(m => ({ default: m.MarketingLayout })));
@@ -96,6 +121,15 @@ const BackendStatus = React.lazy(() => import('./components/admin/BackendStatus'
 // Admission OS
 const LivePipeline = React.lazy(() => import('./components/admissionOS/LivePipeline').then(m => ({ default: m.LivePipeline })));
 const ExecutiveCommandCenter = React.lazy(() => import('./components/admissionOS/ExecutiveCommandCenter').then(m => ({ default: m.ExecutiveCommandCenter })));
+
+// Student Success Hub
+const StudentSuccessLayout = React.lazy(() => import('./components/studentSuccess/StudentSuccessLayout').then(m => ({ default: m.StudentSuccessLayout })));
+const StudentSuccessDashboard = React.lazy(() => import('./components/studentSuccess/StudentSuccessDashboard').then(m => ({ default: m.StudentSuccessDashboard })));
+const EnrollmentList = React.lazy(() => import('./components/studentSuccess/EnrollmentList').then(m => ({ default: m.EnrollmentList })));
+const EnrollmentWorkspace = React.lazy(() => import('./components/studentSuccess/EnrollmentWorkspace').then(m => ({ default: m.EnrollmentWorkspace })));
+const SupportDesk = React.lazy(() => import('./components/studentSuccess/SupportDesk').then(m => ({ default: m.SupportDesk })));
+const AtRiskStudents = React.lazy(() => import('./components/studentSuccess/AtRiskStudents').then(m => ({ default: m.AtRiskStudents })));
+const MilestonesView = React.lazy(() => import('./components/studentSuccess/MilestonesView').then(m => ({ default: m.MilestonesView })));
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -119,6 +153,7 @@ export default function App() {
           <TelephonyProvider>
             <BrowserRouter>
             <AIProvider>
+              <BIProvider>
               <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public Routes */}
@@ -134,7 +169,7 @@ export default function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="leads" element={<LeadsList />} />
                     <Route path="leads/:id" element={<LeadDetails />} />
-                    <Route path="applications" element={<PlaceholderPage title="Applications" />} />
+                    <Route path="applications/:id" element={<ApplicationPage />} />
                     <Route path="/admissions" element={<AdmissionsList />} />
                     <Route path="/ai-dashboard" element={<CounselorDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
@@ -158,6 +193,7 @@ export default function App() {
                       {/* Admin Console Routes */}
                       <Route path="admin" element={<AdminLayout />}>
                         <Route index element={<SuperAdminDashboard />} />
+                        <Route path="team-intelligence" element={<ManagerDashboard />} />
                         <Route path="users" element={<UserManagement />} />
                         <Route path="roles" element={<RoleManagement />} />
                         <Route path="settings" element={<SystemSettings />} />
@@ -173,6 +209,15 @@ export default function App() {
                         <Route path="developer" element={<DeveloperSettings />} />
                         <Route path="automation" element={<AutomationBuilder />} />
                         <Route path="webhooks" element={<WebhookDashboard />} />
+                      </Route>
+                      
+                      {/* BI Command Center Routes */}
+                      <Route path="bi" element={<BILayout />}>
+                        <Route index element={<ExecutiveDashboard />} />
+                        <Route path="funnel" element={<FunnelAnalytics />} />
+                        <Route path="revenue" element={<RevenueAnalytics />} />
+                        <Route path="performance" element={<PerformanceAnalytics />} />
+                        <Route path="reports" element={<ReportBuilder />} />
                       </Route>
                     </Route>
                     
@@ -195,12 +240,16 @@ export default function App() {
                     <Route index element={<PartnerDashboard />} />
                     <Route path="leads" element={<PartnerLeads />} />
                     <Route path="admissions" element={<PartnerAdmissions />} />
+                    <Route path="students" element={<PartnerStudents />} />
                     <Route path="commissions" element={<PartnerCommissions />} />
                     <Route path="reports" element={<PartnerReports />} />
                     <Route path="documents" element={<PartnerDocuments />} />
                     <Route path="payments" element={<PartnerPayments />} />
                     <Route path="notifications" element={<PartnerNotifications />} />
                     <Route path="ai" element={<PartnerAi />} />
+                    <Route path="catalog" element={<PartnerCatalog />} />
+                    <Route path="kyc" element={<PartnerProfile />} />
+                    <Route path="support" element={<PartnerSupport />} />
                   </Route>
                 </Route>
 
@@ -219,6 +268,19 @@ export default function App() {
                   </Route>
                 </Route>
 
+                {/* University Operations Hub Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin', 'University Operations Manager' as any, 'University Operations Executive' as any, 'Manager' as any, 'Team Leader' as any, 'Counselor']} />}>
+                  <Route path="/university-ops" element={<UniversityOpsLayout />}>
+                    <Route index element={<UniversityOpsDashboard />} />
+                    <Route path="queue" element={<SubmissionQueue />} />
+                    <Route path="responses" element={<UniversityResponseInbox />} />
+                    <Route path="contacts" element={<UniversityContactDirectory />} />
+                    <Route path="sla" element={<SLATracker />} />
+                    <Route path="analytics" element={<UniversityOpsAnalytics />} />
+                    <Route path="integrations" element={<IntegrationConfig />} />
+                  </Route>
+                </Route>
+
                 {/* Marketing Hub Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['Marketing', 'Admin', 'Super Admin']} />}>
                   <Route path="/marketing" element={<MarketingLayout />}>
@@ -232,9 +294,22 @@ export default function App() {
                   </Route>
                 </Route>
 
+                {/* Student Success Hub Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin', 'Student Success Executive' as any, 'Manager' as any, 'Team Leader' as any, 'Counselor']} />}>
+                  <Route path="/student-success" element={<StudentSuccessLayout />}>
+                    <Route index element={<StudentSuccessDashboard />} />
+                    <Route path="enrollments" element={<EnrollmentList />} />
+                    <Route path="enrollments/:id" element={<EnrollmentWorkspace />} />
+                    <Route path="support" element={<SupportDesk />} />
+                    <Route path="at-risk" element={<AtRiskStudents />} />
+                    <Route path="milestones" element={<MilestonesView />} />
+                  </Route>
+                </Route>
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </Suspense>
+              </Suspense>
+              </BIProvider>
             </AIProvider>
             <CommandPalette />
           </BrowserRouter>

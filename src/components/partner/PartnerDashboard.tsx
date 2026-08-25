@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, GraduationCap, IndianRupee, PieChart, 
-  ArrowUpRight, ArrowDownRight, Activity, Clock
+  ArrowUpRight, ArrowDownRight, Activity, Clock 
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLeads } from '../../hooks/useLeads';
 import { useAdmissions } from '../../hooks/useAdmissions';
 import { useFinance } from '../../hooks/useFinance';
@@ -22,13 +24,16 @@ const mockChartData = [
 ];
 
 export function PartnerDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { leads, isLoading: leadsLoading } = useLeads();
   const { admissions, isLoading: admissionsLoading } = useAdmissions();
   const { partnerCommissions, isLoading: financeLoading } = useFinance();
 
-  // Leads and admissions are automatically filtered by RLS policies
-  const myLeads = leads;
-  const myAdmissions = admissions;
+  // Leads and admissions are automatically filtered by RLS policies 
+  // (We add client-side filtering so Super Admins testing the view only see their own partner data)
+  const myLeads = leads.filter(l => l.partner_id === user?.id);
+  const myAdmissions = admissions.filter(a => a.lead_id && myLeads.find(l => l.id === a.lead_id));
 
   const isLoading = leadsLoading || admissionsLoading || financeLoading;
 
@@ -75,7 +80,10 @@ export function PartnerDashboard() {
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Partner Overview</h1>
           <p className="text-muted-foreground mt-1">Welcome back. Here is what's happening with your leads.</p>
         </div>
-        <button className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+        <button 
+          onClick={() => navigate('/partner/leads')}
+          className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg shadow-sm shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2"
+        >
           <Users className="w-4 h-4" />
           Submit New Lead
         </button>

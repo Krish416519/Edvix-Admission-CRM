@@ -10,15 +10,17 @@ export type TriggerType =
   | 'Manual Trigger' | 'Scheduled Trigger';
 
 export type ConditionField = 'Lead Status' | 'University' | 'Course' | 'State' | 'Lead Source' | 'Lead Score' | 'Counselor' | 'Admission Stage' | 'Payment Status' | 'Document Status' | 'Date' | 'Time';
-export type ConditionOperator = 'equals' | 'not equals' | 'contains' | 'greater than' | 'less than' | 'is empty' | 'is not empty';
+export type ConditionOperator = 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'exists' | 'not_exists' | 'changed';
 export type LogicType = 'AND' | 'OR';
 
-export interface WorkflowCondition {
+export interface ConditionNode {
   id: string;
-  field: ConditionField;
-  operator: ConditionOperator;
-  value: string;
-  logic: LogicType; // Appended logic for the next condition
+  type: 'condition' | 'group';
+  logic?: LogicType;
+  conditions?: ConditionNode[];
+  field?: string;
+  operator?: ConditionOperator;
+  value?: string;
 }
 
 export type ActionType = 
@@ -36,20 +38,35 @@ export interface WorkflowAction {
 export interface Workflow extends BaseEntity {
   name: string;
   description: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'draft' | 'paused';
   trigger: TriggerType;
   triggerMetadata?: Record<string, any>;
-  conditions: WorkflowCondition[];
+  conditions_tree: ConditionNode;
   actions: WorkflowAction[];
   isPrebuilt?: boolean;
+  version?: number;
+  is_test_mode?: boolean;
+  max_execution_depth?: number;
+}
+
+export interface WorkflowRun extends BaseEntity {
+  workflow_id: string;
+  trigger_event: string;
+  status: 'Pending' | 'In Progress' | 'Completed' | 'Failed' | 'Delayed';
+  resume_at?: string;
+  current_step?: number;
+  execution_depth?: number;
+  error_message?: string;
 }
 
 export interface WorkflowExecutionLog extends BaseEntity {
-  workflowId: string;
-  workflowName: string;
-  triggerEvent: string;
+  workflow_id: string;
+  run_id?: string;
+  workflowName?: string;
+  triggerEvent?: string;
   status: 'Success' | 'Failed' | 'In Progress';
   errorMessage?: string;
   affectedLeadId?: string;
-  executionTimeMs: number;
+  executionTimeMs?: number;
+  step_details?: any[];
 }

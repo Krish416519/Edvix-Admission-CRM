@@ -122,6 +122,13 @@ export interface Lead extends BaseEntity {
   aiInsights?: string;
   aiSuggestedNextAction?: string;
   aiSummary?: string;
+  
+  // AI Sales Coach & Intelligence Fields
+  aiPriorityScore?: number;
+  aiPriorityReason?: string;
+  aiDropOffRisk?: string;
+  aiObjectionDetected?: string;
+  aiCoachNotes?: string;
 
   // AI Agent Fields (Phase 1)
   conversionProbability?: number;
@@ -601,3 +608,68 @@ export * from './integration';
 export * from './marketing';
 export * from './disposition';
 export * from './admin';
+
+// ----------------- AI Sales Coach & Intelligence ----------------- //
+
+export interface CounselorPerformance extends BaseEntity {
+  counselorId: string;
+  date: string;
+  score: number;
+  contactRatePercent: number;
+  conversionRatePercent: number;
+  avgResponseTimeMins: number;
+  aiStrengths?: string;
+  aiImprovements?: string;
+  aiRecommendation?: string;
+}
+
+export interface AiObjectionLibrary extends BaseEntity {
+  category: string;
+  objectionText: string;
+  suggestedResponse: string;
+  successRatePercent: number;
+}
+
+export interface AiFeedback extends BaseEntity {
+  counselorId?: string;
+  leadId?: string;
+  recommendationType: string;
+  recommendationText: string;
+  isHelpful: boolean;
+  feedbackNotes?: string;
+}
+
+export interface AiManagerAlert extends BaseEntity {
+  title: string;
+  description: string;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical' | string;
+  counselorId?: string;
+  leadId?: string;
+  isResolved: boolean;
+}
+
+// ----------------- BI Command Center ----------------- //
+
+export interface BiSavedReport extends BaseEntity {
+  name: string;
+  description?: string;
+  config: any;
+}
+
+export interface BiScheduledReport extends BaseEntity {
+  reportId: string;
+  frequency: string;
+  recipientEmails?: string[];
+  recipientRoles?: string[];
+  lastRunAt?: string;
+  nextRunAt?: string;
+  isActive: boolean;
+}
+
+export interface BiDashboardLayout extends BaseEntity {
+  userId: string;
+  role?: string;
+  layoutConfig: any;
+}
+
+

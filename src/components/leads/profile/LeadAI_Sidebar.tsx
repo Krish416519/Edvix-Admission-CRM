@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lead } from '../../../types/schema';
-import { Sparkles, MessageSquare, ShieldAlert, Phone, Mail, FileText } from 'lucide-react';
+import { Sparkles, MessageSquare, ShieldAlert, Phone, Mail, FileText, Zap, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useAI } from '../../../contexts/AIContext';
 
 export function LeadAI_Sidebar({ lead }: { lead: Lead }) {
@@ -17,6 +17,67 @@ export function LeadAI_Sidebar({ lead }: { lead: Lead }) {
   return (
     <div className="w-full xl:w-80 shrink-0 flex flex-col gap-4 h-full xl:sticky xl:top-20 xl:overflow-y-auto pb-6 scrollbar-hide">
       
+      {/* Next Best Action Panel */}
+      <div className="bg-gradient-to-b from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-card border border-emerald-200 dark:border-emerald-500/20 rounded-xl shadow-sm flex flex-col overflow-hidden">
+        <div className="p-4 border-b border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground text-sm">Next Best Action</h3>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          <p className="text-sm text-foreground font-medium">
+            {lead.aiSuggestedNextAction || lead.aiSuggestedNextAction || "No immediate action required."}
+          </p>
+          <div className="text-xs text-muted-foreground italic mb-2">
+            Reason: {lead.aiPriorityReason || lead.aiPriorityReason || "Routine follow up"}
+          </div>
+          
+          <div className="flex gap-2 justify-end pt-2 border-t border-emerald-100 dark:border-emerald-500/20">
+            <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-emerald-600 transition-colors">
+              <ThumbsUp className="w-3 h-3" /> Helpful
+            </button>
+            <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-red-600 transition-colors">
+              <ThumbsDown className="w-3 h-3" /> Not
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Objection Intelligence */}
+      {(lead.aiObjectionDetected || lead.aiObjectionDetected) && (
+        <div className="bg-gradient-to-b from-amber-50/50 to-white dark:from-amber-950/20 dark:to-card border border-amber-200 dark:border-amber-500/20 rounded-xl shadow-sm flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-amber-100 dark:border-amber-500/20 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Objection Intelligence</h3>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 space-y-2">
+            <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+              {lead.aiObjectionDetected || lead.aiObjectionDetected} Objection Detected
+            </p>
+            <p className="text-sm text-foreground">
+              Consider discussing flexible payment options, EMI plans, and potential scholarships to alleviate concerns.
+            </p>
+            <button 
+              onClick={() => openAssistant(`Draft a response addressing a ${lead.aiObjectionDetected} objection for this lead.`)}
+              className="mt-2 w-full text-xs font-medium bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 py-2 rounded-lg hover:bg-amber-200 transition-colors"
+            >
+              Draft Rebuttal
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* AI Toolkit Panel */}
       <div className="bg-gradient-to-b from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-card border border-indigo-100 dark:border-indigo-500/20 rounded-xl shadow-sm flex flex-col overflow-hidden">
         <div className="p-4 border-b border-indigo-100 dark:border-indigo-500/20 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm">
