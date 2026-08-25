@@ -4,6 +4,7 @@ import { useAdmissions } from '../../../../hooks/useAdmissions';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Admission } from '../../../../types/admission';
+import { AdmissionGating } from '../../../../lib/counseling/AdmissionGating';
 import { toast } from 'sonner';
 
 export function AdmissionTab({ lead }: { lead: Lead }) {
@@ -13,6 +14,13 @@ export function AdmissionTab({ lead }: { lead: Lead }) {
   const admission = admissions.find(a => a.leadId === lead.id);
 
   const initiateAdmission = async () => {
+    // Phase 2 Gating Check
+    const gatingResult = await AdmissionGating.checkEligibility(lead.id);
+    if (!gatingResult.allowed) {
+       toast.error(`Admission Blocked: ${gatingResult.reason}`);
+       return;
+    }
+    
     const res = await addAdmission({
       leadId: lead.id,
       studentName: lead.name,

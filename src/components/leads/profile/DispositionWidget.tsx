@@ -30,6 +30,8 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
   const [followUpDate, setFollowUpDate] = useState<string>('');
   const [followUpTime, setFollowUpTime] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [lostReason, setLostReason] = useState<string>('');
+  const [competitor, setCompetitor] = useState<string>('');
 
   const activeDisposition = dispositions.find(d => d.id === selectedDisposition);
 
@@ -104,6 +106,11 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
       return;
     }
 
+    if (activeDisposition?.target_status === 'Lost' && (!lostReason || lostReason.trim() === '')) {
+      toast.error('Lost Reason is required when marking a lead as Lost');
+      return;
+    }
+
     setIsSaving(true);
     try {
       let followUpAt = undefined;
@@ -118,7 +125,9 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
         nextActionId: selectedNextAction || undefined,
         notes: notes || undefined,
         followUpAt,
-        userId: user.id
+        userId: user.id,
+        lostReason: activeDisposition?.target_status === 'Lost' ? lostReason : undefined,
+        competitor: activeDisposition?.target_status === 'Lost' ? competitor : undefined
       });
 
       toast.success('Disposition saved successfully');
@@ -249,6 +258,39 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
                 required={activeDisposition.requires_note}
               />
             </div>
+
+            {activeDisposition.target_status === 'Lost' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Lost Reason <span className="text-destructive">*</span></label>
+                  <select
+                    className="w-full bg-background border border-input rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    value={lostReason}
+                    onChange={(e) => setLostReason(e.target.value)}
+                    required
+                  >
+                    <option value="">Select Reason</option>
+                    <option value="Budget Issue">Budget Issue</option>
+                    <option value="Eligibility Issue">Eligibility Issue</option>
+                    <option value="Chose Offline Program">Chose Offline Program</option>
+                    <option value="Competitor Selected">Competitor Selected</option>
+                    <option value="Duplicate Lead">Duplicate Lead</option>
+                    <option value="Not Interested">Not Interested</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">Competitor (if applicable)</label>
+                  <input
+                    type="text"
+                    className="w-full bg-background border border-input rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    placeholder="E.g., University X"
+                    value={competitor}
+                    onChange={(e) => setCompetitor(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

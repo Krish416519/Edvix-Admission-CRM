@@ -30,7 +30,7 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
 
   return (
     <>
-    <header className="sticky top-0 z-30 flex h-14 md:h-16 shrink-0 items-center gap-x-2 md:gap-x-4 border-b border-border bg-card/80 backdrop-blur-md px-3 md:px-6">
+    <header className="sticky top-0 z-30 flex h-14 md:h-16 md:mx-4 md:mt-4 md:rounded-2xl shrink-0 items-center gap-x-2 md:gap-x-4 border-b md:border border-border/40 bg-[var(--color-glass)] backdrop-blur-[40px] px-3 md:px-6 shadow-sm transition-all">
       {/* Mobile Logo & Hamburger (Kept for desktop compatibility, but hidden on mobile since we have bottom nav) */}
       <button
         type="button"

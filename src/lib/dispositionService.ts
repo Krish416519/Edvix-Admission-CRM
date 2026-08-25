@@ -140,8 +140,10 @@ export const dispositionService = {
     notes?: string;
     followUpAt?: string;
     userId: string;
+    lostReason?: string;
+    competitor?: string;
   }): Promise<void> {
-    const { leadId, dispositionId, subDispositionId, nextActionId, notes, followUpAt, userId } = payload;
+    const { leadId, dispositionId, subDispositionId, nextActionId, notes, followUpAt, userId, lostReason, competitor } = payload;
 
     // 1. Fetch current lead state and configuration
     const [leadRes, dispRes, subDispRes, nextActionRes] = await Promise.all([
@@ -172,7 +174,9 @@ export const dispositionService = {
       latest_disposition_id: dispositionId,
       latest_sub_disposition_id: subDispositionId || null,
       next_action_date: followUpAt || null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      ...(lostReason ? { lost_reason: lostReason } : {}),
+      ...(competitor ? { competitor: competitor } : {})
     };
 
     if (disp.target_status) {

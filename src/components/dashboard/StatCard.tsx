@@ -12,7 +12,8 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon: Icon, trend, trendValue, subtitle }: StatCardProps) {
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-5 shadow-xl hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <div className="p-2 bg-primary/10 text-primary rounded-xl">

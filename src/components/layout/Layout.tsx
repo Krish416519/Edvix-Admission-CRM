@@ -9,9 +9,16 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-muted/30 overflow-hidden">
-      {/* Desktop/Tablet Sidebar */}
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+    <div className="flex h-screen bg-background text-foreground overflow-hidden relative">
+      {/* Background Mesh Gradient */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[40%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/10 blur-[120px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-blue-500/10 blur-[100px] mix-blend-multiply dark:mix-blend-screen animate-pulse" style={{ animationDuration: '10s' }} />
+      </div>
+
+      <div className="relative z-10 flex w-full h-full">
+        {/* Desktop/Tablet Sidebar */}
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <div className="flex flex-1 flex-col overflow-hidden relative">
         <TopNav setSidebarOpen={setSidebarOpen} />
@@ -26,6 +33,7 @@ export function Layout() {
       
       <MobileBottomNav />
       <AIAssistant />
+      </div>
     </div>
   );
 }

@@ -385,6 +385,20 @@ export function LeadsList() {
     return { label: 'Cold', color: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' };
   };
 
+  const getSLAStatus = (lead: Lead) => {
+    if (lead.status === 'Lost' || lead.status === 'Admission Done') return null;
+    
+    // @ts-ignore
+    const lastTouch = new Date(lead.lastContactedAt || lead.createdAt || Date.now());
+    const hoursSinceTouch = (Date.now() - lastTouch.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceTouch >= 24) return { label: '24h+ Escalation', color: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400', icon: AlertCircle };
+    if (hoursSinceTouch >= 4) return { label: '4h+ Escalation', color: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400', icon: Clock };
+    if (hoursSinceTouch >= 2) return { label: '2h+ Warning', color: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400', icon: Clock };
+    
+    return null;
+  };
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(new Set(paginatedLeads.map(l => l.id)));
@@ -957,8 +971,16 @@ export function LeadsList() {
                         />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{lead.name}</span>
+                        <div className="flex flex-col gap-0.5 items-start">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{lead.name}</span>
+                            {getSLAStatus(lead) && (
+                              <span className={cn("px-1.5 py-0.5 rounded border text-[9px] font-semibold flex items-center gap-1", getSLAStatus(lead)?.color)}>
+                                {React.createElement(getSLAStatus(lead)!.icon, { className: "w-2.5 h-2.5" })}
+                                {getSLAStatus(lead)?.label}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs text-muted-foreground">{lead.email}</span>
                           <span className="text-xs text-muted-foreground">{lead.leadNumber} • {lead.phone}</span>
                         </div>

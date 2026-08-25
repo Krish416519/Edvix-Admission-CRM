@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { useNavigate } from 'react-router-dom';
 import { Lead, LeadStatus } from '../../types/lead';
 import { cn } from '../../lib/utils';
-import { Phone, Mail, MapPin, Star, MoreHorizontal } from 'lucide-react';
+import { Phone, Mail, MapPin, Star, MoreHorizontal, Clock, AlertTriangle } from 'lucide-react';
 
 const STAGES: LeadStatus[] = [
   'New', 'Attempted', 'Connected', 'Interested', 'Qualified', 
@@ -68,6 +68,20 @@ export function LeadsKanban({ searchTerm, leads, updateLead }: LeadsKanbanProps)
       case 'Lost': return 'border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-800';
       default: return 'border-border bg-muted/20';
     }
+  };
+
+  const getSLAStatus = (lead: Lead) => {
+    if (lead.status === 'Lost' || lead.status === 'Admission Done') return null;
+    
+    // @ts-ignore - Assuming lastContactedAt or createdAt exists
+    const lastTouch = new Date(lead.lastContactedAt || lead.createdAt || Date.now());
+    const hoursSinceTouch = (Date.now() - lastTouch.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceTouch >= 24) return { label: '24h+ Manager Escalation', color: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400', icon: AlertTriangle };
+    if (hoursSinceTouch >= 4) return { label: '4h+ Escalation', color: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400', icon: Clock };
+    if (hoursSinceTouch >= 2) return { label: '2h+ Warning', color: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400', icon: Clock };
+    
+    return null;
   };
 
   return (
@@ -143,6 +157,12 @@ export function LeadsKanban({ searchTerm, leads, updateLead }: LeadsKanbanProps)
                                   </span>
                                 </div>
                               </div>
+                              {getSLAStatus(lead) && (
+                                <div className={cn("mt-2 px-2 py-1 rounded border text-[10px] font-medium flex items-center gap-1", getSLAStatus(lead)?.color)}>
+                                  {React.createElement(getSLAStatus(lead)!.icon, { className: "w-3 h-3" })}
+                                  {getSLAStatus(lead)?.label}
+                                </div>
+                              )}
                             </div>
                           )}
                         </Draggable>

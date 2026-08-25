@@ -1,12 +1,20 @@
 import { LLMClient } from './LLMClient';
 import { supabase } from '../supabase';
-import { Lead, University } from '../../types/schema';
+import { Lead, University, Course, ProgramEligibilityRule, ProgramFee } from '../../types/schema';
+import { EligibilityEngine, EligibilityStatus, EligibilityEvaluation } from '../counseling/EligibilityEngine';
+import { FeeCalculator, FeeCalculationResult } from '../counseling/FeeCalculator';
+import { ProfileReadiness } from '../counseling/ProfileReadiness';
 
 export interface AIRecommendationResult {
   topUniversities: Array<{
     code: string;
     name: string;
+    courseName: string;
+    courseId: string;
     compatibilityScore: number;
+    eligibilityStatus: EligibilityStatus;
+    eligibilityExplanation: string;
+    matchScore: number;
     reason: string;
     pros: string[];
     cons: string[];
@@ -15,6 +23,8 @@ export interface AIRecommendationResult {
       semester: number;
       registration: number;
     };
+    estimatedPayable: number;
+    isFeeFinal: boolean;
     scholarshipOpportunities: string[];
     emiEstimate: number;
     admissionTimeline: string;
@@ -40,6 +50,9 @@ export interface AIRecommendationResult {
 }
 
 export class RecommendationEngine {
+  /**
+   * Deterministic matching combined with LLM qualitative insights.
+   */
   static async generate(leadId: string): Promise<AIRecommendationResult | null> {
     try {
       // 1. Fetch Lead
@@ -51,73 +64,133 @@ export class RecommendationEngine {
         
       if (!lead) throw new Error('Lead not found');
 
-      // 2. Fetch Universities
-      const { data: universities } = await supabase
+      // 2. Fetch Universities and Courses with Rules and Fees
+      const { data: universitiesData } = await supabase
         .from('universities')
-        .select('*')
+        .select('*, courses(*, program_eligibility_rules(*), program_fees(*))')
         .eq('status', 'Active');
         
-      if (!universities || universities.length === 0) throw new Error('No universities found');
+      if (!universitiesData || universitiesData.length === 0) throw new Error('No universities found');
 
-      // 3. Prepare Payload
+      // 3. Deterministic Evaluation
+      const evaluatedMatches = [];
+      const userBudget = parseInt(lead.budget?.replace(/[^0-9]/g, '') || '0', 10);
+
+      for (const uni of universitiesData) {
+        if (!uni.courses) continue;
+        
+        for (const course of uni.courses) {
+          // Pre-filter by interest if possible
+          if (lead.course && lead.course !== course.name && !lead.course.includes('Any')) {
+            // Very strict filter - in reality we might want fuzzy matching, but for now we skip exact mismatches if a course is specified
+            // Let's just do soft matching below instead.
+          }
+          
+          // Rule evaluation
+          let eligibility: EligibilityEvaluation = { overallStatus: 'LIKELY_ELIGIBLE', ruleResults: [], programId: course.id };
+          const rules = course.program_eligibility_rules;
+          if (rules && rules.length > 0) {
+             // Take the active rule
+             const activeRule = rules.find((r: any) => r.status === 'Active') || rules[0];
+             eligibility = EligibilityEngine.evaluate(lead, activeRule);
+          }
+          
+          // If definitively NOT_ELIGIBLE or INSUFFICIENT_DATA and it's a hard blocker, maybe score low.
+          // Let's calculate fee
+          const fees = course.program_fees || [];
+          const feeResult = FeeCalculator.calculate(fees);
+          
+          // Calculate Deterministic Match Score (0-100)
+          let matchScore = 0;
+          
+          // a. Program Match (30 pts)
+          // Simple heuristic: Does course name match preferred specialization or course?
+          const courseStr = (course.name || '').toLowerCase();
+          const targetStr = (lead.preferred_specialization || lead.course || '').toLowerCase();
+          if (targetStr && courseStr.includes(targetStr)) {
+            matchScore += 30; // Exact/Related
+          } else if (targetStr) {
+            matchScore += 10; // Alternative
+          } else {
+             matchScore += 15; // Unknown preference
+          }
+          
+          // b. Eligibility Confidence (25 pts)
+          if (eligibility.overallStatus === 'VERIFIED_ELIGIBLE') matchScore += 25;
+          else if (eligibility.overallStatus === 'LIKELY_ELIGIBLE') matchScore += 20;
+          else if (eligibility.overallStatus === 'CONDITIONAL') matchScore += 15;
+          else if (eligibility.overallStatus === 'MANUAL_REVIEW') matchScore += 10;
+          // NOT_ELIGIBLE = 0, INSUFFICIENT_DATA = 5
+          else if (eligibility.overallStatus === 'INSUFFICIENT_DATA') matchScore += 5;
+          
+          // c. Budget Match (20 pts)
+          if (feeResult.estimatedPayable > 0 && userBudget > 0) {
+             if (feeResult.estimatedPayable <= userBudget) matchScore += 20;
+             else if (feeResult.estimatedPayable <= userBudget * 1.1) matchScore += 10; // slightly above
+             else matchScore += 0; // Above
+          } else {
+             matchScore += 10; // Unknown fee/budget
+          }
+          
+          // d. Career Match & e. Preferences (25 pts total - simplified)
+          matchScore += 15; // Assuming baseline career alignment for now.
+          
+          evaluatedMatches.push({
+             uni,
+             course,
+             eligibility,
+             feeResult,
+             matchScore
+          });
+        }
+      }
+
+      // Sort by Match Score Descending
+      evaluatedMatches.sort((a, b) => b.matchScore - a.matchScore);
+      const topMatches = evaluatedMatches.slice(0, 5); // Take top 5
+
+      // 4. Prepare LLM Payload for qualitative insights (Talking points, Pros/Cons, Objection Handling)
       const leadProfile = {
         name: lead.first_name + ' ' + (lead.last_name || ''),
         age: lead.age,
         education: lead.education,
         graduationPercentage: lead.graduation_percentage,
-        twelfthPercentage: lead.twelfth_percentage,
-        tenthPercentage: lead.tenth_percentage,
-        currentOccupation: lead.current_occupation,
-        yearsOfExperience: lead.years_of_experience,
         budget: lead.budget,
-        preferredSpecialization: lead.preferred_specialization,
-        preferredLearningMode: lead.preferred_learning_mode,
         careerGoal: lead.career_goal,
-        needPlacementSupport: lead.need_placement_support,
-        needScholarship: lead.need_scholarship,
-        needEmi: lead.need_emi,
-        preferredIntake: lead.preferred_intake
       };
 
-      const uniProfiles = universities.map(u => ({
-        code: u.code,
-        name: u.name,
-        ugcApproval: u.ugc_approval,
-        naacGrade: u.naac_grade,
-        nirfRanking: u.nirf_ranking,
-        averageSalary: u.average_salary,
-        admissionProcess: u.admission_process,
-        eligibility: u.eligibility,
-        scholarships: u.scholarships,
-        placementSupport: u.placement_support
+      const topProfilesForLLM = topMatches.map(m => ({
+        code: m.uni.code,
+        universityName: m.uni.name,
+        courseName: m.course.name,
+        matchScore: m.matchScore,
+        eligibilityStatus: m.eligibility.overallStatus,
+        estimatedPayable: m.feeResult.estimatedPayable,
+        isFeeFinal: m.feeResult.isFinal
       }));
 
-      // 4. Construct Prompt
+      // 5. Construct Prompt for Soft Insights
       const prompt = `
-You are the Edvix Principal AI Counselor. You have a deep understanding of higher education, career paths, and financial planning.
-Your goal is to recommend the absolute best top 5 universities for this student based on their complete profile.
+You are the Edvix Principal AI Counselor.
+The deterministic Recommendation Engine has already evaluated the student and found the following Top 5 Matches.
 
 Student Profile:
 ${JSON.stringify(leadProfile, null, 2)}
 
-Available Universities:
-${JSON.stringify(uniProfiles, null, 2)}
+Top Matches (Deterministic Results):
+${JSON.stringify(topProfilesForLLM, null, 2)}
 
-Analyze the compatibility based on: budget, eligibility, career goal, work experience, placement preference, learning mode, and academic background.
+Your task is ONLY to generate the qualitative soft data: reasons, pros, cons, and counseling assistance talking points.
 
 Output ONLY a valid JSON object matching this schema exactly, with NO markdown formatting around it:
 {
   "topUniversities": [
     {
       "code": "string",
-      "name": "string",
-      "compatibilityScore": number (0-100),
-      "reason": "Detailed string explaining why",
+      "reason": "Detailed string explaining why it fits the student's career goal.",
       "pros": ["string"],
       "cons": ["string"],
-      "feeBreakdown": { "total": number, "semester": number, "registration": number },
       "scholarshipOpportunities": ["string"],
-      "emiEstimate": number,
       "admissionTimeline": "string",
       "requiredDocuments": ["string"],
       "expectedOutcome": "string"
@@ -146,11 +219,42 @@ Output ONLY a valid JSON object matching this schema exactly, with NO markdown f
       
       if (!responseText) throw new Error('Empty response from AI');
 
-      // 6. Parse and Return
-      const result = JSON.parse(responseText) as AIRecommendationResult;
+      // 6. Merge Deterministic Data with LLM Insights
+      const llmResult = JSON.parse(responseText);
       
-      // We will also save this to the DB in the UI component layer so we can attach generated_by
-      return result;
+      const mergedTopUniversities = topMatches.map(m => {
+         const llmData = llmResult.topUniversities?.find((x: any) => x.code === m.uni.code) || {};
+         return {
+            code: m.uni.code,
+            name: m.uni.name,
+            courseName: m.course.name,
+            courseId: m.course.id,
+            compatibilityScore: m.matchScore, // Legacy field mapping
+            matchScore: m.matchScore,
+            eligibilityStatus: m.eligibility.overallStatus,
+            eligibilityExplanation: m.eligibility.ruleResults.map(r => r.description).join(' | '),
+            feeBreakdown: { total: m.feeResult.estimatedPayable, semester: 0, registration: 0 },
+            estimatedPayable: m.feeResult.estimatedPayable,
+            isFeeFinal: m.feeResult.isFinal,
+            emiEstimate: FeeCalculator.calculateEmi(m.feeResult.estimatedPayable, 0, 12).emi,
+            // LLM augmented fields
+            reason: llmData.reason || 'Strong deterministic match.',
+            pros: llmData.pros || [],
+            cons: llmData.cons || [],
+            scholarshipOpportunities: llmData.scholarshipOpportunities || [],
+            admissionTimeline: llmData.admissionTimeline || 'Rolling',
+            requiredDocuments: llmData.requiredDocuments || [],
+            expectedOutcome: llmData.expectedOutcome || 'N/A'
+         };
+      });
+
+      const finalResult: AIRecommendationResult = {
+         topUniversities: mergedTopUniversities,
+         counselorAssistance: llmResult.counselorAssistance,
+         insights: llmResult.insights
+      };
+      
+      return finalResult;
 
     } catch (error) {
       console.error('Recommendation Engine Error:', error);

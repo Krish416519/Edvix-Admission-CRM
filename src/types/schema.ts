@@ -61,6 +61,39 @@ export interface Course extends BaseEntity {
   status: 'Active' | 'Inactive';
 }
 
+// ----------------- Academic Eligibility Engine ----------------- //
+
+export interface ProgramEligibilityRule extends BaseEntity {
+  courseId: string;
+  universityId: string;
+  ruleGroupName: string;
+  conditions: Record<string, any>; // JSONB representing the rule conditions
+  version: number;
+  status: 'Active' | 'Draft' | 'Archived';
+  effectiveFrom: string;
+  effectiveUntil?: string;
+}
+
+export interface ProgramFee extends BaseEntity {
+  courseId: string;
+  universityId: string;
+  feeCategory: string; // Tuition, Application, Examination, Registration, etc.
+  amount: number;
+  currency: string;
+  isMandatory: boolean;
+}
+
+export interface ProgramScholarship extends BaseEntity {
+  universityId: string;
+  courseId: string;
+  name: string;
+  description?: string;
+  discountAmount?: number;
+  discountPercentage?: number;
+  conditions: Record<string, any>;
+  status: 'Active' | 'Inactive';
+}
+
 // ----------------- CRM Operations ----------------- //
 
 export type LeadPriority = 'High' | 'Medium' | 'Low';
@@ -156,7 +189,50 @@ export interface Lead extends BaseEntity {
   needEmi?: boolean;
   preferredIntake?: string;
 
+  // Academic Profile additions
+  tenthBoard?: string;
+  tenthPassingYear?: number;
+  twelfthBoard?: string;
+  twelfthStream?: string;
+  twelfthPassingYear?: number;
+  graduationDegree?: string;
+  graduationUniversity?: string;
+  graduationPassingYear?: number;
+  graduationBacklogs?: number;
+  graduationMode?: string;
+  postGraduationDegree?: string;
+  postGraduationUniversity?: string;
+  postGraduationPercentage?: number;
+  postGraduationPassingYear?: number;
+  gapYears?: number;
+  gapExplanation?: string;
+
+  // Professional Profile additions
+  company?: string;
+  jobTitle?: string;
+  employmentStatus?: string;
+
+  // Admission Profile additions
+  targetRole?: string;
+  motivation?: string;
+  urgency?: 'Low' | 'Medium' | 'High' | 'Immediate' | string;
+  universityBrandPreference?: string;
+
+  // Disposition extensions
+  lostReason?: string;
+  competitor?: string;
+
   deletedAt?: string;
+}
+
+export interface LeadObjection extends BaseEntity {
+  leadId: string;
+  objectionType: string;
+  studentConcern?: string;
+  counselorResponse?: string;
+  outcome?: string;
+  followUpRequired?: boolean;
+  status: 'Open' | 'Partially Resolved' | 'Resolved' | string;
 }
 
 export interface AiRecommendation extends BaseEntity {
@@ -166,6 +242,16 @@ export interface AiRecommendation extends BaseEntity {
   counselorNotes?: any;
   status: 'Pending' | 'Accepted' | 'Rejected';
   selectedUniversityCode?: string;
+  
+  // Phase 2 Deterministic Fields
+  eligibilityStatus?: 'VERIFIED_ELIGIBLE' | 'LIKELY_ELIGIBLE' | 'CONDITIONAL' | 'MANUAL_REVIEW' | 'NOT_ELIGIBLE' | 'INSUFFICIENT_DATA' | 'PENDING';
+  matchScore?: number;
+  feeEstimate?: number;
+  counselorDecision?: 'Approved' | 'Rejected' | 'Shortlisted' | 'Manual Add';
+  overrideReason?: string;
+  ruleVersion?: number;
+  isManual?: boolean;
+
   deletedAt?: string;
 }
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Lead } from '../../../types/schema';
-import { Sparkles, MessageSquare, ShieldAlert, Phone, Mail, FileText, Zap, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Sparkles, MessageSquare, ShieldAlert, Phone, Mail, FileText } from 'lucide-react';
 import { useAI } from '../../../contexts/AIContext';
+import { NextBestAction } from './NextBestAction';
 
 export function LeadAI_Sidebar({ lead }: { lead: Lead }) {
   const { openAssistant } = useAI();
@@ -15,38 +16,10 @@ export function LeadAI_Sidebar({ lead }: { lead: Lead }) {
   ];
 
   return (
-    <div className="w-full xl:w-80 shrink-0 flex flex-col gap-4 h-full xl:sticky xl:top-20 xl:overflow-y-auto pb-6 scrollbar-hide">
+    <div className="w-full xl:w-80 shrink-0 flex flex-col gap-4 h-full xl:sticky xl:top-20 xl:overflow-y-auto pb-6">
       
-      {/* Next Best Action Panel */}
-      <div className="bg-gradient-to-b from-emerald-50/50 to-white dark:from-emerald-950/20 dark:to-card border border-emerald-200 dark:border-emerald-500/20 rounded-xl shadow-sm flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Next Best Action</h3>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 space-y-3">
-          <p className="text-sm text-foreground font-medium">
-            {lead.aiSuggestedNextAction || lead.aiSuggestedNextAction || "No immediate action required."}
-          </p>
-          <div className="text-xs text-muted-foreground italic mb-2">
-            Reason: {lead.aiPriorityReason || lead.aiPriorityReason || "Routine follow up"}
-          </div>
-          
-          <div className="flex gap-2 justify-end pt-2 border-t border-emerald-100 dark:border-emerald-500/20">
-            <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-emerald-600 transition-colors">
-              <ThumbsUp className="w-3 h-3" /> Helpful
-            </button>
-            <button className="text-xs flex items-center gap-1 text-muted-foreground hover:text-red-600 transition-colors">
-              <ThumbsDown className="w-3 h-3" /> Not
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Next Best Action Panel — powered by rules engine */}
+      <NextBestAction lead={lead} />
 
       {/* Objection Intelligence */}
       {(lead.aiObjectionDetected || lead.aiObjectionDetected) && (

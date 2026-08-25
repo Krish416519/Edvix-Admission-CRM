@@ -11,6 +11,8 @@ import { LeadAI_Sidebar } from './profile/LeadAI_Sidebar';
 import { MobileActionBar } from './mobile/MobileActionBar';
 import { automationService } from '../../lib/automationService';
 import { DispositionWidget } from './profile/DispositionWidget';
+import { CounselingSnapshot } from './profile/CounselingSnapshot';
+import { QuickLogCallModal } from './profile/QuickLogCallModal';
 
 import { useLead } from '../../hooks/useLead';
 import { Skeleton } from '../ui/Skeleton';
@@ -20,6 +22,7 @@ export function LeadDetails() {
   const navigate = useNavigate();
   
   const [showDisposition, setShowDisposition] = useState(false);
+  const [showQuickCall, setShowQuickCall] = useState(false);
   const { lead, isLoading, updateLead } = useLead(id);
   
   // Activities state (temporarily keeping mock activities until migrated)
@@ -131,7 +134,7 @@ export function LeadDetails() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 h-[calc(100vh-4rem)] pt-2 pb-6 px-4 sm:px-8">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500 h-[calc(100vh-4rem)] pt-2 pb-6 px-4 sm:px-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
@@ -198,6 +201,17 @@ export function LeadDetails() {
             <CheckCircle2 className="w-4 h-4" />
             {showDisposition ? 'Close' : 'Disposition'}
           </button>
+          {/* Quick Log Call */}
+          {lead.phone && (
+            <button
+              onClick={() => setShowQuickCall(true)}
+              title="Quick Log Call"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors shadow-sm"
+            >
+              <Phone className="w-4 h-4" />
+              Log Call
+            </button>
+          )}
         </div>
 
         {/* Mobile: just the status selector + disposition toggle (mobile bar handles call/whatsapp) */}
@@ -235,12 +249,24 @@ export function LeadDetails() {
         </div>
       )}
 
+      {/* Counseling Snapshot */}
+      <CounselingSnapshot lead={lead} />
+
       {/* Main 3-Column Layout — pb-28 on mobile to clear the action bar */}
       <div className="flex flex-col xl:flex-row gap-6 items-stretch flex-1 min-h-0 xl:overflow-hidden overflow-y-auto pb-28 xl:pb-0">
         <LeadProfileSidebar lead={lead} />
         <LeadProfileTabs lead={lead} onUpdateLead={handleUpdateLead} activities={activities} setActivities={setActivities} />
         <LeadAI_Sidebar lead={lead} />
       </div>
+
+      {showQuickCall && (
+        <QuickLogCallModal
+          leadId={lead.id}
+          leadName={displayName}
+          onClose={() => setShowQuickCall(false)}
+          onSaved={() => updateLead({ id: lead.id } as any)}
+        />
+      )}
 
       <MobileActionBar
         leadId={lead.id}

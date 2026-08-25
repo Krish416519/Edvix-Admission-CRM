@@ -10,7 +10,7 @@ export function CounselorPerformance() {
   ];
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-foreground">Counselor Performance</h2>
@@ -58,7 +58,7 @@ export function RecentActivities({ onViewAll }: { onViewAll?: () => void }) {
   ];
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Recent Activities</h2>
         <button onClick={onViewAll} className="text-sm text-primary hover:text-primary-hover font-medium transition-colors">View all</button>
@@ -94,7 +94,7 @@ export function UpcomingTasks({ onNavigate }: { onNavigate?: () => void }) {
   const pendingTasks = tasks.filter(t => t.status === 'Pending').slice(0, 4);
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-6 flex justify-between items-center">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Pending Tasks</h2>
         <button onClick={onNavigate} className="p-1 rounded-md hover:bg-muted text-muted-foreground transition-colors" title="View all tasks">

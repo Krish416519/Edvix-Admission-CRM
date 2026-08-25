@@ -21,18 +21,22 @@
   --color-danger-foreground: var(--danger-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
+
+  /* Glassmorphism Tokens */
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
 }
 
 @layer base {
   :root {
     color-scheme: light;
-    --background: #ffffff;
+    --background: #f8fafc;
     --foreground: #09090b;
     --card: #ffffff;
     --card-foreground: #09090b;
-    --border: #e4e4e7;
-    --muted: #f4f4f5;
-    --muted-foreground: #71717a;
+    --border: #e2e8f0;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
     
     /* Semantic Colors */
     --success: #10b981;
@@ -43,6 +47,10 @@
     --danger-foreground: #ffffff;
     --info: #3b82f6;
     --info-foreground: #ffffff;
+
+    /* Glassmorphism Light */
+    --glass: rgba(255, 255, 255, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.4);
   }
 
   .dark {
@@ -64,6 +72,10 @@
     --danger-foreground: #ffffff;
     --info: #2563eb;
     --info-foreground: #ffffff;
+
+    /* Glassmorphism Dark */
+    --glass: rgba(24, 24, 27, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 
   * {

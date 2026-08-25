@@ -54,7 +54,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function RevenueChart() {
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-6">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Monthly Revenue</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Revenue generated from admissions over time.</p>
@@ -87,7 +87,7 @@ export function RevenueChart() {
 
 export function LeadsSourceChart() {
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-2">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Leads by Source</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Acquisition channels.</p>
@@ -128,7 +128,7 @@ export function AdmissionsByUniChart() {
   const barColor = theme === 'dark' ? '#52525b' : '#94a3b8'; // zinc-600 / slate-400
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-[var(--color-glass)] backdrop-blur-[40px] border border-[var(--color-glass-border)] rounded-[24px] p-6 shadow-2xl h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
       <div className="mb-6">
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Admissions by University</h2>
         <p className="text-sm text-muted-foreground mt-0.5">Comparing UG and PG enrollments.</p>

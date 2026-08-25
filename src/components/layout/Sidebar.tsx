@@ -58,7 +58,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-card/80 backdrop-blur-2xl border-r border-border/50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out md:translate-x-0 md:static flex flex-col group",
+        "fixed inset-y-0 left-0 z-50 md:my-4 md:ml-4 md:rounded-2xl bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/40 shadow-2xl transition-all duration-300 ease-in-out md:translate-x-0 md:static flex flex-col group overflow-hidden",
         open ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "w-20" : "w-[260px]"
       )}>

@@ -20,7 +20,7 @@ export function AuditLogDetailPanel({ log, isOpen, onClose }: AuditLogDetailPane
         onClick={onClose}
       />
       
-      <div className="fixed inset-y-0 right-0 w-full md:w-[450px] bg-card border-l border-border shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] md:w-full max-w-lg max-h-[85vh] bg-card border border-border shadow-2xl rounded-xl z-50 flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between bg-primary/5">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" />
@@ -37,7 +37,7 @@ export function AuditLogDetailPanel({ log, isOpen, onClose }: AuditLogDetailPane
             <p className="text-sm text-muted-foreground">{log.description}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-muted/30 p-3 rounded-lg border border-border">
               <span className="text-xs text-muted-foreground font-medium mb-1 block flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/> Date & Time</span>
               <span className="text-sm font-semibold text-foreground">
