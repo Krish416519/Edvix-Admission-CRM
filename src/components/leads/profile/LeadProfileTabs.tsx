@@ -68,7 +68,7 @@ export function LeadProfileTabs({ lead, onUpdateLead, activities, setActivities,
         {activeTab === 'Overview' && <OverviewTab lead={lead} onUpdateLead={onUpdateLead} />}
         {activeTab === 'Timeline' && <TimelineTab lead={lead} refreshKey={activityRefreshKey} />}
         {activeTab === 'Match & Recommend' && <div className="p-3 md:p-4 h-full"><MatchRecommendTab lead={lead} /></div>}
-        {activeTab === 'Tasks' && <TasksTab lead={lead} />}
+        {activeTab === 'Tasks' && <TasksTab lead={lead} refreshKey={activityRefreshKey} />}
         {activeTab === 'Calls' && <CallHistoryTab lead={lead} />}
         {activeTab === 'Dispositions' && <div className="p-3 md:p-4 h-full"><DispositionHistory leadId={lead.id} refreshKey={activityRefreshKey} /></div>}
         {activeTab === 'Documents' && <DocumentsTab lead={lead} />}

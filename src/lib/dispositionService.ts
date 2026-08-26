@@ -246,14 +246,23 @@ export const dispositionService = {
         taskType = nextAct.action_type;
       }
 
+      const followUpDateObj = new Date(followUpAt);
+      const localYear = followUpDateObj.getFullYear();
+      const localMonth = String(followUpDateObj.getMonth() + 1).padStart(2, '0');
+      const localDay = String(followUpDateObj.getDate()).padStart(2, '0');
+      const localDateStr = `${localYear}-${localMonth}-${localDay}`;
+      const localHour = String(followUpDateObj.getHours()).padStart(2, '0');
+      const localMinute = String(followUpDateObj.getMinutes()).padStart(2, '0');
+      const localTimeStr = `${localHour}:${localMinute}`;
+
       const { error: taskError } = await supabase.from('tasks').insert({
         title: `${nextAct ? nextAct.name : 'Follow Up'} - ${lead.first_name} ${lead.last_name || ''}`.trim(),
         description: notes || `Follow-up generated from disposition: ${disp.name}`,
         task_type: taskType,
         priority: 'Medium',
         status: 'Pending',
-        due_date: new Date(followUpAt).toISOString().split('T')[0],
-        due_time: new Date(followUpAt).toTimeString().split(' ')[0].substring(0, 5),
+        due_date: localDateStr,
+        due_time: localTimeStr,
         assigned_user: lead.assigned_counselor || userId,
         lead_id: leadId
         // organization_id is auto-set by set_default_organization_id trigger

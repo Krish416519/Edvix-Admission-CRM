@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lead } from '../../../../types/schema';
 import { Task } from '../../../../types/task';
 import { useTasks } from '../../../../hooks/useTasks';
@@ -10,9 +10,12 @@ import { TaskFollowUpDialog } from '../../../tasks/components/TaskFollowUpDialog
 import { addAuditLog } from '../../../../data/mockAuditLogs';
 import { toast } from 'sonner';
 
-export function TasksTab({ lead }: { lead: Lead }) {
-  const { tasks: allTasks, isLoading, addTask, updateTask } = useTasks();
-  const tasks = allTasks.filter(t => t.leadId === lead.id);
+export function TasksTab({ lead, refreshKey = 0 }: { lead: Lead, refreshKey?: number }) {
+  const { tasks, isLoading, addTask, updateTask, refresh } = useTasks({ leadId: lead.id, pageSize: 100 });
+  
+  useEffect(() => {
+    refresh();
+  }, [refreshKey, refresh]);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [followUpTask, setFollowUpTask] = useState<Task | undefined>();

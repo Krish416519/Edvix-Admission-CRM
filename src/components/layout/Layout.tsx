@@ -4,6 +4,7 @@ import { TopNav } from './TopNav';
 import { AIAssistant } from '../ai/AIAssistant';
 import { Outlet } from 'react-router-dom';
 import { MobileBottomNav } from './MobileBottomNav';
+import { GlobalTaskReminder } from '../tasks/GlobalTaskReminder';
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,6 +34,7 @@ export function Layout() {
       
       <MobileBottomNav />
       <AIAssistant />
+      <GlobalTaskReminder />
       </div>
     </div>
   );
