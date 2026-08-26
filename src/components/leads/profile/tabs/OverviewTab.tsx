@@ -14,19 +14,19 @@ interface SectionProps {
 function ProfileSection({ title, icon: Icon, children, defaultOpen = false }: SectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+    <div className="bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden mb-3 sm:mb-4 md:mb-6">
       <div 
-        className="flex items-center justify-between p-4 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+        className="flex items-center justify-between p-3 sm:p-4 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors active:bg-muted/60 touch-manipulation"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">{title}</h3>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          <h3 className="font-semibold text-foreground text-sm sm:text-base">{title}</h3>
         </div>
         {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </div>
       {isOpen && (
-        <div className="p-5 border-t border-border bg-card/50">
+        <div className="p-3 sm:p-4 md:p-5 border-t border-border bg-card/50">
           {children}
         </div>
       )}
@@ -57,14 +57,14 @@ export function OverviewTab({ lead, onUpdateLead }: { lead: Lead, onUpdateLead: 
 
 
   return (
-    <div className="p-4 sm:p-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center mb-6 sticky top-0 bg-card/95 backdrop-blur-sm z-10 py-3 border-b border-border">
-        <h2 className="text-xl font-bold">360° Student Profile</h2>
+    <div className="p-3 sm:p-4 md:p-6 animate-in fade-in duration-300">
+      <div className="flex justify-between items-center mb-4 sm:mb-6 sticky top-0 bg-card/95 backdrop-blur-sm z-10 py-2 sm:py-3 border-b border-border">
+        <h2 className="text-base sm:text-lg md:text-xl font-bold">360° Student Profile</h2>
         <button 
           onClick={() => setIsEditing(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-semibold transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-xs sm:text-sm font-semibold transition-colors active:scale-95 touch-manipulation"
         >
-          <Edit2 className="w-4 h-4" /> Edit Profile
+          <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Edit Profile</span><span className="sm:hidden">Edit</span>
         </button>
       </div>
 

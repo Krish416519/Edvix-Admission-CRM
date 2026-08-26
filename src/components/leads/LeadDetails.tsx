@@ -210,7 +210,7 @@ export function LeadDetails() {
   );
 
   return (
-    <div className="flex flex-col gap-3 md:gap-4 animate-in fade-in duration-500 min-h-screen pt-2 pb-10 px-2 sm:px-4 md:px-8">
+    <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 animate-in fade-in duration-500 min-h-screen pt-1 sm:pt-2 pb-24 sm:pb-10 px-1.5 sm:px-4 md:px-8">
       {showDisposition && (
         <>
           <div 
@@ -251,7 +251,7 @@ export function LeadDetails() {
       />
 
       {/* Main Content Area */}
-      <div className="flex flex-col xl:flex-row gap-4 md:gap-6 items-start pb-28 xl:pb-0">
+      <div className="flex flex-col xl:flex-row gap-2 sm:gap-3 md:gap-6 items-start pb-2 xl:pb-0">
         <div className="xl:sticky xl:top-4 xl:w-80 shrink-0 w-full z-40">
           <LeadQuickViewSidebar
             lead={lead}
@@ -259,7 +259,7 @@ export function LeadDetails() {
             setActivities={setActivities}
           />
         </div>
-        <div className="flex flex-col gap-3 md:gap-4 flex-1 min-w-0">
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 w-full">
           <CounselingSnapshot lead={lead} />
           <LeadProfileTabs lead={lead} onUpdateLead={handleUpdateLead} activities={activities} setActivities={setActivities} activityRefreshKey={activityRefreshKey} />
         </div>

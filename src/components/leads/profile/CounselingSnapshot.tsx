@@ -92,12 +92,12 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
   const universityName = typeof lead.university === 'object' ? lead.university?.name : lead.university;
 
   return (
-    <div className="shrink-0 bg-card border border-border rounded-xl shadow-sm overflow-hidden transition-all duration-200">
+    <div className="shrink-0 bg-card border border-border rounded-lg sm:rounded-xl shadow-sm overflow-hidden transition-all duration-200">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 px-4 py-3 sm:py-2.5 bg-primary/5 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-primary/5 border-b border-border">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-primary shrink-0" />
-          <span className="text-sm font-bold text-foreground truncate">Counseling Snapshot</span>
+          <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
+          <span className="text-xs sm:text-sm font-bold text-foreground truncate">Counseling Snapshot</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Intent Badge */}
@@ -115,7 +115,7 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? "Expand Snapshot" : "Minimize Snapshot"}
-            className="ml-1 p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors shrink-0"
+            className="ml-0.5 sm:ml-1 p-1 sm:p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors shrink-0 active:scale-95 touch-manipulation"
           >
             {isMinimized ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
@@ -125,7 +125,7 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
       {!isMinimized && (
         <>
           {/* Snapshot Fields */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-4 px-4 py-4 border-t border-border bg-card">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-x-3 sm:gap-x-4 gap-y-3 sm:gap-y-4 px-3 sm:px-4 py-3 sm:py-4 border-t border-border bg-card">
             <Snip label="Goal" value={lead.careerGoal || '—'} icon={User} dimmed={!lead.careerGoal} />
             <Snip label="Education" value={educationSummary} icon={GraduationCap} dimmed={!lead.graduationDegree} />
             <Snip label="Experience" value={expSummary} icon={Briefcase} />
@@ -137,10 +137,10 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
           </div>
 
           {/* Next Action Bar */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2 bg-primary/5 border-t border-border">
-            <ArrowRight className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Next Action:</span>
-            <span className="text-sm font-bold text-foreground leading-tight">{nextAction}</span>
+          <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/5 border-t border-border">
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
+            <span className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">Next:</span>
+            <span className="text-xs sm:text-sm font-bold text-foreground leading-tight">{nextAction}</span>
           </div>
         </>
       )}
