@@ -129,6 +129,7 @@ CREATE POLICY "Allow admin write to next_actions" ON public.next_actions FOR ALL
 DO $$
 DECLARE
     cat_contacted UUID := gen_random_uuid();
+    cat_not_connected UUID := gen_random_uuid();
     cat_interest UUID := gen_random_uuid();
     cat_qual UUID := gen_random_uuid();
     cat_objection UUID := gen_random_uuid();
@@ -164,6 +165,7 @@ DECLARE
 BEGIN
     -- Categories
     INSERT INTO public.disposition_categories (id, name, order_index) VALUES 
+    (cat_not_connected, 'NOT CONNECTED', 5),
     (cat_contacted, 'CONTACTED', 10),
     (cat_interest, 'INTEREST / INTENT', 20),
     (cat_qual, 'QUALIFICATION', 30),
@@ -174,11 +176,27 @@ BEGIN
     (cat_conv, 'CONVERTED', 80),
     (cat_lost, 'LOST / CLOSED', 90);
 
-    -- Contacted Dispositions
+    -- Not Connected Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_connected, cat_contacted, 'Connected', false, false, 'Connected', 10),
+    (gen_random_uuid(), cat_not_connected, 'Switched Off', true, false, 'Attempted', 10),
+    (gen_random_uuid(), cat_not_connected, 'Not Reachable', true, false, 'Attempted', 20),
+    (gen_random_uuid(), cat_not_connected, 'Number Busy', true, false, 'Attempted', 30),
+    (gen_random_uuid(), cat_not_connected, 'Ringing No Answer', true, false, 'Attempted', 40),
+    (gen_random_uuid(), cat_not_connected, 'Invalid Number', false, true, 'Lost', 50);
+
+    -- Contacted Dispositions (Connected)
+    INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
+    (disp_connected, cat_contacted, 'Not Interested', false, true, 'Lost', 10),
     (disp_cb_req, cat_contacted, 'Call Back Requested', true, false, 'Attempted', 20),
-    (disp_no_resp, cat_contacted, 'No Response', true, false, 'Attempted', 30);
+    (disp_no_resp, cat_contacted, 'Counselled', true, true, 'Interested', 30),
+    (gen_random_uuid(), cat_contacted, 'Follow Up', true, false, 'Attempted', 40),
+    (gen_random_uuid(), cat_contacted, 'Meeting Done', true, true, 'Qualified', 50),
+    (gen_random_uuid(), cat_contacted, 'Registration Done', false, false, 'Application Started', 60),
+    (gen_random_uuid(), cat_contacted, 'Document Collected', false, false, 'Documents Pending', 70),
+    (gen_random_uuid(), cat_contacted, 'Follow-up Offer', true, false, 'Interested', 80),
+    (gen_random_uuid(), cat_contacted, 'Follow-up Referral', true, false, 'Interested', 90),
+    (gen_random_uuid(), cat_contacted, 'Semester Fee Paid', false, false, 'Admission Done', 100),
+    (gen_random_uuid(), cat_contacted, 'Loan Rejected', false, true, 'Lost', 110);
 
     -- Interest Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 

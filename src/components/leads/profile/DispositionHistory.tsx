@@ -4,13 +4,13 @@ import { LeadDispositionHistory } from '../../../types/disposition';
 import { Clock, CheckCircle2, User as UserIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-export function DispositionHistory({ leadId }: { leadId: string }) {
+export function DispositionHistory({ leadId, refreshKey = 0 }: { leadId: string; refreshKey?: number }) {
   const [history, setHistory] = useState<LeadDispositionHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadHistory();
-  }, [leadId]);
+  }, [leadId, refreshKey]);
 
   const loadHistory = async () => {
     try {

@@ -113,7 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user && mounted) {
           const { profileData, orgData } = await fetchUserProfile(session.user.id);
-          setUser(parseSupabaseUser(session.user, profileData, orgData));
+          const newUser = parseSupabaseUser(session.user, profileData, orgData);
+          setUser(prev => {
+            if (prev && JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
+            return newUser;
+          });
         }
       } catch (error) {
         console.error('Failed to restore session', error);
@@ -135,7 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPermissions(permsData);
         }
 
-        if (mounted) setUser(parseSupabaseUser(session.user, profileData, orgData));
+        if (mounted) {
+          const newUser = parseSupabaseUser(session.user, profileData, orgData);
+          setUser(prev => {
+            if (prev && JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
+            return newUser;
+          });
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setPermissions([]);

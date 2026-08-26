@@ -1,15 +1,97 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AuditLog } from '../../types/audit';
 import { formatDistanceToNow, format } from 'date-fns';
 import { 
   User, FileText, CheckCircle2, Phone, Mail, 
   MessageSquare, Edit2, Plus, LogIn, LogOut, Settings, 
-  ArrowRight, ShieldAlert, Circle, Activity
+  ArrowRight, ShieldAlert, Circle, Activity, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-export function ActivityTimeline({ logs, onLogClick }: { logs: AuditLog[], onLogClick?: (log: AuditLog) => void }) {
+const FormattedDescription = ({ text }: { text: string }) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const kvPairs: { key: string, value: string }[] = [];
+  let summary = '';
+  let inNotesSection = false;
   
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    if (trimmed === '[Additional Notes]' || trimmed === 'Notes: [Additional Notes]') {
+      inNotesSection = true;
+      return;
+    }
+
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      return; // Skip headers
+    }
+
+    if (trimmed.startsWith('Notes: [')) {
+      return; // Skip 'Notes: [Section Header]'
+    }
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx > 0 && !inNotesSection && !trimmed.startsWith('http')) { // avoid splitting URLs
+      const key = trimmed.substring(0, colonIdx).trim();
+      let value = trimmed.substring(colonIdx + 1).trim();
+      
+      if (value.startsWith('**') && value.endsWith('**')) {
+        value = value.substring(2, value.length - 2);
+      }
+      
+      if (key === 'Notes') {
+        summary += (summary ? '\n' : '') + value;
+      } else {
+        kvPairs.push({ key, value });
+      }
+    } else {
+      summary += (summary ? '\n' : '') + trimmed;
+    }
+  });
+
+  if (kvPairs.length === 0 && !summary) {
+    return <div className="mt-3 bg-primary/5 border border-primary/10 rounded-lg p-3 text-sm whitespace-pre-wrap text-foreground shadow-inner">{text}</div>;
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {summary && summary !== 'na.' && summary !== 'No additional notes provided.' && (
+        <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-sm text-foreground shadow-inner whitespace-pre-wrap">
+          <span className="font-semibold text-primary/80 mb-1 block">Overall Summary</span>
+          {summary}
+        </div>
+      )}
+      
+      {kvPairs.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {kvPairs.map((pair, idx) => (
+            <div key={idx} className="bg-card border border-border shadow-sm rounded-lg px-3 py-2 flex flex-col justify-center min-w-[120px] max-w-[200px]">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-0.5 truncate" title={pair.key}>{pair.key}</span>
+              <span className="text-sm font-medium text-foreground break-words">{pair.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export function ActivityTimeline({ logs, onLogClick, showAuthor = true }: { logs: AuditLog[], onLogClick?: (log: AuditLog) => void, showAuthor?: boolean }) {
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const toggleItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const getIcon = (action: string, entityType: string) => {
     if (action === 'Login' || action === 'Logout') return <LogIn className="w-4 h-4 text-blue-500" />;
     if (action === 'Created' && entityType === 'Lead') return <Plus className="w-4 h-4 text-green-500" />;
@@ -46,20 +128,21 @@ export function ActivityTimeline({ logs, onLogClick }: { logs: AuditLog[], onLog
               </div>
 
               <div 
-                onClick={() => onLogClick && onLogClick(log)}
+                onClick={(e) => toggleItem(log.id, e)}
                 className={cn(
-                  "bg-card border border-border rounded-xl p-4 shadow-sm hover:border-primary/30 transition-colors",
-                  onLogClick && "cursor-pointer hover:shadow-md"
+                  "bg-card border border-border rounded-xl p-4 shadow-sm hover:border-primary/30 transition-colors cursor-pointer hover:shadow-md"
                 )}
               >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-foreground">{log.userName}</span>
-                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
-                        {log.userRole || 'System'}
-                      </span>
-                    </div>
+                    {showAuthor && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground">{log.userName}</span>
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+                          {log.userRole || 'System'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="text-xs font-medium text-muted-foreground">
@@ -71,10 +154,18 @@ export function ActivityTimeline({ logs, onLogClick }: { logs: AuditLog[], onLog
                   </div>
                 </div>
                 
-                <h4 className="text-sm font-semibold text-foreground mb-1">{log.title}</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {log.description}
-                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <h4 className="text-sm font-semibold text-primary">{log.title}</h4>
+                  {expandedItems.has(log.id) ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+
+                {expandedItems.has(log.id) && log.description && (
+                  <FormattedDescription text={log.description} />
+                )}
 
                 {(log.previousValue || log.newValue) && (
                   <div className="mt-3 flex items-center gap-2 text-xs font-medium bg-muted/30 p-2 rounded-lg border border-border/50">

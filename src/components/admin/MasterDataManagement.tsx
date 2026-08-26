@@ -324,7 +324,7 @@ export function MasterDataManagement() {
                       <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold uppercase">{course.level}</span>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">{course.code}</td>
-                    <td className="px-6 py-4 font-medium">${course.fee}</td>
+                    <td className="px-6 py-4 font-medium">₹{course.fee}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => handleEdit(course)} className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-muted transition-colors"><Edit2 className="w-4 h-4" /></button>

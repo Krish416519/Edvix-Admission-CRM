@@ -5,11 +5,13 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { cn } from '../../../lib/utils';
 import { DispositionWidget } from '../profile/DispositionWidget';
 
+import { LeadStatus } from '../../../types/schema';
+
 interface MobileActionBarProps {
-  leadId?: string;
-  phone?: string;
-  leadStatus?: string;
-  onDispositionSaved?: () => void;
+  leadId: string;
+  phone?: string | null;
+  leadStatus?: LeadStatus;
+  onDispositionSaved?: (newStatus?: LeadStatus) => void;
 }
 
 export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved }: MobileActionBarProps) {
@@ -100,14 +102,14 @@ export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved 
             <span className="text-[10px] font-semibold">Call</span>
           </button>
 
-          {/* Disposition Update */}
+          {/* Add Activity Update */}
           <button
             onClick={() => setShowDisposition(true)}
-            aria-label="Update disposition"
+            aria-label="Add Activity"
             className="flex-1 flex flex-col items-center justify-center gap-1 h-14 rounded-2xl font-bold text-primary bg-primary/10 hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30 transition-colors active:scale-95 touch-manipulation"
           >
             <CheckCircle2 className="w-5 h-5" />
-            <span className="text-[10px] font-semibold">Update</span>
+            <span className="text-[10px] font-semibold">Activity</span>
           </button>
 
           {/* Note */}
@@ -122,18 +124,17 @@ export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved 
         </div>
       </div>
 
-      {/* Disposition Sheet — bottom sheet on mobile */}
+      {/* Add Activity Sheet — bottom sheet on mobile */}
       {showDisposition && leadId && (
         <div
           className="xl:hidden fixed inset-0 z-[60] flex flex-col justify-end"
           role="dialog"
           aria-modal="true"
-          aria-label="Update Disposition"
+          aria-label="Add Activity"
         >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowDisposition(false)}
           />
 
           {/* Sheet */}
@@ -141,7 +142,7 @@ export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved 
             {/* Handle + Close */}
             <div className="sticky top-0 bg-card/95 backdrop-blur-sm z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/50">
               <div className="w-10 h-1 bg-border rounded-full mx-auto absolute top-3 left-1/2 -translate-x-1/2" />
-              <h2 className="text-base font-bold text-foreground pt-2">Update Disposition</h2>
+              <h2 className="text-base font-bold text-foreground pt-2">Add Activity</h2>
               <button
                 onClick={() => setShowDisposition(false)}
                 className="p-2 -mr-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
@@ -155,9 +156,9 @@ export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved 
               <DispositionWidget
                 leadId={leadId}
                 currentStatus={leadStatus || 'New'}
-                onSaved={() => {
+                onSaved={(newStatus) => {
                   setShowDisposition(false);
-                  onDispositionSaved?.();
+                  onDispositionSaved?.(newStatus);
                 }}
                 onCancel={() => setShowDisposition(false)}
               />

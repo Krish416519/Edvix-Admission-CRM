@@ -147,7 +147,7 @@ export const dispositionService = {
 
     // 1. Fetch current lead state and configuration
     const [leadRes, dispRes, subDispRes, nextActionRes] = await Promise.all([
-      supabase.from('leads').select('lead_status, assigned_counselor, first_name, last_name').eq('id', leadId).single(),
+      supabase.from('leads').select('lead_status, assigned_counselor, first_name, last_name, organization_id').eq('id', leadId).single(),
       supabase.from('dispositions').select('*').eq('id', dispositionId).single(),
       subDispositionId ? supabase.from('sub_dispositions').select('*').eq('id', subDispositionId).single() : Promise.resolve({ data: null }),
       nextActionId ? supabase.from('next_actions').select('*').eq('id', nextActionId).single() : Promise.resolve({ data: null })
@@ -160,6 +160,15 @@ export const dispositionService = {
     const disp = dispRes.data as Disposition;
     const subDisp = subDispRes.data as SubDisposition | null;
     const nextAct = nextActionRes.data as NextAction | null;
+
+    // Fetch the current user's name for activity logging
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, role')
+      .eq('id', userId)
+      .single();
+    const authorName = userData?.name || 'Unknown User';
+    const authorRole = userData?.role || 'Counselor';
 
     // 2. Validate
     if (disp.requires_follow_up && !followUpAt) throw new Error('Follow-up date/time is required for this disposition.');
@@ -215,13 +224,19 @@ export const dispositionService = {
     if (followUpAt) activityContent += `\nFollow-up Scheduled: ${new Date(followUpAt).toLocaleString()}`;
     if (previousStatus !== newStatus) activityContent += `\nStatus updated: ${previousStatus} → ${newStatus}`;
 
-    await supabase.from('lead_activities').insert({
+    const { error: actError } = await supabase.from('lead_activities').insert({
       lead_id: leadId,
       type: 'status_change',
       content: activityContent,
-      author: userId,
-      date: new Date().toISOString()
+      author: authorName,          // human-readable name
+      date: new Date().toISOString(),
+      organization_id: lead.organization_id
     });
+    
+    if (actError) {
+      console.error('Failed to log activity:', actError);
+      // We don't throw here to avoid failing the whole disposition save, but at least we log it
+    }
 
     // 6. Create Task if Follow-up is required
     if (followUpAt) {
@@ -231,17 +246,19 @@ export const dispositionService = {
         taskType = nextAct.action_type;
       }
 
-      await supabase.from('tasks').insert({
+      const { error: taskError } = await supabase.from('tasks').insert({
         title: `${nextAct ? nextAct.name : 'Follow Up'} - ${lead.first_name} ${lead.last_name || ''}`.trim(),
         description: notes || `Follow-up generated from disposition: ${disp.name}`,
-        type: taskType,
+        task_type: taskType,
         priority: 'Medium',
         status: 'Pending',
         due_date: new Date(followUpAt).toISOString().split('T')[0],
         due_time: new Date(followUpAt).toTimeString().split(' ')[0].substring(0, 5),
         assigned_user: lead.assigned_counselor || userId,
         lead_id: leadId
+        // organization_id is auto-set by set_default_organization_id trigger
       });
+      if (taskError) console.warn('Task insert failed (non-fatal):', taskError.message);
       
       // Update leads tasks_count
       await supabase.rpc('increment_lead_tasks_count', { p_lead_id: leadId });

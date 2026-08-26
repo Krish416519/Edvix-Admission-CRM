@@ -2,13 +2,13 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, Download, Upload, Plus, ChevronDown, MoreHorizontal, 
-  ArrowUpDown, LayoutList, KanbanSquare, Users, Trash2, Edit2, UserPlus, FileSpreadsheet,
-  X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Layers, Merge, Check
+  ArrowUpDown, Users, Trash2, Edit2, UserPlus, FileSpreadsheet, Clock,
+  X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Layers, Merge, Check, Columns
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { cn } from '../../lib/utils';
-import { LeadsKanban } from './LeadsKanban';
+
 import { EmptyState } from '../ui/EmptyState';
 import { LeadFormModal } from './LeadFormModal';
 import { MergeLeadsModal } from './MergeLeadsModal';
@@ -91,7 +91,7 @@ export function LeadsList() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>('All');
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -126,6 +126,66 @@ export function LeadsList() {
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState({
+    leadDetails: true,
+    courseUni: true,
+    score: true,
+    status: true,
+    priority: true,
+    counselor: true,
+    createdOn: true,
+    modifiedOn: false,
+    assignmentDate: false,
+    lastCallDate: false,
+    firstCallDate: false,
+    finalFollowUpDate: false,
+    contactedTimestamp: false,
+    transitionToFallOut: false,
+    transitionToCounselled: false,
+    moreThan5MContactedTime: false,
+    moreThan10MContactedTime: false,
+    moreThan15MContactedTime: false,
+    conversionDate: false,
+    managerPrioritized: false,
+    firstAssignmentDate: false,
+    transitionToAdmissionDone: false,
+    transitionToOBInitiated: false,
+    transitionToOffer: false,
+    transitionToVerificationPending: false,
+    transitionToConverted: false,
+    transitionToScreening: false
+  });
+
+  const COLUMN_LABELS: Record<string, string> = {
+    leadDetails: 'Lead Details',
+    courseUni: 'Course & Uni',
+    score: 'Score',
+    status: 'Status',
+    priority: 'Priority',
+    counselor: 'Counselor',
+    createdOn: 'Created On',
+    modifiedOn: 'Modified On',
+    assignmentDate: 'Assignment Date',
+    lastCallDate: 'Last Call Date',
+    firstCallDate: 'First Call Date',
+    finalFollowUpDate: 'Final Follow Up Date',
+    contactedTimestamp: 'Contacted Timestamp',
+    transitionToFallOut: 'Transition to FallOut',
+    transitionToCounselled: 'Transition to Counselled',
+    moreThan5MContactedTime: 'More Than 5M Contacted Time',
+    moreThan10MContactedTime: 'More Than 10M Contacted Time',
+    moreThan15MContactedTime: 'More Than 15M Contacted Time',
+    conversionDate: 'Conversion Date',
+    managerPrioritized: 'Manager Prioritized',
+    firstAssignmentDate: 'First Assignment Date',
+    transitionToAdmissionDone: 'Transition to Admission Done',
+    transitionToOBInitiated: 'Transition to OB Initiated',
+    transitionToOffer: 'Transition to Offer',
+    transitionToVerificationPending: 'Transition to Verification Pending',
+    transitionToConverted: 'Transition to Converted',
+    transitionToScreening: 'Transition to Screening'
+  };
+  const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   // ── CSV Import State ──────────────────────────────────────────────────────
   const csvInputRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -683,6 +743,60 @@ export function LeadsList() {
               </>
             )}
 
+            <div className="relative">
+              <button 
+                onClick={() => setIsColumnsMenuOpen(!isColumnsMenuOpen)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors",
+                  isColumnsMenuOpen ? "bg-primary/10 text-primary border-primary/30" : "bg-card text-foreground border-border hover:bg-muted"
+                )}
+              >
+                <Columns className="w-4 h-4" />
+                Columns
+              </button>
+              {isColumnsMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsColumnsMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto overflow-x-hidden bg-card border border-border rounded-lg shadow-lg z-50 p-2 py-3 flex flex-col gap-1">
+                    <div className="flex items-center justify-between px-2 pb-1 border-b border-border mb-1">
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Visible Columns</h4>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            const allTrue = Object.keys(visibleColumns).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+                            setVisibleColumns(allTrue as typeof visibleColumns);
+                          }}
+                          className="text-[10px] font-semibold text-primary hover:underline"
+                        >
+                          All
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const allFalse = Object.keys(visibleColumns).reduce((acc, key) => ({ ...acc, [key]: false }), {});
+                            setVisibleColumns(allFalse as typeof visibleColumns);
+                          }}
+                          className="text-[10px] font-semibold text-muted-foreground hover:underline"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                    {Object.entries(visibleColumns).map(([key, isVisible]) => (
+                      <label key={key} className="flex items-center gap-3 px-2 py-1.5 hover:bg-muted rounded-md cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={isVisible}
+                          onChange={() => setVisibleColumns(prev => ({ ...prev, [key]: !isVisible }))}
+                          className="rounded border-border text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-foreground">{COLUMN_LABELS[key] || key}</span>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <button 
               onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
               className={cn(
@@ -696,21 +810,6 @@ export function LeadsList() {
                 <span className="w-2 h-2 rounded-full bg-primary" />
               )}
             </button>
-
-            <div className="flex items-center p-1 bg-muted rounded-lg border border-border">
-              <button 
-                onClick={() => setViewMode('list')}
-                className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                <LayoutList className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => setViewMode('kanban')}
-                className={cn("p-1.5 rounded-md transition-all", viewMode === 'kanban' ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                <KanbanSquare className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </div>
 
@@ -846,7 +945,7 @@ export function LeadsList() {
           </div>
         )}
 
-        {viewMode === 'list' ? (
+
           <>
             <div className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8">
               {isLoading ? (
@@ -927,25 +1026,139 @@ export function LeadsList() {
                         className="rounded border-border text-primary focus:ring-primary cursor-pointer"
                       />
                     </th>
+                    {visibleColumns.leadDetails && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
                       <div className="flex items-center gap-1">Lead Details <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.courseUni && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('course')}>
                       <div className="flex items-center gap-1">Course & Uni <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.score && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('score')}>
                       <div className="flex items-center gap-1">Score <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.status && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('status')}>
                       <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.priority && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('priority')}>
                        <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.counselor && (
                     <th scope="col" className="px-4 py-3 font-semibold">Counselor</th>
+                    )}
+                    {visibleColumns.createdOn && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('createdAt')}>
-                      <div className="flex items-center gap-1">Captured On <ArrowUpDown className="w-3 h-3" /></div>
+                      <div className="flex items-center gap-1">Created On <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
+                    )}
+                    {visibleColumns.modifiedOn && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('modifiedOn' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Modified On <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.assignmentDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('assignmentDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Assignment Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.lastCallDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('lastCallDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Last Call Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.firstCallDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('firstCallDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">First Call Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.finalFollowUpDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('finalFollowUpDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Final Follow Up Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.contactedTimestamp && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('contactedTimestamp' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Contacted Timestamp <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToFallOut && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToFallOut' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to FallOut <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToCounselled && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToCounselled' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Counselled <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.moreThan5MContactedTime && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan5MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1">More Than 5M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.moreThan10MContactedTime && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan10MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1">More Than 10M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.moreThan15MContactedTime && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan15MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1">More Than 15M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.conversionDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('conversionDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Conversion Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.managerPrioritized && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('managerPrioritized' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Manager Prioritized <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.firstAssignmentDate && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('firstAssignmentDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1">First Assignment Date <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToAdmissionDone && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToAdmissionDone' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Admission Done <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToOBInitiated && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToOBInitiated' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to OB Initiated <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToOffer && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToOffer' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Offer <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToVerificationPending && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToVerificationPending' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Verification Pending <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToConverted && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToConverted' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Converted <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.transitionToScreening && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToScreening' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Screening <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
                     <th scope="col" className="px-4 py-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
@@ -970,6 +1183,7 @@ export function LeadsList() {
                           className="rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
                       </td>
+                      {visibleColumns.leadDetails && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5 items-start">
                           <div className="flex items-center gap-2">
@@ -985,12 +1199,16 @@ export function LeadsList() {
                           <span className="text-xs text-muted-foreground">{lead.leadNumber} • {lead.phone}</span>
                         </div>
                       </td>
+                      )}
+                      {visibleColumns.courseUni && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="font-medium text-foreground">{lead.course || 'Not specified'}</span>
                           <span className="text-xs text-muted-foreground">{lead.university || 'Not specified'}</span>
                         </div>
                       </td>
+                      )}
+                      {visibleColumns.score && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1.5 w-32">
                           <div className="flex items-center gap-2">
@@ -1012,16 +1230,22 @@ export function LeadsList() {
                           </span>
                         </div>
                       </td>
+                      )}
+                      {visibleColumns.status && (
                       <td className="px-4 py-4">
                         <span className={cn('px-2.5 py-1 rounded-full text-xs font-semibold', statusColors[(lead.leadStatus || lead.status) as LeadStatus] || 'bg-gray-100 text-gray-600')}>
                           {lead.leadStatus || lead.status || 'New'}
                         </span>
                       </td>
+                      )}
+                      {visibleColumns.priority && (
                       <td className="px-4 py-4">
                         <span className={cn("text-xs font-semibold", priorityColors[lead.priority as LeadPriority])}>
                           {lead.priority || 'Medium'}
                         </span>
                       </td>
+                      )}
+                      {visibleColumns.counselor && (
                       <td className="px-4 py-4 font-medium text-sm" onClick={e => e.stopPropagation()}>
                         <select
                           value={lead.assignedCounselor || lead.counselorId || ''}
@@ -1040,6 +1264,8 @@ export function LeadsList() {
                           ))}
                         </select>
                       </td>
+                      )}
+                      {visibleColumns.createdOn && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="font-medium text-foreground text-sm">
@@ -1050,6 +1276,27 @@ export function LeadsList() {
                           </span>
                         </div>
                       </td>
+                      )}
+                      {visibleColumns.modifiedOn && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).modifiedOn || 'N/A'}</td>}
+                      {visibleColumns.assignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).assignmentDate || 'N/A'}</td>}
+                      {visibleColumns.lastCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).lastCallDate || 'N/A'}</td>}
+                      {visibleColumns.firstCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).firstCallDate || 'N/A'}</td>}
+                      {visibleColumns.finalFollowUpDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).finalFollowUpDate || 'N/A'}</td>}
+                      {visibleColumns.contactedTimestamp && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).contactedTimestamp || 'N/A'}</td>}
+                      {visibleColumns.transitionToFallOut && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToFallOut || 'N/A'}</td>}
+                      {visibleColumns.transitionToCounselled && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToCounselled || 'N/A'}</td>}
+                      {visibleColumns.moreThan5MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan5MContactedTime || 'N/A'}</td>}
+                      {visibleColumns.moreThan10MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan10MContactedTime || 'N/A'}</td>}
+                      {visibleColumns.moreThan15MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan15MContactedTime || 'N/A'}</td>}
+                      {visibleColumns.conversionDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).conversionDate || 'N/A'}</td>}
+                      {visibleColumns.managerPrioritized && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).managerPrioritized || 'N/A'}</td>}
+                      {visibleColumns.firstAssignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).firstAssignmentDate || 'N/A'}</td>}
+                      {visibleColumns.transitionToAdmissionDone && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToAdmissionDone || 'N/A'}</td>}
+                      {visibleColumns.transitionToOBInitiated && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToOBInitiated || 'N/A'}</td>}
+                      {visibleColumns.transitionToOffer && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToOffer || 'N/A'}</td>}
+                      {visibleColumns.transitionToVerificationPending && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToVerificationPending || 'N/A'}</td>}
+                      {visibleColumns.transitionToConverted && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToConverted || 'N/A'}</td>}
+                      {visibleColumns.transitionToScreening && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToScreening || 'N/A'}</td>}
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button 
@@ -1201,11 +1448,7 @@ export function LeadsList() {
               </div>
             </div>
           </>
-        ) : (
-          <div className="flex-1 p-4 overflow-hidden flex flex-col bg-muted/10">
-            <LeadsKanban searchTerm={searchTerm} leads={leads} updateLead={updateLead} />
-          </div>
-        )}
+
       </div>
 
       <LeadFormModal 
