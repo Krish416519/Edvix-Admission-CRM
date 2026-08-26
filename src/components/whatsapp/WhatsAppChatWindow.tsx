@@ -64,10 +64,10 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
   return (
     <div className="flex flex-col h-full bg-[#E5DDD5] dark:bg-zinc-950 relative">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 custom-scrollbar">
         {messages.length === 0 && (
           <div className="flex justify-center">
-            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-xs px-4 py-2 rounded-full">
+            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-xs px-3 md:px-4 py-1.5 md:py-2 rounded-full">
               No messages yet. Start the conversation!
             </div>
           </div>
@@ -77,7 +77,7 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
           <div key={msg.id} className={cn("flex", msg.sender_type === 'counselor' ? "justify-end" : "justify-start")}>
             <div 
               className={cn(
-                "max-w-[85%] rounded-lg p-2.5 relative shadow-sm",
+                "max-w-[85%] md:max-w-[75%] rounded-lg p-2 md:p-2.5 relative shadow-sm",
                 msg.is_internal_note 
                   ? "bg-amber-100 text-amber-900 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700/50" 
                   : msg.sender_type === 'counselor' 
@@ -85,17 +85,17 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
                     : "bg-white text-slate-800 dark:bg-zinc-900 dark:text-zinc-100"
               )}
             >
-              {msg.is_internal_note && <div className="text-[10px] font-bold uppercase mb-1 opacity-70">Internal Note</div>}
+              {msg.is_internal_note && <div className="text-[9px] md:text-[10px] font-bold uppercase mb-1 opacity-70">Internal Note</div>}
               {msg.message_type === 'template' && (
-                <div className="text-[10px] font-bold uppercase mb-1 opacity-70 flex items-center gap-1">
-                  <Bot className="w-3 h-3"/> Template
+                <div className="text-[9px] md:text-[10px] font-bold uppercase mb-1 opacity-70 flex items-center gap-1">
+                  <Bot className="w-2.5 h-2.5 md:w-3 md:h-3"/> Template
                 </div>
               )}
               
-              <p className="text-sm leading-relaxed whitespace-pre-wrap pr-10">{msg.content}</p>
+              <p className="text-xs md:text-sm leading-relaxed whitespace-pre-wrap pr-8 md:pr-10">{msg.content}</p>
               
-              <div className="absolute bottom-1 right-1.5 flex items-center gap-1 opacity-70">
-                <span className="text-[10px] leading-none">
+              <div className="absolute bottom-1 right-1.5 flex items-center gap-0.5 md:gap-1 opacity-70">
+                <span className="text-[9px] md:text-[10px] leading-none">
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
                 {msg.sender_type === 'counselor' && !msg.is_internal_note && (
@@ -110,23 +110,23 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
 
       {/* Template Drawer */}
       {showTemplates && (
-        <div className="absolute bottom-16 left-0 right-0 bg-background border-t border-border p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-10 animate-in slide-in-from-bottom-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm">Select Template</h3>
+        <div className="absolute bottom-14 md:bottom-16 left-0 right-0 bg-background border-t border-border p-3 md:p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-10 animate-in slide-in-from-bottom-5">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <h3 className="font-semibold text-xs md:text-sm">Select Template</h3>
             <button onClick={() => setShowTemplates(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4"/></button>
           </div>
-          <div className="grid gap-2 max-h-48 overflow-y-auto custom-scrollbar">
+          <div className="grid gap-2 max-h-40 md:max-h-48 overflow-y-auto custom-scrollbar">
             {templates.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No templates found</p>
+              <p className="text-xs md:text-sm text-muted-foreground text-center py-4">No templates found</p>
             )}
             {templates.map(t => (
               <button 
                 key={t.id} 
                 onClick={() => handleSendTemplate(t)}
-                className="text-left p-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-sm"
+                className="text-left p-2 md:p-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors text-xs md:text-sm"
               >
                 <div className="font-medium mb-1">{t.name}</div>
-                <div className="text-muted-foreground text-xs line-clamp-1">{t.content}</div>
+                <div className="text-muted-foreground text-[10px] md:text-xs line-clamp-1">{t.content}</div>
               </button>
             ))}
           </div>
@@ -134,24 +134,24 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
       )}
 
       {/* Input Area */}
-      <div className="p-3 bg-card border-t border-border flex items-end gap-2 z-20">
+      <div className="p-2 md:p-3 bg-card border-t border-border flex items-end gap-1 md:gap-2 z-20">
         <button 
           onClick={() => setShowTemplates(!showTemplates)}
-          className="p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0"
+          className="p-2 md:p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0"
           title="Templates"
         >
-          <Bot className="w-5 h-5" />
+          <Bot className="w-4 h-4 md:w-5 md:h-5" />
         </button>
         <button 
           onClick={handleAIDraft}
           disabled={isDrafting}
-          className="p-2.5 text-emerald-500 hover:bg-emerald-500/10 rounded-full transition-colors shrink-0"
+          className="p-2 md:p-2.5 text-emerald-500 hover:bg-emerald-500/10 rounded-full transition-colors shrink-0"
           title="AI Draft Message"
         >
-          {isDrafting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+          {isDrafting ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5" />}
         </button>
-        <button className="p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0">
-          <Paperclip className="w-5 h-5" />
+        <button className="p-2 md:p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0 hidden sm:block">
+          <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
         </button>
         
         <div className={cn(
@@ -171,7 +171,7 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
             }}
             placeholder={isInternalNote ? "Type an internal note..." : "Type a message..."}
             className={cn(
-              "w-full bg-transparent px-3 py-2.5 text-sm resize-none max-h-32 min-h-[44px] outline-none",
+              "w-full bg-transparent px-2 md:px-3 py-2 md:py-2.5 text-xs md:text-sm resize-none max-h-24 md:max-h-32 min-h-[40px] md:min-h-[44px] outline-none",
               isInternalNote ? "placeholder:text-amber-500/50" : "placeholder:text-muted-foreground"
             )}
             rows={1}
@@ -181,20 +181,20 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
         <button 
           onClick={() => setIsInternalNote(!isInternalNote)}
           className={cn(
-            "p-2.5 rounded-full transition-colors shrink-0 text-sm font-medium",
+            "p-2 md:p-2.5 rounded-full transition-colors shrink-0 text-xs md:text-sm font-medium",
             isInternalNote ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-400" : "text-muted-foreground hover:bg-muted"
           )}
           title="Toggle Internal Note"
         >
-          <FileText className="w-5 h-5" />
+          <FileText className="w-4 h-4 md:w-5 md:h-5" />
         </button>
 
         <button 
           onClick={handleSend}
           disabled={!inputText.trim() || isSending}
-          className="p-2.5 bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:hover:bg-primary rounded-full transition-colors shrink-0 shadow-sm"
+          className="p-2 md:p-2.5 bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:hover:bg-primary rounded-full transition-colors shrink-0 shadow-sm"
         >
-          <Send className="w-5 h-5 ml-0.5" />
+          <Send className="w-4 h-4 md:w-5 md:h-5 ml-0.5" />
         </button>
       </div>
     </div>

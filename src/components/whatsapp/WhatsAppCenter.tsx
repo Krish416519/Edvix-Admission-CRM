@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Search, Filter, Pin, Phone, Video, MoreVertical, Send, Users, Plus, WifiOff } from 'lucide-react';
+import { MessageSquare, Search, Filter, Pin, Phone, Video, MoreVertical, Send, Users, Plus, WifiOff, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWhatsApp, WAConversation } from '../../hooks/useWhatsApp';
 import { WhatsAppChatWindow } from './WhatsAppChatWindow';
@@ -9,6 +9,7 @@ export function WhatsAppCenter() {
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [tab, setTab] = useState<'Chat' | 'Broadcast'>('Chat');
+  const [showMobileChat, setShowMobileChat] = useState(false);
 
   const { conversations, isLoading } = useWhatsApp(activeConvId || undefined);
 
@@ -34,25 +35,26 @@ export function WhatsAppCenter() {
     conv.whatsapp_contacts?.phone_number || '';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
-      <div className="flex justify-between items-end mb-4">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full px-2 md:px-0">
+      <div className="flex justify-between items-end mb-3 md:mb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-green-500" />
-            Communication Center
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-green-500" />
+            <span className="hidden sm:inline">Communication Center</span>
+            <span className="sm:hidden">WhatsApp</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage WhatsApp conversations and broadcasts.</p>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">Manage WhatsApp conversations and broadcasts.</p>
         </div>
         <div className="flex bg-muted p-1 rounded-lg">
           <button 
             onClick={() => setTab('Chat')}
-            className={cn("px-4 py-1.5 text-sm font-medium rounded-md transition-all", tab === 'Chat' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all", tab === 'Chat' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
             Chats
           </button>
           <button 
             onClick={() => setTab('Broadcast')}
-            className={cn("px-4 py-1.5 text-sm font-medium rounded-md transition-all", tab === 'Broadcast' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-3 md:px-4 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all", tab === 'Broadcast' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
           >
             Broadcast
           </button>
@@ -60,9 +62,12 @@ export function WhatsAppCenter() {
       </div>
 
       {tab === 'Chat' && (
-        <div className="flex-1 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex">
+        <div className="flex-1 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex relative">
           {/* Chat List Sidebar */}
-          <div className="w-80 border-r border-border flex flex-col bg-background/50">
+          <div className={cn(
+            "w-full md:w-80 border-r border-border flex flex-col bg-background/50 absolute md:relative inset-0 md:inset-auto z-10 md:z-auto transition-transform",
+            showMobileChat && "md:translate-x-0 -translate-x-full"
+          )}>
             <div className="p-3 border-b border-border">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -99,7 +104,10 @@ export function WhatsAppCenter() {
                 filteredConversations.map(conv => (
                   <button 
                     key={conv.id}
-                    onClick={() => setActiveConvId(conv.id)}
+                    onClick={() => {
+                      setActiveConvId(conv.id);
+                      setShowMobileChat(true);
+                    }}
                     className={cn(
                       "w-full text-left p-3 flex items-start gap-3 border-b border-border hover:bg-muted/50 transition-colors",
                       activeConvId === conv.id && "bg-muted"
@@ -136,13 +144,22 @@ export function WhatsAppCenter() {
           </div>
 
           {/* Chat Window */}
-          <div className="flex-1 flex flex-col bg-background">
+          <div className={cn(
+            "flex-1 flex flex-col bg-background absolute md:relative inset-0 md:inset-auto transition-transform",
+            !showMobileChat && "translate-x-full md:translate-x-0"
+          )}>
             {activeConv ? (
               <>
                 {/* Chat Header */}
-                <div className="h-16 px-4 border-b border-border flex items-center justify-between bg-card shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                <div className="h-14 md:h-16 px-3 md:px-4 border-b border-border flex items-center justify-between bg-card shrink-0">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <button 
+                      onClick={() => setShowMobileChat(false)}
+                      className="md:hidden p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
                       {getDisplayName(activeConv).charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -150,26 +167,26 @@ export function WhatsAppCenter() {
                       <p className="text-xs text-muted-foreground">{getPhone(activeConv)}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><Search className="w-5 h-5" /></button>
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><Phone className="w-5 h-5" /></button>
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><Video className="w-5 h-5" /></button>
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><MoreVertical className="w-5 h-5" /></button>
+                  <div className="flex items-center gap-0.5 md:gap-1">
+                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors hidden sm:block"><Search className="w-5 h-5" /></button>
+                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><Phone className="w-4 h-4 md:w-5 md:h-5" /></button>
+                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors hidden sm:block"><Video className="w-5 h-5" /></button>
+                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"><MoreVertical className="w-4 h-4 md:w-5 md:h-5" /></button>
                   </div>
                 </div>
 
                 {/* Chat Area */}
                 <div className="flex-1 overflow-hidden relative">
-                  <WhatsAppChatWindow conversationId={activeConv.id} />
+                  <WhatsAppChatWindow conversationId={activeConv.id} leadId={activeConv.lead_id} />
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-[#F0F2F5] dark:bg-zinc-950/50">
-                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <MessageSquare className="w-10 h-10 text-muted-foreground/50" />
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-[#F0F2F5] dark:bg-zinc-950/50 p-4">
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+                  <MessageSquare className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground/50" />
                 </div>
-                <h2 className="text-xl font-medium text-foreground mb-2">WhatsApp for CRM</h2>
-                <p className="text-sm max-w-sm text-center">Select a chat from the sidebar to start messaging your leads directly from Edvix.</p>
+                <h2 className="text-lg md:text-xl font-medium text-foreground mb-2">WhatsApp for CRM</h2>
+                <p className="text-xs md:text-sm max-w-sm text-center">Select a chat from the sidebar to start messaging your leads directly from Edvix.</p>
               </div>
             )}
           </div>
