@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Task } from '../../../types/task';
 import { Calendar, AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { isToday, isPast, parseISO, startOfDay, isThisWeek } from 'date-fns';

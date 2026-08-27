@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { supabase } from '../../lib/supabase';

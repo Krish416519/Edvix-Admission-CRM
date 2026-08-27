@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, Search, Filter, Pin, Phone, Video, MoreVertical, Send, Users, Plus, WifiOff, ArrowLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWhatsApp, WAConversation } from '../../hooks/useWhatsApp';

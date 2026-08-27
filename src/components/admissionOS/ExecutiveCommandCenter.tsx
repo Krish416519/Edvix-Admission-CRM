@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Brain, IndianRupee, GraduationCap, FileText, TrendingUp,
   AlertTriangle, Users, Building2, Loader2, Sparkles

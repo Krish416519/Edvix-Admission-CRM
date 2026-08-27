@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, ArrowRight, X } from 'lucide-react';
 import { useIntegration } from '../../lib/integrationService';
 import { ImportJob } from '../../types/integration';

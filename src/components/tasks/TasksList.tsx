@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Task, TaskStatus, TaskPriority, TaskType } from '../../types/task';
 import { LeadStatus } from '../../types/schema';
 import { cn } from '../../lib/utils';

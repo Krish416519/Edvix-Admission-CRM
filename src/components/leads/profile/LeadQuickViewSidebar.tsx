@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lead, LeadActivity } from '../../../types/schema';
 import { FileText, Plus, Sparkles, Hash, Target, User, ChevronDown, ChevronUp, Phone, MessageSquare, Mail, ShieldAlert, ArrowRight } from 'lucide-react';
 import { cn } from '../../../lib/utils';

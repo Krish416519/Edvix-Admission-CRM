@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAdmissionLetters } from '../../hooks/useUniversityOps';
-import { Upload, FileText, CheckCircle, XCircle, Clock, AlertTriangle, Eye, ShieldCheck, Download, Trash2 } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, Clock, AlertTriangle, Eye, ShieldCheck, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { Skeleton } from '../ui/Skeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -19,7 +18,8 @@ const LETTER_TYPES = [
 ];
 
 export function AdmissionLetterManager({ submissionId, admissionId }: AdmissionLetterManagerProps) {
-  const { userRole } = useAuth();
+  const { user } = useAuth();
+  const userRole = user?.role;
   const { letters, uploadLetter, updateVerification } = useAdmissionLetters(submissionId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedType, setSelectedType] = useState(LETTER_TYPES[0]);
@@ -27,7 +27,7 @@ export function AdmissionLetterManager({ submissionId, admissionId }: AdmissionL
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const canVerify = userRole === 'Admin' || userRole === 'Super Admin' || userRole === 'University Operations Manager';
+  const canVerify = userRole === 'Admin' || userRole === 'Super Admin' || (userRole as string) === 'University Operations Manager';
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,7 +147,7 @@ export function AdmissionLetterManager({ submissionId, admissionId }: AdmissionL
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">Archived Version {letter.version}</span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">{letter.fileName} • {(letter.fileSizeBytes / 1024).toFixed(1)} KB</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{letter.fileName}</p>
                     <p className="text-xs text-muted-foreground mt-1">Uploaded {new Date(letter.uploadedAt).toLocaleString()}</p>
                     
                     {letter.verificationStatus === 'Rejected' && letter.rejectionReason && (

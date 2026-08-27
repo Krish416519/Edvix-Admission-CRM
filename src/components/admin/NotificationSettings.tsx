@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';

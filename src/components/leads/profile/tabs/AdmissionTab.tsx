@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lead } from '../../../../types/schema';
 import { useAdmissions } from '../../../../hooks/useAdmissions';
 import { useNavigate } from 'react-router-dom';

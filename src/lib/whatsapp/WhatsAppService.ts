@@ -1,7 +1,6 @@
 import { supabase } from '../supabase';
 import { MetaCloudProvider } from './providers/MetaCloudProvider';
 import { IWhatsAppProvider } from './providers/BaseProvider';
-import { toast } from 'sonner';
 
 /**
  * Core WhatsApp Service — all state lives in Supabase.

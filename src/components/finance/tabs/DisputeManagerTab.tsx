@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AlertCircle, MessageSquare } from 'lucide-react';
 import { EmptyState } from '../../ui/EmptyState';
 import { formatCurrency } from '../../../lib/utils';

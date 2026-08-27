@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, MessageSquare, Mail, Smartphone } from 'lucide-react';
 import { omnichannelService } from '../../lib/omnichannel/OmnichannelService';
 import { CommunicationPreference, ChannelType } from '../../types/communication';

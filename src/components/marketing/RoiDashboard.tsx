@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useMarketing } from '../../hooks/useMarketing';
 import { TrendingUp, PieChart as PieChartIcon, IndianRupee, Target, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';

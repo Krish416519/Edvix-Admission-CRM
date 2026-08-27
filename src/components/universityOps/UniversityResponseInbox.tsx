@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useUniversityResponses } from '../../hooks/useUniversityOps';
 import { Inbox, CheckCircle2, Clock, AlertTriangle, Search, Filter, MessageSquare, Mail, Terminal, Link, ChevronRight, Building2 } from 'lucide-react';
 import { cn } from '../../lib/utils';

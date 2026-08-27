@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { BookOpen, Search, Plus, Filter, MoreHorizontal } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 

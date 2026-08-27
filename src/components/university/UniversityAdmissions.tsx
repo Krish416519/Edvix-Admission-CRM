@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Filter, FileText, ArrowUpDown, ShieldAlert, GraduationCap, CheckCircle2 } from 'lucide-react';
 import { useAdmissions } from '../../hooks/useAdmissions';
 import { EmptyState } from '../ui/EmptyState';

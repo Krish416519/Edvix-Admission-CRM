@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Task } from '../../../types/task';
 import { LeadStatus } from '../../../types/schema';
 import { X, Calendar, Clock, CheckCircle2 } from 'lucide-react';

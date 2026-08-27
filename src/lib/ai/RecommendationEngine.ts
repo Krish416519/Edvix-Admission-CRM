@@ -1,9 +1,7 @@
 import { LLMClient } from './LLMClient';
 import { supabase } from '../supabase';
-import { Lead, University, Course, ProgramEligibilityRule, ProgramFee } from '../../types/schema';
 import { EligibilityEngine, EligibilityStatus, EligibilityEvaluation } from '../counseling/EligibilityEngine';
-import { FeeCalculator, FeeCalculationResult } from '../counseling/FeeCalculator';
-import { ProfileReadiness } from '../counseling/ProfileReadiness';
+import { FeeCalculator } from '../counseling/FeeCalculator';
 
 export interface AIRecommendationResult {
   topUniversities: Array<{

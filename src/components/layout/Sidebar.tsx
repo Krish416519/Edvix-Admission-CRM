@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, GraduationCap, FileText, Settings, CheckCircle, X, LogOut, IndianRupee, Bell, PieChart, Workflow, MessageSquare, Mail, Network, ShieldAlert, Megaphone, Server, Phone, Sparkles, ChevronLeft, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, FileText, CheckCircle, X, LogOut, IndianRupee, Bell, PieChart, Workflow, MessageSquare, Mail, Network, ShieldAlert, Megaphone, Server, Phone, Sparkles, ChevronLeft, Building2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Admission OS', href: '/admission-os', icon: Sparkles },
   { name: 'Command Center', href: '/admission-os/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
   { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
+  { name: 'AI Intelligence', href: '/ai-intelligence', icon: Sparkles },
   { name: 'Leads', href: '/leads', icon: Users, resource: 'Lead Management' },
   { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
   { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },

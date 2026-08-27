@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { CreditCard, Download, Search, Filter, AlertCircle } from 'lucide-react';
 import { useFinance } from '../../hooks/useFinance';
 

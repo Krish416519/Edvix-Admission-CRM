@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '../supabase';
 
 export class AIAssistantService {
   private genAI: GoogleGenerativeAI;

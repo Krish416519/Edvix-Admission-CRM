@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Lead } from '../../../../types/schema';
 import { Call } from '../../../../types/telephony';
 import { useTelephony } from '../../../../contexts/TelephonyContext';

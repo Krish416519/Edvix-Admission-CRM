@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Call } from '../../types/telephony';
 import { Phone, Clock, FileText, CheckCircle, XCircle, Sparkles, Play, Search, Filter } from 'lucide-react';
 import { cn } from '../../lib/utils';

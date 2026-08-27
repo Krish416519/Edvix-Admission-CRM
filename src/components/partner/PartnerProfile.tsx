@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Building2, UploadCloud, ShieldCheck, AlertCircle, CheckCircle2, ChevronDown, FileText, Briefcase, MapPin, BadgeCheck } from 'lucide-react';
 import { partnerService, PartnerProfile as IPartnerProfile } from '../../lib/partner/PartnerService';
 import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 export function PartnerProfile() {
   const [profile, setProfile] = useState<IPartnerProfile | null>(null);
@@ -32,9 +33,10 @@ export function PartnerProfile() {
     try {
       await partnerService.uploadKYCDocument(file, docType);
       await loadProfile();
-      alert('Document uploaded successfully! It is now under review.');
-    } catch (error: any) {
-      alert('Failed to upload document: ' + error.message);
+      toast.success('Document uploaded successfully! It is now under review.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to upload document';
+      toast.error(`Failed to upload document: ${message}`);
     } finally {
       setUploading(false);
       if (e.target) e.target.value = '';

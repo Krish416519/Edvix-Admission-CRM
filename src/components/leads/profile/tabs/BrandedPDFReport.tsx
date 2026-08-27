@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Lead, AiRecommendation } from '../../../../types/schema';
 import { Sparkles, CheckCircle, GraduationCap, Building2 } from 'lucide-react';
 

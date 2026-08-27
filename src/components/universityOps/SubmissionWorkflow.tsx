@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useUniversityOpsActions, UniversitySubmission } from '../../hooks/useUniversityOps';
 import { CheckCircle, Globe, Mail, Link, AlertTriangle, Send, ShieldCheck, FileKey, Terminal } from 'lucide-react';
 import { cn } from '../../lib/utils';

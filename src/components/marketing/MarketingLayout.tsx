@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Outlet } from 'react-router-dom';
 import { MarketingSidebar } from './layout/MarketingSidebar';
 import { MarketingTopNav } from './layout/MarketingTopNav';

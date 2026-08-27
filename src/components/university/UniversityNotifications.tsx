@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Bell, Check, Trash2 } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
 

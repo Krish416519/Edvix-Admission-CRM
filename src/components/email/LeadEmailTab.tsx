@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Mail, Clock, CheckCheck, Eye, ChevronDown, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEmail } from '../../hooks/useEmail';
 import { Lead } from '../../types/schema';
 import { EmailComposer } from './EmailComposer';
 import { Skeleton } from '../ui/Skeleton';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 export function LeadEmailTab({ lead }: { lead: Lead }) {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
@@ -107,9 +108,9 @@ export function LeadEmailTab({ lead }: { lead: Lead }) {
 
                 {expandedEmail === email.id && (
                   <div className="p-4 border-t border-border bg-background/50">
-                    <div 
+                    <div
                       className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: email.body }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(email.body) }}
                     />
                   </div>
                 )}

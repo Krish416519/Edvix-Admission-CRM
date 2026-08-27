@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, ArrowRight, Check, AlertTriangle } from 'lucide-react';
 import { Lead } from '../../types/schema';
 import { cn } from '../../lib/utils';

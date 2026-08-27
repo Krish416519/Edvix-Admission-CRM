@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lead } from '../../../types/schema';
 import { aiService } from '../../../lib/aiService';
 import { Sparkles, MessageSquare, Mail, Phone, MessageCircle, Copy, Check } from 'lucide-react';

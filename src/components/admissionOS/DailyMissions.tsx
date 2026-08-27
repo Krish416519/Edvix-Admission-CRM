@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Target, Phone, FileText, CreditCard, AlertTriangle, CheckCircle2,
   Brain, Loader2, ChevronRight, Clock

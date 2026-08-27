@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Cpu, Save, Settings2, SlidersHorizontal, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { fetchAiConfig, updateAiConfig } from '../../lib/adminService';

@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useUniversityContacts, UniversityContact } from '../../hooks/useUniversityContacts';
 import { Users, Plus, Search, Building2, Phone, Mail, MapPin, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Skeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 export function UniversityContactDirectory() {
   const { contacts, isLoading, deleteContact } = useUniversityContacts();
+  const { confirm } = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -21,7 +23,12 @@ export function UniversityContactDirectory() {
   });
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete contact ${name}?`)) {
+    if (await confirm({
+      title: 'Delete Contact',
+      message: `Are you sure you want to delete contact ${name}?`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) {
       try {
         await deleteContact(id);
         toast.success('Contact deleted');

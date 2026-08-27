@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Lead } from '../../../../types/schema';
 import { X, Save, GraduationCap, Briefcase, Target, Building } from 'lucide-react';
 import { toast } from 'sonner';

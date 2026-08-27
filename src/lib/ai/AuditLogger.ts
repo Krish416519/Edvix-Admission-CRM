@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import { AIAuditLog } from './types';
 
 export class AuditLogger {
   static async log(

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, MessageSquare, Send, FileText, Calendar, Mail } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Skeleton } from '../ui/Skeleton';

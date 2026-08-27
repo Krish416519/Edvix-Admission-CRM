@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Users, TrendingUp, AlertTriangle, CheckCircle2, Flame, Loader2, UserCog, PhoneCall, Filter } from 'lucide-react';
 import { CounselorPerformance, AiManagerAlert } from '../../types/schema';

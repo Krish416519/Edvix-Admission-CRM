@@ -26,7 +26,7 @@ export class ExotelProvider implements TelephonyProviderInterface {
     console.log(`[ExotelProvider] Hanging up call ${providerCallId} via API...`);
   }
 
-  async mute(providerCallId: string, isMuted: boolean): Promise<void> {
+  async mute(_providerCallId: string, _isMuted: boolean): Promise<void> {
     console.log(`[ExotelProvider] Mute not directly supported via PSTN API`);
   }
 

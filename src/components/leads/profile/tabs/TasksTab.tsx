@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Lead } from '../../../../types/schema';
 import { Task } from '../../../../types/task';
 import { useTasks } from '../../../../hooks/useTasks';

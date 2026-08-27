@@ -1,0 +1,846 @@
+﻿diff --git a/package-lock.json b/package-lock.json
+index 001e1a5..8c2da2a 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -17,6 +17,7 @@
+         "@vitejs/plugin-react": "^5.0.4",
+         "clsx": "^2.1.1",
+         "date-fns": "^4.4.0",
++        "dompurify": "^3.4.14",
+         "dotenv": "^17.2.3",
+         "html-to-image": "^1.11.13",
+         "jspdf": "^4.2.1",
+@@ -34,8 +35,11 @@
+       },
+       "devDependencies": {
+         "@faker-js/faker": "^10.5.0",
++        "@types/dompurify": "^3.0.5",
+         "@types/node": "^22.14.0",
+         "@types/pg": "^8.20.3",
++        "@types/react": "^19.2.18",
++        "@types/react-dom": "^19.2.5",
+         "autoprefixer": "^10.4.21",
+         "esbuild": "^0.25.0",
+         "pg": "^8.22.0",
+@@ -1685,6 +1689,16 @@
+       "version": "3.0.2",
+       "license": "MIT"
+     },
++    "node_modules/@types/dompurify": {
++      "version": "3.0.5",
++      "resolved": "https://registry.npmjs.org/@types/dompurify/-/dompurify-3.0.5.tgz",
++      "integrity": "sha512-1Wg0g3BtQF7sSb27fJQAKck1HECM6zV1EB66j8JH9i3LCjYabJa0FSdiSgsD5K/RbrsR0SiraKacLB+T8ZVYAg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/trusted-types": "*"
++      }
++    },
+     "node_modules/@types/estree": {
+       "version": "1.0.9",
+       "license": "MIT"
+@@ -1721,6 +1735,26 @@
+       "license": "MIT",
+       "optional": true
+     },
++    "node_modules/@types/react": {
++      "version": "19.2.18",
++      "resolved": "https://registry.npmjs.org/@types/react/-/react-19.2.18.tgz",
++      "integrity": "sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==",
++      "devOptional": true,
++      "license": "MIT",
++      "dependencies": {
++        "csstype": "^3.2.2"
++      }
++    },
++    "node_modules/@types/react-dom": {
++      "version": "19.2.5",
++      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.2.5.tgz",
++      "integrity": "sha512-fMPwH9v7r/pp43yUd2/Mbiex5KouJwwR3dzHkhLREUC6764VyDsqxhAxv6OFEYR1RhjOyD1naqba8ECDBe7ZQg==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@types/react": "^19.2.0"
++      }
++    },
+     "node_modules/@types/retry": {
+       "version": "0.12.0",
+       "license": "MIT"
+@@ -1729,8 +1763,8 @@
+       "version": "2.0.7",
+       "resolved": "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz",
+       "integrity": "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==",
+-      "license": "MIT",
+-      "optional": true
++      "devOptional": true,
++      "license": "MIT"
+     },
+     "node_modules/@types/use-sync-external-store": {
+       "version": "0.0.6",
+@@ -1997,6 +2031,13 @@
+         "utrie": "^1.0.2"
+       }
+     },
++    "node_modules/csstype": {
++      "version": "3.2.3",
++      "resolved": "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz",
++      "integrity": "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==",
++      "devOptional": true,
++      "license": "MIT"
++    },
+     "node_modules/d3-array": {
+       "version": "3.2.4",
+       "license": "ISC",
+@@ -2125,11 +2166,10 @@
+       }
+     },
+     "node_modules/dompurify": {
+-      "version": "3.4.12",
+-      "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.12.tgz",
+-      "integrity": "sha512-zQvGet8Z2sWbQhCmfFz/T5QWH2oBmjnqK3qvOjaqaNLrLEF912WamU+ohnTp0TCep/MFVHpdJuCZEdFOdTnEFg==",
++      "version": "3.4.14",
++      "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.14.tgz",
++      "integrity": "sha512-dVoH9z+MY+C9IilgGCk3YfFqjLi3fChm2OiKJMzh6axrJ5qwxqWaZamgmHrpv22CN/KdbZJuGEGgfQoL00LTdg==",
+       "license": "(MPL-2.0 OR Apache-2.0)",
+-      "optional": true,
+       "optionalDependencies": {
+         "@types/trusted-types": "^2.0.7"
+       }
+diff --git a/package.json b/package.json
+index 38643ec..26f742d 100644
+--- a/package.json
++++ b/package.json
+@@ -31,6 +31,7 @@
+     "@vitejs/plugin-react": "^5.0.4",
+     "clsx": "^2.1.1",
+     "date-fns": "^4.4.0",
++    "dompurify": "^3.4.14",
+     "dotenv": "^17.2.3",
+     "html-to-image": "^1.11.13",
+     "jspdf": "^4.2.1",
+@@ -48,8 +49,11 @@
+   },
+   "devDependencies": {
+     "@faker-js/faker": "^10.5.0",
++    "@types/dompurify": "^3.0.5",
+     "@types/node": "^22.14.0",
+     "@types/pg": "^8.20.3",
++    "@types/react": "^19.2.18",
++    "@types/react-dom": "^19.2.5",
+     "autoprefixer": "^10.4.21",
+     "esbuild": "^0.25.0",
+     "pg": "^8.22.0",
+diff --git a/src/App.tsx b/src/App.tsx
+index eb9aaa8..49c0bc3 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -7,6 +7,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
+ import { TelephonyProvider } from './contexts/TelephonyContext';
+ import { AIProvider } from './contexts/AIContext';
+ import { BIProvider } from './contexts/BIContext';
++import { ConfirmProvider } from './components/ConfirmDialog';
+ import { ProtectedRoute } from './components/auth/ProtectedRoute';
+ import { PageLoader } from './components/layout/PageLoader';
+ import { Construction } from 'lucide-react';
+@@ -153,6 +154,7 @@ export default function App() {
+           <TelephonyProvider>
+             <BrowserRouter>
+             <AIProvider>
++              <ConfirmProvider>
+               <BIProvider>
+               <Suspense fallback={<PageLoader />}>
+               <Routes>
+@@ -310,6 +312,7 @@ export default function App() {
+               </Routes>
+               </Suspense>
+               </BIProvider>
++              </ConfirmProvider>
+             </AIProvider>
+             <CommandPalette />
+           </BrowserRouter>
+diff --git a/src/components/admin/AutomationBuilder.tsx b/src/components/admin/AutomationBuilder.tsx
+index f9362ed..fbf1dde 100644
+--- a/src/components/admin/AutomationBuilder.tsx
++++ b/src/components/admin/AutomationBuilder.tsx
+@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
+ import { useAuth } from '../../contexts/AuthContext';
+ import { Settings, Zap, MessageSquare, Bot, Plus, Trash2, Save, ArrowRight } from 'lucide-react';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ const AVAILABLE_TRIGGERS = [
+   { id: 'lead.created', label: 'Lead Created' },
+@@ -14,6 +15,7 @@ const AVAILABLE_TRIGGERS = [
+ 
+ export default function AutomationBuilder() {
+   const { user } = useAuth();
++  const { confirm } = useConfirm();
+   
+   const [workflows, setWorkflows] = useState<any[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+@@ -127,7 +129,12 @@ export default function AutomationBuilder() {
+   };
+ 
+   const deleteWorkflow = async (id: string) => {
+-    if (!confirm('Are you sure you want to delete this workflow?')) return;
++    if (!await confirm({
++      title: 'Delete Workflow',
++      message: 'Are you sure you want to delete this workflow?',
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) return;
+     try {
+       const { error } = await supabase
+         .from('automation_workflows')
+diff --git a/src/components/admin/DeveloperSettings.tsx b/src/components/admin/DeveloperSettings.tsx
+index a2a3164..2836af0 100644
+--- a/src/components/admin/DeveloperSettings.tsx
++++ b/src/components/admin/DeveloperSettings.tsx
+@@ -4,9 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
+ import { Key, Copy, CheckCircle2, AlertTriangle, Plus, Trash2, Eye, EyeOff, RefreshCw, ShieldCheck, Activity } from 'lucide-react';
+ import { ApiAnalytics } from './ApiAnalytics';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ export function DeveloperSettings() {
+   const { user } = useAuth();
++  const { confirm } = useConfirm();
+   const [apiKeys, setApiKeys] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+   
+@@ -165,7 +167,12 @@ export function DeveloperSettings() {
+   };
+ 
+   const revokeKey = async (id: string) => {
+-    if (!confirm('Are you sure you want to revoke this API key? Any applications using it will instantly lose access.')) return;
++    if (!await confirm({
++      title: 'Revoke API Key',
++      message: 'Are you sure you want to revoke this API key? Any applications using it will instantly lose access.',
++      confirmLabel: 'Revoke',
++      variant: 'danger'
++    })) return;
+     
+     try {
+       const { error } = await supabase
+@@ -231,7 +238,12 @@ export function DeveloperSettings() {
+   };
+ 
+   const removeWebhook = async (id: string) => {
+-    if (!confirm('Are you sure you want to remove this webhook? Partner systems will stop receiving updates.')) return;
++    if (!await confirm({
++      title: 'Remove Webhook',
++      message: 'Are you sure you want to remove this webhook? Partner systems will stop receiving updates.',
++      confirmLabel: 'Remove',
++      variant: 'danger'
++    })) return;
+     try {
+       const { error } = await supabase.from('webhooks').delete().eq('id', id);
+       if (error) throw error;
+@@ -243,7 +255,12 @@ export function DeveloperSettings() {
+   };
+ 
+   const rotateWebhookSecret = async (id: string) => {
+-    if (!confirm('Are you sure you want to rotate this webhook secret? You must immediately update your partner application with the new secret to verify payloads.')) return;
++    if (!await confirm({
++      title: 'Rotate Webhook Secret',
++      message: 'Are you sure you want to rotate this webhook secret? You must immediately update your partner application with the new secret to verify payloads.',
++      confirmLabel: 'Rotate',
++      variant: 'warning'
++    })) return;
+     
+     try {
+       setIsRotating(prev => ({ ...prev, [id]: true }));
+diff --git a/src/components/admin/MasterDataManagement.tsx b/src/components/admin/MasterDataManagement.tsx
+index 1988cdf..5109deb 100644
+--- a/src/components/admin/MasterDataManagement.tsx
++++ b/src/components/admin/MasterDataManagement.tsx
+@@ -3,9 +3,11 @@ import { GraduationCap, BookOpen, Plus, Search, Edit2, Trash2 } from 'lucide-rea
+ import { toast } from 'sonner';
+ import { supabase } from '../../lib/supabase';
+ import { MasterDataModal } from './MasterDataModal';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ export function MasterDataManagement() {
+   const [activeTab, setActiveTab] = useState<'universities' | 'courses'>('universities');
++  const { confirm } = useConfirm();
+   const [universities, setUniversities] = useState<any[]>([]);
+   const [courses, setCourses] = useState<any[]>([]);
+   const [search, setSearch] = useState('');
+@@ -55,7 +57,12 @@ export function MasterDataManagement() {
+   };
+ 
+   const handleDelete = async (id: string, type: 'universities' | 'courses') => {
+-    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
++    if (!await confirm({
++      title: 'Delete Item',
++      message: `Are you sure you want to delete this ${type.slice(0, -1)}?`,
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) return;
+     try {
+       const { error } = await supabase.from(type).delete().eq('id', id);
+       if (error) throw error;
+@@ -67,7 +74,12 @@ export function MasterDataManagement() {
+   };
+ 
+   const handleBulkDelete = async () => {
+-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} items?`)) return;
++    if (!await confirm({
++      title: 'Delete Items',
++      message: `Are you sure you want to delete ${selectedIds.size} items?`,
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) return;
+     setIsBulkUpdating(true);
+     try {
+       const ids = Array.from(selectedIds);
+diff --git a/src/components/admin/SystemLogsTab.tsx b/src/components/admin/SystemLogsTab.tsx
+index 5b4a407..627ccb0 100644
+--- a/src/components/admin/SystemLogsTab.tsx
++++ b/src/components/admin/SystemLogsTab.tsx
+@@ -3,9 +3,11 @@ import { Activity, Search, AlertCircle, Info, Trash2, Filter, AlertTriangle } fr
+ import { supabase } from '../../lib/supabase';
+ import { cn } from '../../lib/utils';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ export function SystemLogsTab() {
+   const [logs, setLogs] = useState<any[]>([]);
++  const { confirm } = useConfirm();
+   const [search, setSearch] = useState('');
+   const [loading, setLoading] = useState(true);
+ 
+@@ -30,7 +32,12 @@ export function SystemLogsTab() {
+   }, []);
+ 
+   const handleClearLogs = async () => {
+-    if (!confirm('Are you sure you want to clear all system logs?')) return;
++    if (!await confirm({
++      title: 'Clear Logs',
++      message: 'Are you sure you want to clear all system logs?',
++      confirmLabel: 'Clear',
++      variant: 'danger'
++    })) return;
+     try {
+       const { error } = await supabase
+         .from('system_logs')
+diff --git a/src/components/admin/UserManagement.tsx b/src/components/admin/UserManagement.tsx
+index d417e54..e673ab8 100644
+--- a/src/components/admin/UserManagement.tsx
++++ b/src/components/admin/UserManagement.tsx
+@@ -5,6 +5,7 @@ import { toast } from 'sonner';
+ import { supabase } from '../../lib/supabase';
+ import { adminDeleteUser, adminBulkDeleteUsers } from '../../lib/adminApi';
+ import { UserFormModal } from './UserFormModal';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ // Fetch users from Supabase
+ const fetchUsers = async () => {
+@@ -35,6 +36,7 @@ const fetchUsers = async () => {
+ 
+ export function UserManagement() {
+   const [users, setUsers] = useState<any[]>([]);
++  const { confirm } = useConfirm();
+   const [search, setSearch] = useState('');
+   const [isModalOpen, setIsModalOpen] = useState(false);
+   const [selectedUser, setSelectedUser] = useState<any>(null);
+@@ -77,7 +79,12 @@ export function UserManagement() {
+ 
+   // ΓöÇΓöÇ Bulk actions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+   const handleBulkDeactivate = async () => {
+-    if (!confirm(`Deactivate ${selectedIds.size} selected users?`)) return;
++    if (!await confirm({
++      title: 'Deactivate Users',
++      message: `Deactivate ${selectedIds.size} selected users?`,
++      confirmLabel: 'Deactivate',
++      variant: 'warning'
++    })) return;
+     setIsBulkLoading(true);
+     let failed = 0;
+     try {
+@@ -97,7 +104,11 @@ export function UserManagement() {
+   };
+ 
+   const handleBulkActivate = async () => {
+-    if (!confirm(`Activate ${selectedIds.size} selected users?`)) return;
++    if (!await confirm({
++      title: 'Activate Users',
++      message: `Activate ${selectedIds.size} selected users?`,
++      confirmLabel: 'Activate'
++    })) return;
+     setIsBulkLoading(true);
+     let failed = 0;
+     try {
+@@ -117,7 +128,12 @@ export function UserManagement() {
+   };
+ 
+   const handleBulkDelete = async () => {
+-    if (!confirm(`Permanently delete ${selectedIds.size} selected users? This cannot be undone.`)) return;
++    if (!await confirm({
++      title: 'Delete Users',
++      message: `Permanently delete ${selectedIds.size} selected users? This cannot be undone.`,
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) return;
+     setIsBulkLoading(true);
+     try {
+       const ids = Array.from(selectedIds) as string[];
+@@ -143,7 +159,12 @@ export function UserManagement() {
+       return;
+     }
+ 
+-    if (!confirm(`Are you sure you want to ${action} for ${user.name}?`)) return;
++    if (!await confirm({
++      title: 'Confirm Action',
++      message: `Are you sure you want to ${action} for ${user.name}?`,
++      confirmLabel: 'Confirm',
++      variant: action === 'Delete' ? 'danger' : 'info'
++    })) return;
+ 
+     try {
+       if (action === 'Delete') {
+diff --git a/src/components/admissions/AdmissionDetails.tsx b/src/components/admissions/AdmissionDetails.tsx
+index 131a5ee..8ce9e8e 100644
+--- a/src/components/admissions/AdmissionDetails.tsx
++++ b/src/components/admissions/AdmissionDetails.tsx
+@@ -9,6 +9,7 @@ import { useDocuments } from '../../hooks/useDocuments';
+ import { Admission, AdmissionStage, AdmissionChecklistItem } from '../../types/admission';
+ import { cn } from '../../lib/utils';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ const STAGES: AdmissionStage[] = [
+   'Admission Confirmed',
+@@ -29,6 +30,7 @@ const STAGES: AdmissionStage[] = [
+ export function AdmissionDetails() {
+   const { id } = useParams();
+   const navigate = useNavigate();
++  const { confirm } = useConfirm();
+   const { admissions, updateAdmission, isLoading } = useAdmissions();
+   
+   const admission = admissions.find(a => a.id === id);
+@@ -438,19 +440,24 @@ export function AdmissionDetails() {
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+-                      <button 
++                      <button
+                         onClick={async () => {
+                           const url = await getSignedUrl(doc.id);
+-                          if (url) window.open(url, '_blank');
++                          if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                         }}
+                         className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                         title="Preview"
+                       >
+                         <Eye className="w-4 h-4" />
+                       </button>
+-                      <button 
++                      <button
+                         onClick={async () => {
+-                          if (window.confirm('Are you sure you want to delete this document?')) {
++                          if (await confirm({
++                            title: 'Delete Document',
++                            message: 'Are you sure you want to delete this document?',
++                            confirmLabel: 'Delete',
++                            variant: 'danger'
++                          })) {
+                             await deleteDocument(doc.id);
+                           }
+                         }}
+diff --git a/src/components/ai/AIAssistant.tsx b/src/components/ai/AIAssistant.tsx
+index 01ff4f1..1ce0a9a 100644
+--- a/src/components/ai/AIAssistant.tsx
++++ b/src/components/ai/AIAssistant.tsx
+@@ -7,6 +7,7 @@ import { AIMessage } from '../../lib/ai/types';
+ import { useLocation } from 'react-router-dom';
+ import { cn } from '../../lib/utils';
+ import { supabase } from '../../lib/supabase';
++import { sanitizeHtml } from '../../lib/sanitize';
+ 
+ export function AIAssistant() {
+   const { isOpen, closeAssistant, initialPrompt } = useAI();
+@@ -111,7 +112,7 @@ export function AIAssistant() {
+       const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+       return (
+         <span key={i}>
+-          <span dangerouslySetInnerHTML={{ __html: formattedLine }} />
++          <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(formattedLine) }} />
+           <br />
+         </span>
+       );
+diff --git a/src/components/ai/CommandPalette.tsx b/src/components/ai/CommandPalette.tsx
+index f261f85..548af1f 100644
+--- a/src/components/ai/CommandPalette.tsx
++++ b/src/components/ai/CommandPalette.tsx
+@@ -6,6 +6,7 @@ import { AIMessage } from '../../lib/ai/types';
+ import { useLocation } from 'react-router-dom';
+ import { cn } from '../../lib/utils';
+ import { AIReportRenderer } from './AIReportRenderer';
++import { sanitizeHtml } from '../../lib/sanitize';
+ 
+ export function CommandPalette() {
+   const [isOpen, setIsOpen] = useState(false);
+@@ -95,7 +96,7 @@ export function CommandPalette() {
+     }
+     
+     // Fallback: just return text with basic formatting
+-    const formattedText = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br />');
++    const formattedText = sanitizeHtml(content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br />'));
+     return { text: formattedText, report: null };
+   };
+ 
+diff --git a/src/components/billing/TenantBillingDashboard.tsx b/src/components/billing/TenantBillingDashboard.tsx
+index 96d7521..e05f06f 100644
+--- a/src/components/billing/TenantBillingDashboard.tsx
++++ b/src/components/billing/TenantBillingDashboard.tsx
+@@ -4,9 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
+ import { billingProvider } from '../../lib/billing/MockBillingProvider';
+ import { CreditCard, Zap, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ export function TenantBillingDashboard() {
+   const { user } = useAuth();
++  const { confirm } = useConfirm();
+   const [plans, setPlans] = useState<any[]>([]);
+   const [subscription, setSubscription] = useState<any>(null);
+   const [invoices, setInvoices] = useState<any[]>([]);
+@@ -72,7 +74,12 @@ export function TenantBillingDashboard() {
+   };
+ 
+   const handleCancel = async () => {
+-    if (!confirm('Are you sure you want to cancel your subscription? You will lose access at the end of your billing cycle.')) return;
++    if (!await confirm({
++      title: 'Cancel Subscription',
++      message: 'Are you sure you want to cancel your subscription? You will lose access at the end of your billing cycle.',
++      confirmLabel: 'Cancel Subscription',
++      variant: 'danger'
++    })) return;
+     
+     setProcessingId('cancel');
+     try {
+diff --git a/src/components/email/EmailCenter.tsx b/src/components/email/EmailCenter.tsx
+index 38d9541..a6c1e8d 100644
+--- a/src/components/email/EmailCenter.tsx
++++ b/src/components/email/EmailCenter.tsx
+@@ -1,12 +1,13 @@
+ import React, { useState, useEffect } from 'react';
+-import { 
+-  Mail, Inbox, Send, Archive, Trash2, Clock, FileText, 
++import {
++  Mail, Inbox, Send, Archive, Trash2, Clock, FileText,
+   Search, Star, Eye, PenSquare, Loader2, StarOff
+ } from 'lucide-react';
+ import { cn } from '../../lib/utils';
+ import { useEmail } from '../../hooks/useEmail';
+ import { EmailComposer } from './EmailComposer';
+ import { Skeleton } from '../ui/Skeleton';
++import { sanitizeHtml } from '../../lib/sanitize';
+ 
+ type FolderType = 'Inbox' | 'Sent' | 'Drafts' | 'Scheduled' | 'Archived' | 'Trash';
+ 
+@@ -225,9 +226,9 @@ export function EmailCenter() {
+               </div>
+ 
+               <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+-                <div 
++                <div
+                   className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed"
+-                  dangerouslySetInnerHTML={{ __html: activeEmail.body }}
++                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeEmail.body) }}
+                 />
+               </div>
+             </div>
+diff --git a/src/components/email/LeadEmailTab.tsx b/src/components/email/LeadEmailTab.tsx
+index 1d26dfa..0161ce1 100644
+--- a/src/components/email/LeadEmailTab.tsx
++++ b/src/components/email/LeadEmailTab.tsx
+@@ -5,6 +5,7 @@ import { useEmail } from '../../hooks/useEmail';
+ import { Lead } from '../../types/schema';
+ import { EmailComposer } from './EmailComposer';
+ import { Skeleton } from '../ui/Skeleton';
++import { sanitizeHtml } from '../../lib/sanitize';
+ 
+ export function LeadEmailTab({ lead }: { lead: Lead }) {
+   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
+@@ -107,9 +108,9 @@ export function LeadEmailTab({ lead }: { lead: Lead }) {
+ 
+                 {expandedEmail === email.id && (
+                   <div className="p-4 border-t border-border bg-background/50">
+-                    <div 
++                    <div
+                       className="prose prose-sm dark:prose-invert max-w-none"
+-                      dangerouslySetInnerHTML={{ __html: email.body }}
++                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(email.body) }}
+                     />
+                   </div>
+                 )}
+diff --git a/src/components/leads/LeadsList.tsx b/src/components/leads/LeadsList.tsx
+index 8fa5e06..f93bccf 100644
+--- a/src/components/leads/LeadsList.tsx
++++ b/src/components/leads/LeadsList.tsx
+@@ -18,6 +18,7 @@ import { LeadSortSheet } from './mobile/LeadSortSheet';
+ import { useLeadAssignment } from '../../hooks/useLeadAssignment';
+ import { useAuth } from '../../contexts/AuthContext';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ import * as XLSX from 'xlsx';
+ import { supabase } from '../../lib/supabase';
+ import { format } from 'date-fns';
+@@ -89,6 +90,7 @@ function autoMap(headers: string[]): Record<string, string> {
+ 
+ export function LeadsList() {
+   const navigate = useNavigate();
++  const { confirm } = useConfirm();
+   const [searchTerm, setSearchTerm] = useState('');
+   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>('All');
+ 
+@@ -478,7 +480,12 @@ export function LeadsList() {
+   };
+ 
+   const handleDeleteSelected = async () => {
+-    if (confirm(`Are you sure you want to delete ${selectedIds.size} leads?`)) {
++    if (await confirm({
++      title: 'Delete Leads',
++      message: `Are you sure you want to delete ${selectedIds.size} leads?`,
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) {
+       const ids = Array.from(selectedIds) as string[];
+       await bulkDeleteLeads(ids);
+       setSelectedIds(new Set());
+@@ -1312,10 +1319,14 @@ export function LeadsList() {
+                           </button>
+                           
+                           {/* Duplicate Action */}
+-                          <button 
++                          <button
+                             onClick={async (e) => {
+                               e.stopPropagation();
+-                              if (confirm('Are you sure you want to duplicate this lead?')) {
++                              if (await confirm({
++                                title: 'Duplicate Lead',
++                                message: 'Are you sure you want to duplicate this lead?',
++                                confirmLabel: 'Duplicate'
++                              })) {
+                                 const res = await duplicateLead(lead.id);
+                                 if (res.success) toast.success('Lead duplicated successfully');
+                               }
+@@ -1340,10 +1351,15 @@ export function LeadsList() {
+                               <ArchiveRestore className="w-4 h-4" />
+                             </button>
+                           ) : (
+-                            <button 
++                            <button
+                               onClick={async (e) => {
+                                 e.stopPropagation();
+-                                if (confirm('Are you sure you want to delete this lead?')) {
++                                if (await confirm({
++                                  title: 'Delete Lead',
++                                  message: 'Are you sure you want to delete this lead?',
++                                  confirmLabel: 'Delete',
++                                  variant: 'danger'
++                                })) {
+                                   await deleteLead(lead.id);
+                                   toast.success('Lead deleted successfully');
+                                 }
+diff --git a/src/components/partner/PartnerLeads.tsx b/src/components/partner/PartnerLeads.tsx
+index 5ba0414..e8db3b9 100644
+--- a/src/components/partner/PartnerLeads.tsx
++++ b/src/components/partner/PartnerLeads.tsx
+@@ -8,6 +8,7 @@ import { LeadFormModal } from '../leads/LeadFormModal';
+ import { Skeleton } from '../ui/Skeleton';
+ import { format } from 'date-fns';
+ import { partnerService } from '../../lib/partner/PartnerService';
++import { toast } from 'sonner';
+ 
+ export function PartnerLeads() {
+   const { user } = useAuth();
+@@ -159,10 +160,10 @@ export function PartnerLeads() {
+             try {
+               await partnerService.submitLead(data);
+               setIsFormOpen(false);
+-              alert('Lead submitted successfully.');
+-              // We could force a reload here if needed, but RLS and Realtime generally handle it
+-            } catch (error: any) {
+-              alert(error.message || 'Failed to submit lead.');
++              toast.success('Lead submitted successfully.');
++            } catch (error: unknown) {
++              const message = error instanceof Error ? error.message : 'Failed to submit lead.';
++              toast.error(message);
+             }
+           }}
+         />
+diff --git a/src/components/partner/PartnerProfile.tsx b/src/components/partner/PartnerProfile.tsx
+index c55e13e..9fadadf 100644
+--- a/src/components/partner/PartnerProfile.tsx
++++ b/src/components/partner/PartnerProfile.tsx
+@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
+ import { User, Building2, UploadCloud, ShieldCheck, AlertCircle, CheckCircle2, ChevronDown, FileText, Briefcase, MapPin, BadgeCheck } from 'lucide-react';
+ import { partnerService, PartnerProfile as IPartnerProfile } from '../../lib/partner/PartnerService';
+ import { cn } from '../../lib/utils';
++import { toast } from 'sonner';
+ 
+ export function PartnerProfile() {
+   const [profile, setProfile] = useState<IPartnerProfile | null>(null);
+@@ -32,9 +33,10 @@ export function PartnerProfile() {
+     try {
+       await partnerService.uploadKYCDocument(file, docType);
+       await loadProfile();
+-      alert('Document uploaded successfully! It is now under review.');
+-    } catch (error: any) {
+-      alert('Failed to upload document: ' + error.message);
++      toast.success('Document uploaded successfully! It is now under review.');
++    } catch (error: unknown) {
++      const message = error instanceof Error ? error.message : 'Failed to upload document';
++      toast.error(`Failed to upload document: ${message}`);
+     } finally {
+       setUploading(false);
+       if (e.target) e.target.value = '';
+diff --git a/src/components/partner/PartnerSupport.tsx b/src/components/partner/PartnerSupport.tsx
+index 8e014ea..bd25cb7 100644
+--- a/src/components/partner/PartnerSupport.tsx
++++ b/src/components/partner/PartnerSupport.tsx
+@@ -3,6 +3,7 @@ import { LifeBuoy, Plus, MessageSquare, Clock, CheckCircle2, ChevronDown, Headse
+ import { supabase } from '../../lib/supabase';
+ import { useAuth } from '../../contexts/AuthContext';
+ import { cn } from '../../lib/utils';
++import { toast } from 'sonner';
+ 
+ export function PartnerSupport() {
+   const { user } = useAuth();
+@@ -73,9 +74,10 @@ export function PartnerSupport() {
+       setSubject('');
+       setMessage('');
+       await loadTickets();
+-      alert('Ticket submitted successfully.');
+-    } catch (error: any) {
+-      alert('Failed to submit ticket: ' + error.message);
++      toast.success('Ticket submitted successfully.');
++    } catch (error: unknown) {
++      const message = error instanceof Error ? error.message : 'Failed to submit ticket';
++      toast.error(`Failed to submit ticket: ${message}`);
+     } finally {
+       setSubmitting(false);
+     }
+diff --git a/src/components/public/ChatWidget.tsx b/src/components/public/ChatWidget.tsx
+index d8f0a54..50c017f 100644
+--- a/src/components/public/ChatWidget.tsx
++++ b/src/components/public/ChatWidget.tsx
+@@ -3,6 +3,7 @@ import { Send, Bot, User, Sparkles, X, Phone, Mail, User as UserIcon } from 'luc
+ import { supabase } from '../../lib/supabase';
+ import { cn } from '../../lib/utils';
+ import { LLMClient } from '../../lib/ai/LLMClient';
++import { sanitizeHtml } from '../../lib/sanitize';
+ 
+ interface Message {
+   id: string;
+@@ -147,7 +148,7 @@ Once they provide their contact details, thank them and assure them a counselor
+                 ? "bg-primary text-white rounded-tr-sm" 
+                 : "bg-white dark:bg-card border border-border text-foreground rounded-tl-sm"
+             )}>
+-              <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }} />
++               <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.content.replace(/\n/g, '<br/>')) }} />
+             </div>
+           </div>
+         ))}
+diff --git a/src/components/telephony/ProviderSettings.tsx b/src/components/telephony/ProviderSettings.tsx
+index fe01edb..dbca7e3 100644
+--- a/src/components/telephony/ProviderSettings.tsx
++++ b/src/components/telephony/ProviderSettings.tsx
+@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
+ import { TelephonyProvider, TelephonyProviderType } from '../../types/telephony';
+ import { Server, Save, Plus, Trash2, CheckCircle, X } from 'lucide-react';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ const PROVIDER_TYPES: TelephonyProviderType[] = [
+   'Twilio', 'Exotel', 'Knowlarity', 'MyOperator', 'CloudTalk', 'CustomSIP'
+@@ -10,6 +11,7 @@ const PROVIDER_TYPES: TelephonyProviderType[] = [
+ 
+ export function ProviderSettings() {
+   const [providers, setProviders] = useState<TelephonyProvider[]>([]);
++  const { confirm } = useConfirm();
+   const [isLoading, setIsLoading] = useState(true);
+   
+   // Modal state
+@@ -56,7 +58,12 @@ export function ProviderSettings() {
+   };
+ 
+   const handleDelete = async (id: string) => {
+-    if (!window.confirm('Are you sure you want to delete this provider configuration?')) return;
++    if (!await confirm({
++      title: 'Delete Provider',
++      message: 'Are you sure you want to delete this provider configuration?',
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) return;
+     const { error } = await supabase.from('telephony_providers').delete().eq('id', id);
+     if (error) toast.error('Failed to delete provider');
+     else {
+diff --git a/src/components/universityOps/UniversityContactDirectory.tsx b/src/components/universityOps/UniversityContactDirectory.tsx
+index afbc018..3dd7d32 100644
+--- a/src/components/universityOps/UniversityContactDirectory.tsx
++++ b/src/components/universityOps/UniversityContactDirectory.tsx
+@@ -5,9 +5,11 @@ import { cn } from '../../lib/utils';
+ import { Skeleton } from '../ui/Skeleton';
+ import { EmptyState } from '../ui/EmptyState';
+ import { toast } from 'sonner';
++import { useConfirm } from '../ConfirmDialog';
+ 
+ export function UniversityContactDirectory() {
+   const { contacts, isLoading, deleteContact } = useUniversityContacts();
++  const { confirm } = useConfirm();
+   const [searchTerm, setSearchTerm] = useState('');
+   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+ 
+@@ -21,7 +23,12 @@ export function UniversityContactDirectory() {
+   });
+ 
+   const handleDelete = async (id: string, name: string) => {
+-    if (confirm(`Are you sure you want to delete contact ${name}?`)) {
++    if (await confirm({
++      title: 'Delete Contact',
++      message: `Are you sure you want to delete contact ${name}?`,
++      confirmLabel: 'Delete',
++      variant: 'danger'
++    })) {
+       try {
+         await deleteContact(id);
+         toast.success('Contact deleted');
+diff --git a/src/main.tsx b/src/main.tsx
+index 080dac3..2e34fd6 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,10 +1,13 @@
+ import {StrictMode} from 'react';
+ import {createRoot} from 'react-dom/client';
+ import App from './App.tsx';
++import { ErrorBoundary } from './components/ErrorBoundary';
+ import './index.css';
+ 
+ createRoot(document.getElementById('root')!).render(
+   <StrictMode>
+-    <App />
++    <ErrorBoundary>
++      <App />
++    </ErrorBoundary>
+   </StrictMode>,
+ );
+diff --git a/tsconfig.json b/tsconfig.json
+index 2f09518..4c9068d 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -15,6 +15,11 @@
+     "moduleDetection": "force",
+     "allowJs": true,
+     "jsx": "react-jsx",
++    "strict": true,
++    "noUnusedLocals": true,
++    "noUnusedParameters": true,
++    "noFallthroughCasesInSwitch": true,
++    "forceConsistentCasingInFileNames": true,
+     "paths": {
+       "@/*": [
+         "./*"

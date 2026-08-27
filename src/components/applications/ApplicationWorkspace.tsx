@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FileText, CheckCircle, AlertCircle, Clock, Upload, Shield, X, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DocumentChecklist } from './DocumentChecklist';

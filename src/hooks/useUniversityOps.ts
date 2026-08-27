@@ -332,9 +332,11 @@ export function useUniversityOpsActions() {
   };
 
   const updateSubmissionStatus = async (submissionId: string, newStatus: string, notes?: string) => {
+    const payload: any = { status: newStatus, updated_by: user?.id };
+    if (notes) payload.notes = notes;
     const { error } = await supabase
       .from('university_submissions')
-      .update({ status: newStatus, updated_by: user?.id })
+      .update(payload)
       .eq('id', submissionId);
     if (error) throw error;
   };

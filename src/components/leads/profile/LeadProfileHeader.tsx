@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Lead } from '../../../types/schema';
 import { Sun, Sparkles, ArrowLeft } from 'lucide-react';
 import { cn } from '../../../lib/utils';

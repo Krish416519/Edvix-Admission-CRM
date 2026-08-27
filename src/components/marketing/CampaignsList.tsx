@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Filter, Plus, Megaphone, MoreHorizontal, Play, Pause, Trash2, Copy, Loader2 } from 'lucide-react';
 import { useMarketing } from '../../hooks/useMarketing';
 import { EmptyState } from '../ui/EmptyState';

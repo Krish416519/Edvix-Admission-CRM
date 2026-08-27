@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, CheckCircle, Sparkles, Menu, X, PieChart } from 'lucide-react';
 import { cn } from '../../lib/utils';

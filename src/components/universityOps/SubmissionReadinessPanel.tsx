@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useSubmissionReadiness } from '../../hooks/useUniversityOps';
 import { CheckCircle, XCircle, AlertCircle, FileText, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';

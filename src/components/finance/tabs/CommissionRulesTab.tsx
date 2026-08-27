@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Settings, Plus, CheckCircle, Clock } from 'lucide-react';
 import { EmptyState } from '../../ui/EmptyState';
 import { formatCurrency } from '../../../lib/utils';

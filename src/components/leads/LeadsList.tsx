@@ -18,6 +18,7 @@ import { LeadSortSheet } from './mobile/LeadSortSheet';
 import { useLeadAssignment } from '../../hooks/useLeadAssignment';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
@@ -89,6 +90,7 @@ function autoMap(headers: string[]): Record<string, string> {
 
 export function LeadsList() {
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>('All');
 
@@ -478,7 +480,12 @@ export function LeadsList() {
   };
 
   const handleDeleteSelected = async () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.size} leads?`)) {
+    if (await confirm({
+      title: 'Delete Leads',
+      message: `Are you sure you want to delete ${selectedIds.size} leads?`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) {
       const ids = Array.from(selectedIds) as string[];
       await bulkDeleteLeads(ids);
       setSelectedIds(new Set());
@@ -1312,10 +1319,14 @@ export function LeadsList() {
                           </button>
                           
                           {/* Duplicate Action */}
-                          <button 
+                          <button
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (confirm('Are you sure you want to duplicate this lead?')) {
+                              if (await confirm({
+                                title: 'Duplicate Lead',
+                                message: 'Are you sure you want to duplicate this lead?',
+                                confirmLabel: 'Duplicate'
+                              })) {
                                 const res = await duplicateLead(lead.id);
                                 if (res.success) toast.success('Lead duplicated successfully');
                               }
@@ -1340,10 +1351,15 @@ export function LeadsList() {
                               <ArchiveRestore className="w-4 h-4" />
                             </button>
                           ) : (
-                            <button 
+                            <button
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (confirm('Are you sure you want to delete this lead?')) {
+                                if (await confirm({
+                                  title: 'Delete Lead',
+                                  message: 'Are you sure you want to delete this lead?',
+                                  confirmLabel: 'Delete',
+                                  variant: 'danger'
+                                })) {
                                   await deleteLead(lead.id);
                                   toast.success('Lead deleted successfully');
                                 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Key, Copy, Plus, Trash2, Shield, Eye, EyeOff, AlertTriangle, Loader2 } from 'lucide-react';
 import { useIntegration } from '../../lib/integrationService';
 import { ApiKey } from '../../types/integration';

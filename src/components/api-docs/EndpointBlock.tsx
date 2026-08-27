@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ApiEndpoint } from './ApiEndpoints';
 import { Play, Copy, CheckCircle2, ChevronRight, Terminal } from 'lucide-react';
 import { toast } from 'sonner';

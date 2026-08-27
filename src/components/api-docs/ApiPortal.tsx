@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ENDPOINTS } from './ApiEndpoints';
 import { EndpointBlock } from './EndpointBlock';
 import { Link } from 'react-router-dom';

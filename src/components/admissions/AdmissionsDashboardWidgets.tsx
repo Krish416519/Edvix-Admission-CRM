@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Admission, AdmissionStage } from '../../types/admission';
 import { 
   GraduationCap, CheckCircle2, FileText, IndianRupee, 

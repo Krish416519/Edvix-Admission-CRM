@@ -1,7 +1,6 @@
 import { supabase } from '../supabase';
 import { ResendProvider } from './providers/ResendProvider';
 import { IEmailProvider, EmailSendPayload } from './providers/BaseEmailProvider';
-import { toast } from 'sonner';
 
 export interface SendEmailOptions {
   leadId?: string;
@@ -51,8 +50,6 @@ export class EmailCoreService {
     // 1. Determine folder & status
     const isScheduled = !!opts.scheduledFor;
     const folder = opts.folder || (isScheduled ? 'Scheduled' : 'Sent');
-    const status = isScheduled ? 'queued' : 'queued';
-
     // Get current user as sender if not specified
     const { data: { user } } = await supabase.auth.getUser();
     const senderId = opts.senderId || user?.id;

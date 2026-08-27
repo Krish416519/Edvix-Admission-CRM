@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FileText, Search, Upload, Filter, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Skeleton } from '../ui/Skeleton';

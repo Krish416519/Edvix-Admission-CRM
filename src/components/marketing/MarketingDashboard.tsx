@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useMarketing } from '../../hooks/useMarketing';
 import { 
   Megaphone, Target, ArrowUpRight, ArrowDownRight, 

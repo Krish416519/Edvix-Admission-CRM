@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Activity, Server, Clock, AlertTriangle, CheckCircle2, XCircle, Webhook, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';

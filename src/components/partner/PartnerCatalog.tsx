@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Building2, Globe, Clock, Banknote, ShieldCheck, GraduationCap } from 'lucide-react';
 import { universityCatalogService } from '../../lib/partner/UniversityCatalogService';
 

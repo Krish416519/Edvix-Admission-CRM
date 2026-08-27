@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, Send, FileText, Bot, AlertCircle } from 'lucide-react';
 import { useAdmissions } from '../../hooks/useAdmissions';
 

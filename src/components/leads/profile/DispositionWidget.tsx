@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { dispositionService } from '../../../lib/dispositionService';
 import { DispositionCategory, Disposition, SubDisposition, NextAction } from '../../../types/disposition';
@@ -385,6 +385,8 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
         notes: finalNotes || undefined,
         followUpAt,
         userId: user.id,
+        userName: user.name,
+        userRole: user.role,
         lostReason: activeDisposition?.target_status === 'Lost' ? lostReason : undefined,
         competitor: activeDisposition?.target_status === 'Lost' ? competitor : undefined
       });

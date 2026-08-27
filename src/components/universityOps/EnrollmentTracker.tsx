@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useEnrollmentMilestones } from '../../hooks/useUniversityOps';
 import { CheckCircle2, Circle, Clock, Building2, Flag } from 'lucide-react';
 import { cn } from '../../lib/utils';

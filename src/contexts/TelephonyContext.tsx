@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { CallConfig, TelephonyProviderInterface } from '../lib/telephony/provider';
 import { createTelephonyProvider } from '../lib/telephony/providerFactory';

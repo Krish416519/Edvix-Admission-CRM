@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { IndianRupee, Download, Search, Wallet, FileText } from 'lucide-react';
 import { useFinance } from '../../hooks/useFinance';
 import { EmptyState } from '../ui/EmptyState';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, X, Mic, Send, Command, Loader2, User, Bot, AlertTriangle, MessageSquare, BarChart2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AIService } from '../../lib/ai/AIService';
@@ -6,6 +6,7 @@ import { AIMessage } from '../../lib/ai/types';
 import { useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { AIReportRenderer } from './AIReportRenderer';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 export function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
@@ -95,7 +96,7 @@ export function CommandPalette() {
     }
     
     // Fallback: just return text with basic formatting
-    const formattedText = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br />');
+    const formattedText = sanitizeHtml(content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').split('\n').join('<br />'));
     return { text: formattedText, report: null };
   };
 

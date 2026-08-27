@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Download, Calendar, BarChart3 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 

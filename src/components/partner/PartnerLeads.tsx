@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, Plus, FileSpreadsheet, ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Lead } from '../../types/schema';
@@ -8,6 +8,7 @@ import { LeadFormModal } from '../leads/LeadFormModal';
 import { Skeleton } from '../ui/Skeleton';
 import { format } from 'date-fns';
 import { partnerService } from '../../lib/partner/PartnerService';
+import { toast } from 'sonner';
 
 export function PartnerLeads() {
   const { user } = useAuth();
@@ -159,10 +160,10 @@ export function PartnerLeads() {
             try {
               await partnerService.submitLead(data);
               setIsFormOpen(false);
-              alert('Lead submitted successfully.');
-              // We could force a reload here if needed, but RLS and Realtime generally handle it
-            } catch (error: any) {
-              alert(error.message || 'Failed to submit lead.');
+              toast.success('Lead submitted successfully.');
+            } catch (error: unknown) {
+              const message = error instanceof Error ? error.message : 'Failed to submit lead.';
+              toast.error(message);
             }
           }}
         />

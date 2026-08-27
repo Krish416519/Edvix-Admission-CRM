@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { dispositionService } from '../../../lib/dispositionService';
 import { DispositionCategory, Disposition } from '../../../types/disposition';

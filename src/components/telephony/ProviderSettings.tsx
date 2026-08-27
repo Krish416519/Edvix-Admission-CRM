@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { TelephonyProvider, TelephonyProviderType } from '../../types/telephony';
 import { Server, Save, Plus, Trash2, CheckCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 const PROVIDER_TYPES: TelephonyProviderType[] = [
   'Twilio', 'Exotel', 'Knowlarity', 'MyOperator', 'CloudTalk', 'CustomSIP'
@@ -10,6 +11,7 @@ const PROVIDER_TYPES: TelephonyProviderType[] = [
 
 export function ProviderSettings() {
   const [providers, setProviders] = useState<TelephonyProvider[]>([]);
+  const { confirm } = useConfirm();
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal state
@@ -56,7 +58,12 @@ export function ProviderSettings() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this provider configuration?')) return;
+    if (!await confirm({
+      title: 'Delete Provider',
+      message: 'Are you sure you want to delete this provider configuration?',
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) return;
     const { error } = await supabase.from('telephony_providers').delete().eq('id', id);
     if (error) toast.error('Failed to delete provider');
     else {

@@ -62,7 +62,7 @@ export class MockBillingProvider implements IBillingProvider {
     }
   }
 
-  async createCustomerPortalSession(organizationId: string, returnUrl: string): Promise<string> {
+  async createCustomerPortalSession(_organizationId: string, returnUrl: string): Promise<string> {
     toast.info("Customer portal is simulated in mock mode.");
     return returnUrl;
   }

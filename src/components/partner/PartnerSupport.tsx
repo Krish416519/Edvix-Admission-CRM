@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { LifeBuoy, Plus, MessageSquare, Clock, CheckCircle2, ChevronDown, Headset, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 export function PartnerSupport() {
   const { user } = useAuth();
@@ -73,9 +74,10 @@ export function PartnerSupport() {
       setSubject('');
       setMessage('');
       await loadTickets();
-      alert('Ticket submitted successfully.');
-    } catch (error: any) {
-      alert('Failed to submit ticket: ' + error.message);
+      toast.success('Ticket submitted successfully.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to submit ticket';
+      toast.error(`Failed to submit ticket: ${message}`);
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Loader2, Download, GitCompare, CheckCircle2, XCircle, AlertTriangle, CheckCircle, HelpCircle } from 'lucide-react';
 import { Lead, AiRecommendation } from '../../../../types/schema';
 import { useAuth } from '../../../../contexts/AuthContext';

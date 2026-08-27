@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { ApplicationWorkspace } from '../components/applications/ApplicationWorkspace';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,14 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 export function ApplicationPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   
   if (!id) {
     return <div>Invalid Application ID</div>;
   }
   
-  const role = profile?.role === 'Super Admin' || profile?.role === 'Admin' ? 'Admin' :
-               profile?.role === 'Partner' ? 'Partner' : 'Counselor';
+  const role = user?.role === 'Super Admin' || user?.role === 'Admin' ? 'Admin' :
+               user?.role === 'Partner' ? 'Partner' : 'Counselor';
 
   return (
     <div className="h-[calc(100vh-4rem)]">

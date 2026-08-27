@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Send, MessageSquare, Mail, Smartphone, Wand2, Paperclip, Loader2, Image as ImageIcon, FileText } from 'lucide-react';
 import { ChannelType } from '../../types/communication';
 import { omnichannelService } from '../../lib/omnichannel/OmnichannelService';

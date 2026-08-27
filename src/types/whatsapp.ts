@@ -1,4 +1,4 @@
-import { BaseEntity, Lead, User } from './schema';
+import { BaseEntity } from './schema';
 
 export type WhatsAppMessageStatus = 'Pending' | 'Sent' | 'Delivered' | 'Read' | 'Failed';
 export type WhatsAppMessageType = 'Text' | 'Image' | 'PDF' | 'Document' | 'Audio' | 'Video' | 'Location' | 'Template';

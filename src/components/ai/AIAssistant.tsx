@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Send, Sparkles, Loader2, Bot, User, FunctionSquare } from 'lucide-react';
 import { useAI } from '../../contexts/AIContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,6 +7,7 @@ import { AIMessage } from '../../lib/ai/types';
 import { useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 export function AIAssistant() {
   const { isOpen, closeAssistant, initialPrompt } = useAI();
@@ -111,7 +112,7 @@ export function AIAssistant() {
       const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       return (
         <span key={i}>
-          <span dangerouslySetInnerHTML={{ __html: formattedLine }} />
+          <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(formattedLine) }} />
           <br />
         </span>
       );

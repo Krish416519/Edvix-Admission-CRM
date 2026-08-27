@@ -27,7 +27,7 @@ export const aiService = {
     if (lead.status === 'Admission Done') score = 100;
     
     // Boost based on activities
-    const recentActivityCount = activities.filter(a => new Date(a.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
+    const recentActivityCount = activities.filter(a => a.createdAt && new Date(a.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
     score += Math.min(recentActivityCount * 5, 20);
 
     // Penalize if no recent follow up
@@ -45,7 +45,7 @@ export const aiService = {
     // Generate Summary
     const summary = `Student is interested in ${lead.course || 'a program'}. Preferred university: ${lead.university || 'Not specified'}. ${
       lead.status === 'Documents Pending' ? 'Currently waiting for documents.' : ''
-    } Last contacted: ${activities.length > 0 ? new Date(activities[0].createdAt).toLocaleDateString() : 'Never'}.`;
+    } Last contacted: ${activities.length > 0 && activities[0].createdAt ? new Date(activities[0].createdAt).toLocaleDateString() : 'Never'}.`;
 
     // Next best action
     let nextBestAction = 'Send introduction email and brochure.';

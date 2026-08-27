@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { UploadCloud, CheckCircle, AlertCircle, Clock, File as FileIcon, MoreVertical, Eye, Download, Trash2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';

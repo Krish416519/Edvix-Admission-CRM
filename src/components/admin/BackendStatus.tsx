@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Database, Shield, Wifi, WifiOff, Server, Key, User, Activity, HardDrive, Cpu, Zap, LogOut, Clock, AlertTriangle, MessageSquare, Mail, Users } from 'lucide-react';
 import { supabase, hasSupabaseKeys, checkSupabaseConnection } from '../../lib/supabase';
 import { useOperations } from '../../hooks/useOperations';

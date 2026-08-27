@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Webhook, Plus, Settings2, Activity, Loader2 } from 'lucide-react';
 import { useIntegration } from '../../lib/integrationService';
 import { toast } from 'sonner';

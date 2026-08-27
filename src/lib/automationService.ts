@@ -5,8 +5,8 @@ export const automationService = {
   // but they should be migrated to useAutomations() hook
   getWorkflows() { return []; },
   getLogs() { return []; },
-  saveWorkflow(workflow: any) { console.warn('Use Supabase to save workflows directly'); },
-  deleteWorkflow(id: string) { console.warn('Use Supabase to delete workflows directly'); },
+  saveWorkflow(_workflow: any) { console.warn('Use Supabase to save workflows directly'); },
+  deleteWorkflow(_id: string) { console.warn('Use Supabase to delete workflows directly'); },
 
   // The main entry point
   async triggerEvent(triggerName: string, payload: any) {

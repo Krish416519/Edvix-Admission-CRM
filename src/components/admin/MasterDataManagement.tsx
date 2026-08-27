@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { GraduationCap, BookOpen, Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { MasterDataModal } from './MasterDataModal';
+import { useConfirm } from '../ConfirmDialog';
 
 export function MasterDataManagement() {
   const [activeTab, setActiveTab] = useState<'universities' | 'courses'>('universities');
+  const { confirm } = useConfirm();
   const [universities, setUniversities] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -55,7 +57,12 @@ export function MasterDataManagement() {
   };
 
   const handleDelete = async (id: string, type: 'universities' | 'courses') => {
-    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+    if (!await confirm({
+      title: 'Delete Item',
+      message: `Are you sure you want to delete this ${type.slice(0, -1)}?`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) return;
     try {
       const { error } = await supabase.from(type).delete().eq('id', id);
       if (error) throw error;
@@ -67,7 +74,12 @@ export function MasterDataManagement() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} items?`)) return;
+    if (!await confirm({
+      title: 'Delete Items',
+      message: `Are you sure you want to delete ${selectedIds.size} items?`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) return;
     setIsBulkUpdating(true);
     try {
       const ids = Array.from(selectedIds);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Loader2, Zap, CheckCircle2, XCircle, Clock, Search, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';

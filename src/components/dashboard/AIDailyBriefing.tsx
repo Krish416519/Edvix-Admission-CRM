@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Target, AlertCircle, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';

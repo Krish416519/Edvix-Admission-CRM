@@ -161,6 +161,8 @@ CURRENT UI CONTEXT: ${JSON.stringify(dynamicContext)}`;
 
           for (const call of response.functionCalls) {
             const { name, args } = call;
+            if (!name) continue;
+            
             toolsUsed.push(name);
             actionTaken = `Executed ${name}`;
             

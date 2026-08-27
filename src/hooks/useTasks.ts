@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Task, TaskComment, TaskReminder, TaskHistory } from '../types/schema';
+import { Task } from '../types/schema';
 import { useAuth } from '../contexts/AuthContext';
 
 export interface UseTasksOptions {

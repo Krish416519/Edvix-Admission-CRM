@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Plus, Search, Edit2, ShieldOff, Trash2, KeyRound, LogOut, CheckCircle, UserX, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { adminDeleteUser, adminBulkDeleteUsers } from '../../lib/adminApi';
 import { UserFormModal } from './UserFormModal';
+import { useConfirm } from '../ConfirmDialog';
 
 // Fetch users from Supabase
 const fetchUsers = async () => {
@@ -35,6 +36,7 @@ const fetchUsers = async () => {
 
 export function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
+  const { confirm } = useConfirm();
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -77,7 +79,12 @@ export function UserManagement() {
 
   // ── Bulk actions ──────────────────────────────────────────────
   const handleBulkDeactivate = async () => {
-    if (!confirm(`Deactivate ${selectedIds.size} selected users?`)) return;
+    if (!await confirm({
+      title: 'Deactivate Users',
+      message: `Deactivate ${selectedIds.size} selected users?`,
+      confirmLabel: 'Deactivate',
+      variant: 'warning'
+    })) return;
     setIsBulkLoading(true);
     let failed = 0;
     try {
@@ -97,7 +104,11 @@ export function UserManagement() {
   };
 
   const handleBulkActivate = async () => {
-    if (!confirm(`Activate ${selectedIds.size} selected users?`)) return;
+    if (!await confirm({
+      title: 'Activate Users',
+      message: `Activate ${selectedIds.size} selected users?`,
+      confirmLabel: 'Activate'
+    })) return;
     setIsBulkLoading(true);
     let failed = 0;
     try {
@@ -117,7 +128,12 @@ export function UserManagement() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Permanently delete ${selectedIds.size} selected users? This cannot be undone.`)) return;
+    if (!await confirm({
+      title: 'Delete Users',
+      message: `Permanently delete ${selectedIds.size} selected users? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) return;
     setIsBulkLoading(true);
     try {
       const ids = Array.from(selectedIds) as string[];
@@ -143,7 +159,12 @@ export function UserManagement() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to ${action} for ${user.name}?`)) return;
+    if (!await confirm({
+      title: 'Confirm Action',
+      message: `Are you sure you want to ${action} for ${user.name}?`,
+      confirmLabel: 'Confirm',
+      variant: action === 'Delete' ? 'danger' : 'info'
+    })) return;
 
     try {
       if (action === 'Delete') {

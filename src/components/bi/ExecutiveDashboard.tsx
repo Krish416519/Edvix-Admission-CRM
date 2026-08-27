@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBI } from '../../contexts/BIContext';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';

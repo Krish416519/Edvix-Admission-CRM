@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Phone, PhoneIncoming, PhoneMissed, Clock, Users, Activity, BarChart2, Settings, History, Sparkles } from 'lucide-react';
 import { useCallReports } from '../../hooks/useCallReports';
 import { CallHistoryPanel } from './CallHistoryPanel';

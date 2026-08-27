@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Phone, PhoneOff, Mic, MicOff, Pause, Play, UserPlus, X, Save, Calendar, Tag, ChevronDown } from 'lucide-react';
 import { useTelephony } from '../../contexts/TelephonyContext';
 import { cn } from '../../lib/utils';

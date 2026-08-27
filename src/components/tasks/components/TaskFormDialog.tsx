@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Task, TaskType, TaskPriority } from '../../../types/task';
 import { X, Calendar, Clock, User, AlertCircle, FileText } from 'lucide-react';
 import { cn } from '../../../lib/utils';

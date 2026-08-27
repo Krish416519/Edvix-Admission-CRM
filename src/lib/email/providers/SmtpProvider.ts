@@ -11,14 +11,14 @@ export class SmtpProvider implements IEmailProvider {
   name = 'smtp';
   private host: string;
   private port: number;
-  private user: string;
-  private pass: string;
+  private _user: string;
+  private _pass: string;
 
   constructor(host: string, port: number, user: string, pass: string) {
     this.host = host;
     this.port = port;
-    this.user = user;
-    this.pass = pass;
+    this._user = user;
+    this._pass = pass;
   }
 
   async send(payload: EmailSendPayload): Promise<EmailSendResult> {
@@ -36,11 +36,11 @@ export class SmtpProvider implements IEmailProvider {
     });
   }
 
-  validateWebhook(body: any, signature: string): boolean {
+  validateWebhook(_body: any, _signature: string): boolean {
     return false; // SMTP doesn't have standard webhooks like Resend/Sendgrid
   }
 
-  parseWebhookEvent(payload: any): EmailWebhookEvent | null {
+  parseWebhookEvent(_payload: any): EmailWebhookEvent | null {
     return null; // SMTP delivery reports are typically parsed via IMAP bounce handling
   }
 }

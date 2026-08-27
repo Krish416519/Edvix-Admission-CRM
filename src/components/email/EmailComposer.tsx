@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Send, Paperclip, X, Bold, Italic, List, Link as LinkIcon, 
   Sparkles, Maximize2, Minimize2, Eye, ChevronDown, Clock

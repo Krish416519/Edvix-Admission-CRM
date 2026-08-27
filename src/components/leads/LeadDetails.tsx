@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, MessageCircle, CheckCircle2, UserPlus } from 'lucide-react';
 import { mockActivities } from '../../data/mockActivities';
@@ -116,10 +116,9 @@ export function LeadDetails() {
   const handleStatusChange = async (newStatus: LeadStatus) => {
     const currentStatus = lead.leadStatus || lead.status;
     if (newStatus === currentStatus) return;
-    
-    await updateLead({ leadStatus: newStatus, status: newStatus });
-    
-    addAuditLog({
+        await updateLead({ leadStatus: newStatus, status: newStatus });
+      
+      addAuditLog({
       action: 'Status Changed',
       entityType: 'Lead',
       entityId: lead.id,

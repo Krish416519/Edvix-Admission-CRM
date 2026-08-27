@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { IndianRupee, PieChart, Receipt, Building, Percent, FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DashboardTab } from './tabs/DashboardTab';

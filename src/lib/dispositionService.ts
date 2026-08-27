@@ -6,7 +6,7 @@ import {
   NextAction, 
   LeadDispositionHistory 
 } from '../types/disposition';
-import { Task, LeadActivity } from '../types/schema';
+
 
 export const dispositionService = {
   async getCategories(): Promise<DispositionCategory[]> {
@@ -140,10 +140,12 @@ export const dispositionService = {
     notes?: string;
     followUpAt?: string;
     userId: string;
+    userName?: string;
+    userRole?: string;
     lostReason?: string;
     competitor?: string;
   }): Promise<void> {
-    const { leadId, dispositionId, subDispositionId, nextActionId, notes, followUpAt, userId, lostReason, competitor } = payload;
+    const { leadId, dispositionId, subDispositionId, nextActionId, notes, followUpAt, userId, userName, userRole, lostReason, competitor } = payload;
 
     // 1. Fetch current lead state and configuration
     const [leadRes, dispRes, subDispRes, nextActionRes] = await Promise.all([
@@ -161,14 +163,8 @@ export const dispositionService = {
     const subDisp = subDispRes.data as SubDisposition | null;
     const nextAct = nextActionRes.data as NextAction | null;
 
-    // Fetch the current user's name for activity logging
-    const { data: userData } = await supabase
-      .from('users')
-      .select('name, role')
-      .eq('id', userId)
-      .single();
-    const authorName = userData?.name || 'Unknown User';
-    const authorRole = userData?.role || 'Counselor';
+    // Use passed name or fallback to System
+    const authorName = userName || 'System';
 
     // 2. Validate
     if (disp.requires_follow_up && !followUpAt) throw new Error('Follow-up date/time is required for this disposition.');

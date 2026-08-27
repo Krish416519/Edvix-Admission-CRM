@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useMarketing } from '../../hooks/useMarketing';
 import { Workflow, Plus, Play, Pause, MoreHorizontal, MessageSquare, Mail, Clock, UserPlus, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';

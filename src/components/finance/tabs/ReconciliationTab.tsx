@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ShieldAlert, RefreshCw } from 'lucide-react';
 import { EmptyState } from '../../ui/EmptyState';
 import { formatCurrency } from '../../../lib/utils';

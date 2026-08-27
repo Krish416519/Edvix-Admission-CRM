@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { billingProvider } from '../../lib/billing/MockBillingProvider';
 import { CreditCard, Zap, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 export function TenantBillingDashboard() {
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const [plans, setPlans] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -72,7 +74,12 @@ export function TenantBillingDashboard() {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Are you sure you want to cancel your subscription? You will lose access at the end of your billing cycle.')) return;
+    if (!await confirm({
+      title: 'Cancel Subscription',
+      message: 'Are you sure you want to cancel your subscription? You will lose access at the end of your billing cycle.',
+      confirmLabel: 'Cancel Subscription',
+      variant: 'danger'
+    })) return;
     
     setProcessingId('cancel');
     try {

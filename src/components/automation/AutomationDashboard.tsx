@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Workflow as WorkflowIcon, Plus, Play, Pause, Settings, MoreVertical, 
   Zap, Mail, MessageSquare, UserPlus, CheckSquare, 

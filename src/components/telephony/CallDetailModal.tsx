@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Call } from '../../types/telephony';
 import { X, Sparkles, CheckSquare, AlertCircle, FileText, Play, Mail, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';

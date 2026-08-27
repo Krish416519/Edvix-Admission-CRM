@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { Lead } from '../../../types/schema';
 import { OverviewTab } from './tabs/OverviewTab';

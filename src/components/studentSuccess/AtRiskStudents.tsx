@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { useStudentSuccess } from '../../hooks/useStudentSuccess';
 import { AlertTriangle, ArrowRight, Activity } from 'lucide-react';

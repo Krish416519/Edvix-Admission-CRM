@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Paperclip, Check, CheckCheck, Clock, FileText, Bot, X, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWhatsApp, WAMessage, WATemplate } from '../../hooks/useWhatsApp';

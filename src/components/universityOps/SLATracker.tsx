@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSLAs } from '../../hooks/useUniversityOps';
 import { Clock, AlertTriangle, CheckCircle, ShieldAlert, Settings, Building2 } from 'lucide-react';
 import { cn } from '../../lib/utils';

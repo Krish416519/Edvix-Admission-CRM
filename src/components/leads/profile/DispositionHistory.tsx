@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { dispositionService } from '../../../lib/dispositionService';
 import { LeadDispositionHistory } from '../../../types/disposition';
 import { Clock, CheckCircle2, User as UserIcon } from 'lucide-react';

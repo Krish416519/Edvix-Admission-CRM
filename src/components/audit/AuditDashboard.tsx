@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { mockAuditLogs, subscribeAuditLogs } from '../../data/mockAuditLogs';
 import { ActivityTimeline } from '../shared/ActivityTimeline';
 import { AuditLogDetailPanel } from '../shared/AuditLogDetailPanel';

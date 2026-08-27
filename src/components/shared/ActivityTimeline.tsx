@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AuditLog } from '../../types/audit';
 import { formatDistanceToNow, format } from 'date-fns';
 import { 
@@ -138,9 +138,11 @@ export function ActivityTimeline({ logs, onLogClick, showAuthor = true }: { logs
                     {showAuthor && (
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-foreground">{log.userName}</span>
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
-                          {log.userRole || 'System'}
-                        </span>
+                        {log.userRole && (
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+                            {log.userRole}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

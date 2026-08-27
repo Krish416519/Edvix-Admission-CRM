@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { WhatsAppChatWindow } from './WhatsAppChatWindow';
 import { whatsAppCoreService } from '../../lib/whatsapp/WhatsAppService';
 import { Lead } from '../../types/schema';

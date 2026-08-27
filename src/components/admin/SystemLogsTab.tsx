@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Activity, Search, AlertCircle, Info, Trash2, Filter, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 export function SystemLogsTab() {
   const [logs, setLogs] = useState<any[]>([]);
+  const { confirm } = useConfirm();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +32,12 @@ export function SystemLogsTab() {
   }, []);
 
   const handleClearLogs = async () => {
-    if (!confirm('Are you sure you want to clear all system logs?')) return;
+    if (!await confirm({
+      title: 'Clear Logs',
+      message: 'Are you sure you want to clear all system logs?',
+      confirmLabel: 'Clear',
+      variant: 'danger'
+    })) return;
     try {
       const { error } = await supabase
         .from('system_logs')

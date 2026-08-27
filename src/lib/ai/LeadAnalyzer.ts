@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import { Lead } from '../../types/schema';
 
 export class LeadAnalyzer {
   /**

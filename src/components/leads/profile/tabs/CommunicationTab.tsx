@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Lead } from '../../../../types/schema';
 
 export function CommunicationTab({ lead }: { lead: Lead }) {

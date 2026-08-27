@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Lead } from '../../../types/schema';
 import { 
   Zap, Flame, Thermometer, Snowflake, 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Phone, X, Clock, ChevronDown, Calendar, Zap } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { supabase } from '../../../lib/supabase';

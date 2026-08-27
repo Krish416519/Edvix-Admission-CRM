@@ -7,6 +7,8 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { TelephonyProvider } from './contexts/TelephonyContext';
 import { AIProvider } from './contexts/AIContext';
 import { BIProvider } from './contexts/BIContext';
+import { AIIntelligenceProvider } from './contexts/AIIntelligenceContext';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { PageLoader } from './components/layout/PageLoader';
 import { Construction } from 'lucide-react';
@@ -125,6 +127,9 @@ const ExecutiveCommandCenter = React.lazy(() => import('./components/admissionOS
 // Student Success Hub
 const StudentSuccessLayout = React.lazy(() => import('./components/studentSuccess/StudentSuccessLayout').then(m => ({ default: m.StudentSuccessLayout })));
 const StudentSuccessDashboard = React.lazy(() => import('./components/studentSuccess/StudentSuccessDashboard').then(m => ({ default: m.StudentSuccessDashboard })));
+
+// AI Intelligence Layer
+const AIIntelligenceDashboard = React.lazy(() => import('./components/ai/AIIntelligenceDashboard').then(m => ({ default: m.AIIntelligenceDashboard })));
 const EnrollmentList = React.lazy(() => import('./components/studentSuccess/EnrollmentList').then(m => ({ default: m.EnrollmentList })));
 const EnrollmentWorkspace = React.lazy(() => import('./components/studentSuccess/EnrollmentWorkspace').then(m => ({ default: m.EnrollmentWorkspace })));
 const SupportDesk = React.lazy(() => import('./components/studentSuccess/SupportDesk').then(m => ({ default: m.SupportDesk })));
@@ -153,6 +158,8 @@ export default function App() {
           <TelephonyProvider>
             <BrowserRouter>
             <AIProvider>
+              <ConfirmProvider>
+              <AIIntelligenceProvider>
               <BIProvider>
               <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -169,10 +176,12 @@ export default function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="leads" element={<LeadsList />} />
                     <Route path="leads/:id" element={<LeadDetails />} />
+                    <Route path="applications" element={<PlaceholderPage title="Applications List" />} />
                     <Route path="applications/:id" element={<ApplicationPage />} />
                     <Route path="/admissions" element={<AdmissionsList />} />
                     <Route path="/ai-dashboard" element={<CounselorDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
+                    <Route path="/ai-intelligence" element={<AIIntelligenceDashboard />} />
                     <Route path="/admission-os" element={<LivePipeline />} />
                     <Route path="/admission-os/command-center" element={<ExecutiveCommandCenter />} />
                     
@@ -310,6 +319,8 @@ export default function App() {
               </Routes>
               </Suspense>
               </BIProvider>
+              </AIIntelligenceProvider>
+              </ConfirmProvider>
             </AIProvider>
             <CommandPalette />
           </BrowserRouter>

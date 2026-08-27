@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Upload, FileText, CheckCircle2, Circle, AlertCircle, 
@@ -9,6 +9,7 @@ import { useDocuments } from '../../hooks/useDocuments';
 import { Admission, AdmissionStage, AdmissionChecklistItem } from '../../types/admission';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 const STAGES: AdmissionStage[] = [
   'Admission Confirmed',
@@ -29,6 +30,7 @@ const STAGES: AdmissionStage[] = [
 export function AdmissionDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm } = useConfirm();
   const { admissions, updateAdmission, isLoading } = useAdmissions();
   
   const admission = admissions.find(a => a.id === id);
@@ -438,19 +440,24 @@ export function AdmissionDetails() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
+                      <button
                         onClick={async () => {
                           const url = await getSignedUrl(doc.id);
-                          if (url) window.open(url, '_blank');
+                          if (url) window.open(url, '_blank', 'noopener,noreferrer');
                         }}
                         className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                         title="Preview"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={async () => {
-                          if (window.confirm('Are you sure you want to delete this document?')) {
+                          if (await confirm({
+                            title: 'Delete Document',
+                            message: 'Are you sure you want to delete this document?',
+                            confirmLabel: 'Delete',
+                            variant: 'danger'
+                          })) {
                             await deleteDocument(doc.id);
                           }
                         }}

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Bell, Search, Plus, Sun, Moon, LogOut } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../ThemeProvider';

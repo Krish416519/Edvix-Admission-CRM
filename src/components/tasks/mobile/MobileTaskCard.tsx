@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Task, TaskPriority, TaskType } from '../../../types/task';
 import { Phone, MessageCircle, Mail, Video, Bell, Clock, CheckCircle2, Circle, Calendar, AlertCircle } from 'lucide-react';
 import { cn } from '../../../lib/utils';

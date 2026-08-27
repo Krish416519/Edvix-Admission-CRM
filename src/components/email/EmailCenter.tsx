@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Mail, Inbox, Send, Archive, Trash2, Clock, FileText, 
+import { useState, useEffect } from 'react';
+import {
+  Mail, Inbox, Send, Archive, Trash2, Clock, FileText,
   Search, Star, Eye, PenSquare, Loader2, StarOff
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEmail } from '../../hooks/useEmail';
 import { EmailComposer } from './EmailComposer';
 import { Skeleton } from '../ui/Skeleton';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 type FolderType = 'Inbox' | 'Sent' | 'Drafts' | 'Scheduled' | 'Archived' | 'Trash';
 
@@ -225,9 +226,9 @@ export function EmailCenter() {
               </div>
 
               <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-                <div 
+                <div
                   className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: activeEmail.body }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeEmail.body) }}
                 />
               </div>
             </div>

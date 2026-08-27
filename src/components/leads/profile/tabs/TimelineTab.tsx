@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Lead } from '../../../../types/schema';
 import { ActivityTimeline } from '../../../shared/ActivityTimeline';
 import { AuditLogDetailPanel } from '../../../shared/AuditLogDetailPanel';
@@ -9,8 +9,8 @@ import { useAuth } from '../../../../contexts/AuthContext';
 
 export function TimelineTab({ lead, refreshKey = 0 }: { lead: Lead; refreshKey?: number }) {
   const { user, hasRole } = useAuth();
-  // Only admins and authorized roles can see who performed each activity
-  const showAuthor = hasRole(['Admin', 'Super Admin', 'Accounts', 'Marketing', 'University']);
+  // Show author for all roles so Counselors can see who performed activities
+  const showAuthor = true;
   const [selectedLog, setSelectedLog] = useState<AuditLog | undefined>();
   const [filter, setFilter] = useState<string>('All');
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -60,10 +60,42 @@ export function TimelineTab({ lead, refreshKey = 0 }: { lead: Lead; refreshKey?:
           }
         }
         
-        const user = userMap.get(activity.created_by);
-        // Prefer user lookup by UUID, fall back to stored author name, then 'System'
-        const userName = user?.name || (activity.author && !activity.author.match(/^[0-9a-f-]{36}$/i) ? activity.author : null) || 'System';
-        const userRole = user?.role || 'System';
+        const mapUser = userMap.get(activity.created_by);
+        let userName = mapUser?.name;
+        let userRole = mapUser?.role;
+
+        // If created_by matches the current user viewing the page
+        if (!userName && activity.created_by && activity.created_by === user?.id) {
+          userName = user?.name;
+          userRole = user?.role;
+        }
+
+        // Check the author string
+        if (!userName && activity.author && !activity.author.match(/^[0-9a-f-]{36}$/i) && activity.author !== 'Unknown User' && activity.author !== 'System') {
+          userName = activity.author;
+        }
+
+        // Aggressive fallback for older historical logs: Use assigned counselor for manual actions
+        if ((!userName || userName === 'System') && ['status_change', 'note_added', 'call_logged'].includes(activity.type)) {
+          const counselorId = lead.assignedCounselor || (lead as any).assigned_counselor || (lead as any).counselorId;
+          const counselorName = (lead as any).counselor; // Comes from useLead.ts
+          
+          if (counselorId) {
+             const assigned = userMap.get(counselorId);
+             if (assigned) {
+               userName = assigned.name;
+               userRole = assigned.role;
+             }
+          }
+          
+          if ((!userName || userName === 'System') && counselorName && counselorName !== 'Unassigned') {
+             userName = counselorName;
+             userRole = 'Counselor';
+          }
+        }
+
+        userName = userName || 'System';
+        userRole = userRole || (userName === 'System' ? 'System' : undefined);
 
         return {
           id: activity.id,

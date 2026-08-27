@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { FileDown, Plus, CheckCircle, Clock, Building } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmptyState } from '../../ui/EmptyState';

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AuditLog } from '../../types/audit';
 import { X, Calendar, User, Activity, Monitor, Shield, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';

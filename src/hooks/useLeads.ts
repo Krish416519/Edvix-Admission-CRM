@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Lead, LeadStatus, LeadPriority } from '../types/schema';
+import { Lead } from '../types/schema';
 import { useAuth } from '../contexts/AuthContext';
 
 export interface UseLeadsOptions {
@@ -370,7 +370,7 @@ export function useLeads(options?: UseLeadsOptions) {
   const bulkDeleteLeads = async (ids: string[]) => {
     try {
       // Try the fast RPC first
-      const { data, error: rpcError } = await supabase.rpc('bulk_delete_leads', { p_lead_ids: ids });
+      const { error: rpcError } = await supabase.rpc('bulk_delete_leads', { p_lead_ids: ids });
       
       if (rpcError) {
         // Fallback: Chunk the IDs to avoid URL length limits
@@ -451,7 +451,7 @@ export function useLeads(options?: UseLeadsOptions) {
         lead_id: primaryId,
         type: 'merge',
         content: `Merged with duplicate lead (ID: ${secondaryId})`,
-        author: user?.user_metadata?.name || 'System'
+        author: user?.name || 'System'
       }]);
 
       // 3. Soft-delete the secondary lead
@@ -479,7 +479,7 @@ export function useLeads(options?: UseLeadsOptions) {
       }
 
       // Try the fast RPC first
-      const { data, error: rpcError } = await supabase.rpc('bulk_update_leads', {
+      const { error: rpcError } = await supabase.rpc('bulk_update_leads', {
         p_lead_ids: ids,
         p_status: payload.lead_status || null,
         p_priority: payload.priority || null,

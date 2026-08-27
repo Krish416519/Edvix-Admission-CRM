@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Lead, LeadStatus } from '../../../types/schema';
 import { Phone, MessageCircle, GraduationCap, Building2, ChevronRight, Clock, Flame, Wind, Thermometer } from 'lucide-react';
 import { cn } from '../../../lib/utils';

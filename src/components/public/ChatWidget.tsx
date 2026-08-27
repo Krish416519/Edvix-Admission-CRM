@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, X, Phone, Mail, User as UserIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 import { LLMClient } from '../../lib/ai/LLMClient';
+import { sanitizeHtml } from '../../lib/sanitize';
 
 interface Message {
   id: string;
@@ -147,7 +148,7 @@ Once they provide their contact details, thank them and assure them a counselor 
                 ? "bg-primary text-white rounded-tr-sm" 
                 : "bg-white dark:bg-card border border-border text-foreground rounded-tl-sm"
             )}>
-              <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>') }} />
+               <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.content.replace(/\n/g, '<br/>')) }} />
             </div>
           </div>
         ))}

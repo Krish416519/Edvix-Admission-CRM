@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Settings, Zap, MessageSquare, Bot, Plus, Trash2, Save, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 const AVAILABLE_TRIGGERS = [
   { id: 'lead.created', label: 'Lead Created' },
@@ -14,6 +15,7 @@ const AVAILABLE_TRIGGERS = [
 
 export default function AutomationBuilder() {
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   
   const [workflows, setWorkflows] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -127,7 +129,12 @@ export default function AutomationBuilder() {
   };
 
   const deleteWorkflow = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this workflow?')) return;
+    if (!await confirm({
+      title: 'Delete Workflow',
+      message: 'Are you sure you want to delete this workflow?',
+      confirmLabel: 'Delete',
+      variant: 'danger'
+    })) return;
     try {
       const { error } = await supabase
         .from('automation_workflows')

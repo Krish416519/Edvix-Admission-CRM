@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Shield, Check, X, Search, FileText, AlertTriangle, Eye, Download, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';

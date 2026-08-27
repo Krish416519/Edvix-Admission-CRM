@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useStudentSupportTickets } from '../../hooks/useStudentSuccess';
 import { LifeBuoy, Search, AlertTriangle, Clock, CheckCircle, User } from 'lucide-react';
 import { cn } from '../../lib/utils';

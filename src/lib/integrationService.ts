@@ -10,8 +10,7 @@ export const useIntegration = () => {
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [importJobs, setImportJobs] = useState<ImportJob[]>([]);
-  const [leadSources, setLeadSources] = useState<LeadSourceConfig[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [leadSources] = useState<LeadSourceConfig[]>([]);
 
   const fetchApiKeys = useCallback(async () => {
     const { data, error } = await supabase.from('api_keys').select('*').order('created_at', { ascending: false });
@@ -38,7 +37,8 @@ export const useIntegration = () => {
         events: d.events,
         status: d.status,
         secret: d.secret,
-        createdAt: d.created_at
+        createdAt: d.created_at,
+        retryCount: d.retry_count || 0
       })));
     }
   }, []);

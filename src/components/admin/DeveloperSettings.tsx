@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Key, Copy, CheckCircle2, AlertTriangle, Plus, Trash2, Eye, EyeOff, RefreshCw, ShieldCheck, Activity } from 'lucide-react';
 import { ApiAnalytics } from './ApiAnalytics';
 import { toast } from 'sonner';
+import { useConfirm } from '../ConfirmDialog';
 
 export function DeveloperSettings() {
   const { user } = useAuth();
+  const { confirm } = useConfirm();
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -165,7 +167,12 @@ export function DeveloperSettings() {
   };
 
   const revokeKey = async (id: string) => {
-    if (!confirm('Are you sure you want to revoke this API key? Any applications using it will instantly lose access.')) return;
+    if (!await confirm({
+      title: 'Revoke API Key',
+      message: 'Are you sure you want to revoke this API key? Any applications using it will instantly lose access.',
+      confirmLabel: 'Revoke',
+      variant: 'danger'
+    })) return;
     
     try {
       const { error } = await supabase
@@ -231,7 +238,12 @@ export function DeveloperSettings() {
   };
 
   const removeWebhook = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this webhook? Partner systems will stop receiving updates.')) return;
+    if (!await confirm({
+      title: 'Remove Webhook',
+      message: 'Are you sure you want to remove this webhook? Partner systems will stop receiving updates.',
+      confirmLabel: 'Remove',
+      variant: 'danger'
+    })) return;
     try {
       const { error } = await supabase.from('webhooks').delete().eq('id', id);
       if (error) throw error;
@@ -243,7 +255,12 @@ export function DeveloperSettings() {
   };
 
   const rotateWebhookSecret = async (id: string) => {
-    if (!confirm('Are you sure you want to rotate this webhook secret? You must immediately update your partner application with the new secret to verify payloads.')) return;
+    if (!await confirm({
+      title: 'Rotate Webhook Secret',
+      message: 'Are you sure you want to rotate this webhook secret? You must immediately update your partner application with the new secret to verify payloads.',
+      confirmLabel: 'Rotate',
+      variant: 'warning'
+    })) return;
     
     try {
       setIsRotating(prev => ({ ...prev, [id]: true }));

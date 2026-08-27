@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useStudentSuccess } from '../../../hooks/useStudentSuccess';
 import { X, Search, GraduationCap, Plus } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';

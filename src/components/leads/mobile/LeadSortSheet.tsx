@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { Lead } from '../../../types/schema';
 import { cn } from '../../../lib/utils';

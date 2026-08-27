@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { aiService } from '../../../lib/aiService';
 import { ShieldAlert, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { BarChart3, TrendingUp, Filter, Calendar, LayoutDashboard, PieChart, LineChart, FileText } from 'lucide-react';
 import { useBI, DateRangePreset } from '../../contexts/BIContext';
