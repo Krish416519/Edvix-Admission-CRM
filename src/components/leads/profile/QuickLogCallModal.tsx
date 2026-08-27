@@ -83,15 +83,19 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
 
       // 3. Create follow-up task if requested
       if (followup.enabled && followup.date) {
-        const dueDate = new Date(`${followup.date}T${followup.time || '09:00'}`);
+        const dueDateStr = followup.date;
+        const dueTimeStr = followup.time || '09:00';
+        const dueDate = new Date(`${dueDateStr}T${dueTimeStr}`);
+        
         await supabase.from('tasks').insert({
           lead_id: leadId,
           title: `${followup.type} follow-up with ${leadName}`,
           task_type: followup.type,
-          due_date: dueDate.toISOString(),
+          due_date: dueDateStr,
+          due_time: dueTimeStr,
           priority: 'High',
           status: 'Pending',
-          assigned_to: user?.id,
+          assigned_user: user?.id,
         });
 
         await supabase.from('leads').update({
