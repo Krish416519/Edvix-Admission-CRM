@@ -23,10 +23,38 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+
+    // If the error is a Vite dynamic import failure (stale cache), hard reload the page
+    if (
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Importing a module script failed') ||
+      error.name === 'ChunkLoadError'
+    ) {
+      const hasReloaded = sessionStorage.getItem('chunk_load_error_reloaded');
+      
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_load_error_reloaded', 'true');
+        window.location.reload();
+      } else {
+        console.error('Already attempted to reload for chunk load error to prevent infinite loop.');
+      }
+    } else {
+      // Clear the reload flag if a different error occurs
+      sessionStorage.removeItem('chunk_load_error_reloaded');
+    }
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    // If it's a chunk load error, the only way to recover is to reload the browser
+    if (
+      this.state.error?.message.includes('Failed to fetch dynamically imported module') ||
+      this.state.error?.message.includes('Importing a module script failed') ||
+      this.state.error?.name === 'ChunkLoadError'
+    ) {
+      window.location.reload();
+    } else {
+      this.setState({ hasError: false, error: null });
+    }
   };
 
   render() {
