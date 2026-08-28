@@ -106,7 +106,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                     <p className="text-xs text-muted-foreground mt-1">Status: {dup.status || dup.leadStatus}</p>
                   </div>
                   <a
-                    href={`/leads/${dup.id}`}
+                    href={`/all-leads/${dup.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-3 py-1.5 bg-muted text-foreground rounded-lg text-sm hover:bg-muted/80 transition-colors"

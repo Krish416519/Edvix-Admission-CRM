@@ -15,13 +15,13 @@ export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
 
   const menuItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Admission OS', href: '/admission-os', icon: Sparkles },
-    { name: 'Command Center', href: '/admission-os/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
+    { name: 'Smart View', href: '/smart-view', icon: Sparkles },
+    { name: 'All Leads', href: '/all-leads', icon: Users, resource: 'Lead Management' },
+    { name: 'Tasks', href: '/tasks', icon: CheckCircle },
+    { name: 'Command Center', href: '/smart-view/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
     { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
-    { name: 'Leads', href: '/leads', icon: Users, resource: 'Lead Management' },
     { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
     { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },
-    { name: 'Tasks', href: '/tasks', icon: CheckCircle },
     { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
     { name: 'Email', href: '/email', icon: Mail, resource: 'Communication' },
     { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },

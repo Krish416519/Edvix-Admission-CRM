@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Building2, Globe, Clock, IndianRupee, Image as ImageIcon } from 'lucide-react';
+import { Settings, Save, Building2, Globe, Clock, IndianRupee, Image as ImageIcon, GripVertical, Plus, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 
@@ -220,7 +220,7 @@ export function SystemSettings() {
               </div>
             )}
 
-            <div className="flex justify-end pt-6 mt-6 border-t border-border">
+            <div className="flex justify-end pt-6 border-t border-border">
               <button 
                 type="submit"
                 className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg font-medium hover:bg-primary-hover transition-colors shadow-sm"

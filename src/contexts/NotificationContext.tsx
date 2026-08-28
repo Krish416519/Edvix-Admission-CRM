@@ -89,7 +89,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
              notification.onclick = () => {
                window.focus();
                if (newRow.module === 'Leads' && newRow.module_record_id) {
-                 window.location.href = `/leads/${newRow.module_record_id}`;
+                 window.location.href = `/all-leads/${newRow.module_record_id}`;
                } else {
                  window.location.href = '/notifications';
                }

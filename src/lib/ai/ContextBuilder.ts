@@ -5,7 +5,7 @@ export class AIContextBuilder {
     const context: any = {};
 
     try {
-      if (pathname.startsWith('/leads/')) {
+      if (pathname.startsWith('/all-leads/')) {
         const leadId = pathname.split('/')[2];
         if (leadId) {
           const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single();

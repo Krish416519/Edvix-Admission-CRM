@@ -97,7 +97,7 @@ export interface ProgramScholarship extends BaseEntity {
 // ----------------- CRM Operations ----------------- //
 
 export type LeadPriority = 'High' | 'Medium' | 'Low';
-export type LeadStatus = 'New' | 'Attempted' | 'Connected' | 'Interested' | 'Qualified' | 'Application Started' | 'Documents Pending' | 'Admission Done' | 'Lost';
+export type LeadStatus = string; // Allows dynamic pipeline stages
 
 export interface Lead extends BaseEntity {
   leadNumber: string;

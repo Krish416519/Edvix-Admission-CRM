@@ -56,10 +56,10 @@ export function ExecutiveCommandCenter() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col animate-in fade-in duration-500 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex shrink-0 items-center justify-center text-white shadow-lg">
           <Brain className="w-5 h-5" />
         </div>
         <div>
@@ -68,7 +68,7 @@ export function ExecutiveCommandCenter() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-8 hide-scrollbar space-y-6">
+      <div className="flex flex-col pb-8 space-y-6">
         {/* KPI Row 1: Revenue */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard icon={IndianRupee} color="emerald" label="Revenue Today" value={fmt(revenue.revenueToday)} />

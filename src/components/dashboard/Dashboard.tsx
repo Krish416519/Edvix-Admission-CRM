@@ -39,10 +39,25 @@ function useDashboardStats() {
     }
     try {
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+      // Role-based filtering: Counselors only see their own leads
+      const isCounselor = user.role === 'Counselor';
+
+      const leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null);
+      const newLeadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('lead_status', 'New');
+      const admissionsQuery = supabase.from('admissions').select('*', { count: 'exact', head: true }).is('deleted_at', null).neq('admission_status', 'Cancelled');
+
+      // For counselors, scope to their own records
+      if (isCounselor) {
+        leadsQuery.eq('assigned_counselor', user.id);
+        newLeadsQuery.eq('assigned_counselor', user.id);
+        admissionsQuery.eq('assigned_counselor', user.id);
+      }
+
       const [totalRes, newRes, admRes, revenueRes] = await Promise.all([
-        supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null),
-        supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('lead_status', 'New'),
-        supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('lead_status', 'Admission Done'),
+        leadsQuery,
+        newLeadsQuery,
+        admissionsQuery,
         supabase.from('payments').select('amount').eq('status', 'Completed').gte('created_at', startOfMonth),
       ]);
 
@@ -183,21 +198,21 @@ export function Dashboard() {
 
       <AIDailyBriefing />
 
-      {/* KPI Cards — powered by server-side COUNT queries. Horizontally scrollable on mobile */}
-      <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+      {/* KPI Cards — powered by server-side COUNT queries. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="w-full">
           <StatCard title="Total Leads" value={stats.total.toString()} icon={Users} trend="up" trendValue="12%" subtitle="All time" />
         </div>
-        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+        <div className="w-full">
           <StatCard title="New Leads" value={stats.newLeads.toString()} icon={UserPlus} trend="up" trendValue="5%" subtitle="All time" />
         </div>
-        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+        <div className="w-full">
           <StatCard title="Admissions Done" value={stats.admissionsDone.toString()} icon={GraduationCap} trend="up" trendValue="2" subtitle="All time" />
         </div>
-        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+        <div className="w-full">
           <StatCard title="Revenue (MTD)" value={formatRevenue(stats.revenueMTD)} icon={IndianRupee} trend="up" trendValue="18%" subtitle="vs last month" />
         </div>
-        <div className="w-[85vw] sm:w-auto shrink-0 snap-center">
+        <div className="w-full">
           <StatCard title="Conversion Rate" value={`${stats.conversionRate}%`} icon={Percent} trend="up" trendValue="1.2%" subtitle="All time" />
         </div>
       </div>
@@ -226,7 +241,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <UpcomingTasks onNavigate={() => navigate('/tasks')} />
         <TodaysCalls />
-        <RecentActivities onViewAll={() => navigate('/leads')} />
+        <RecentActivities onViewAll={() => navigate('/all-leads')} />
       </div>
 
       {/* Lead Creation Modal */}

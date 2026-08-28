@@ -120,9 +120,9 @@ export function AIIntelligenceDashboard() {
   }
 
   return (
-    <div className="flex flex-col max-w-7xl mx-auto w-full pb-12">
+    <div className="flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12 pt-2 sm:pt-6">
       {/* 10x Hero Section: Neural Core */}
-      <div className="relative mb-8 p-8 sm:p-10 rounded-[2.5rem] bg-slate-950 overflow-hidden shadow-2xl border border-white/10 group flex-shrink-0">
+      <div className="relative mb-6 sm:mb-8 p-6 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] bg-slate-950 overflow-hidden shadow-2xl border border-white/10 group flex-shrink-0">
         {/* Animated Mesh Gradients */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950 to-slate-950" />
         <div className="absolute -top-[50%] -left-[10%] w-[80%] h-[150%] bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 blur-[120px] rounded-full group-hover:scale-110 transition-transform duration-1000 ease-out" />
@@ -132,9 +132,9 @@ export function AIIntelligenceDashboard() {
         {/* Decorative Grid Lines */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <div className="relative">
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="relative shrink-0">
               {/* Outer glowing ring */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30 blur group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse" />
               <div className="relative w-16 h-16 rounded-2xl bg-slate-900 border border-white/20 flex items-center justify-center shadow-inner overflow-hidden">
@@ -393,8 +393,8 @@ export function AIIntelligenceDashboard() {
               <div className="lg:col-span-12 relative overflow-hidden bg-slate-900 rounded-[2rem] border border-white/10 p-1 group">
                 <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] animate-[bg-pan_3s_linear_infinite]" />
                 <div className="relative bg-slate-950/50 backdrop-blur-md rounded-[1.75rem] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 z-10">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-5 text-center sm:text-left">
+                    <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform duration-500">
                       <Activity className="w-7 h-7 text-white" />
                     </div>
                     <div>
@@ -522,20 +522,20 @@ export function AIIntelligenceDashboard() {
                 <EmptyState icon={Target} title="No Pending Actions" description="AI will suggest actions based on lead priorities." />
               ) : (
                 nextBestActions.map((action) => (
-                  <div key={action.leadId} className="bg-card border border-border/80 rounded-[1.5rem] p-5 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex items-center gap-5">
-                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner", action.priority === 'high' ? "bg-gradient-to-br from-orange-500 to-red-600" : "bg-gradient-to-br from-emerald-500 to-teal-600")}>
+                  <div key={action.leadId} className="bg-card border border-border/80 rounded-[1.5rem] p-4 sm:p-5 hover:border-primary/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
+                    <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner", action.priority === 'high' ? "bg-gradient-to-br from-orange-500 to-red-600" : "bg-gradient-to-br from-emerald-500 to-teal-600")}>
                       {getActionIcon(action.action)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{action.leadName}</h4>
-                      <p className="text-sm text-muted-foreground mt-0.5">{action.reason}</p>
+                      <h4 className="font-bold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors">{action.leadName}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">{action.reason}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                       <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider rounded-lg border border-primary/20">
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 mt-2 sm:mt-0 w-full sm:w-auto justify-between sm:justify-start">
+                       <span className="px-2.5 sm:px-3 py-1 bg-primary/10 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-wider rounded-lg border border-primary/20">
                           {action.actionLabel}
                        </span>
-                       <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                          <div className={cn("w-2 h-2 rounded-full", getRiskDot(action.priority))} />
+                       <span className="text-[10px] sm:text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                          <div className={cn("w-2 h-2 rounded-full shrink-0", getRiskDot(action.priority))} />
                           {action.priority} priority
                        </span>
                     </div>

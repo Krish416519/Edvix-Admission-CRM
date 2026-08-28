@@ -97,14 +97,14 @@ export function CounselorDashboard() {
   if (loading) return <div className="p-8 flex justify-center"><Sparkles className="w-8 h-8 text-primary animate-pulse" /></div>;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex shrink-0 items-center justify-center">
           <Sparkles className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">AI Assistant Dashboard</h1>
-          <p className="text-muted-foreground">Your personalized daily priorities and intelligent recommendations.</p>
+          <h1 className="text-xl sm:text-2xl font-bold">AI Assistant Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Your personalized daily priorities and intelligent recommendations.</p>
         </div>
       </div>
 
@@ -171,7 +171,7 @@ export function CounselorDashboard() {
               <p className="text-sm text-muted-foreground text-center py-8">No leads in priority queue right now.</p>
             ) : (
               highPriority.map((lead, index) => (
-                <div key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} className="flex items-start justify-between p-3 border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors group">
+                <div key={lead.id} onClick={() => navigate(`/all-leads/${lead.id}`)} className="flex items-start justify-between p-3 border border-border rounded-lg hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors group">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">
@@ -204,7 +204,7 @@ export function CounselorDashboard() {
               <p className="text-sm text-muted-foreground text-center py-8">All leads are healthy.</p>
             ) : (
               atRisk.map(lead => (
-                <div key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} className="flex items-center justify-between p-3 border border-red-100 dark:border-red-900/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors group">
+                <div key={lead.id} onClick={() => navigate(`/all-leads/${lead.id}`)} className="flex items-center justify-between p-3 border border-red-100 dark:border-red-900/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors group">
                   <div>
                     <p className="font-medium group-hover:text-red-500 transition-colors">{lead.name}</p>
                     <p className="text-xs text-muted-foreground">Inactive for a while</p>

@@ -124,7 +124,7 @@ export function DailyMissions() {
                 className="flex-1 min-w-0 cursor-pointer"
                 onClick={() => {
                   if (mission.entityId && mission.entityType === 'Lead') {
-                    navigate(`/leads/${mission.entityId}`);
+                    navigate(`/all-leads/${mission.entityId}`);
                   }
                 }}
               >

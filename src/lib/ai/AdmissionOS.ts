@@ -174,7 +174,7 @@ export class AdmissionOS {
         lead_status, priority, score,
         assigned_counselor, budget,
         conversion_probability, temperature, drop_off_risk, payment_probability,
-        created_at, updated_at
+        created_at, updated_at, last_contacted_at, next_action_date
       `)
       .is('deleted_at', null)
       .neq('lead_status', 'Lost')
@@ -191,6 +191,15 @@ export class AdmissionOS {
       .in('lead_id', leadIds)
       .neq('admission_status', 'Cancelled');
 
+    // Fetch pending tasks for these leads
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('id, lead_id, title, due_date, due_time, task_type, priority')
+      .in('lead_id', leadIds)
+      .neq('status', 'Completed')
+      .is('deleted_at', null)
+      .order('due_date', { ascending: true });
+
     // Fetch counselor names
     const counselorIds = [...new Set([
       ...leads.map(l => l.assigned_counselor).filter(Boolean),
@@ -202,19 +211,53 @@ export class AdmissionOS {
       : { data: [] };
 
     const counselorMap = new Map((counselors || []).map(c => [c.id, c.full_name || c.email]));
-
-    // Build pipeline cards
     const admissionMap = new Map((admissions || []).map(a => [a.lead_id, a]));
+    
+    const tasksMap = new Map<string, any[]>();
+    if (tasks) {
+      tasks.forEach(t => {
+        if (!tasksMap.has(t.lead_id)) tasksMap.set(t.lead_id, []);
+        tasksMap.get(t.lead_id)!.push(t);
+      });
+    }
 
     return leads.map(lead => {
       const admission = admissionMap.get(lead.id);
       const pipelineStage = this.mapToPipelineStage(lead.lead_status, admission?.current_stage);
       const ownerId = admission?.assigned_counselor || lead.assigned_counselor;
       const ownerName = ownerId ? (counselorMap.get(ownerId) || 'Unassigned') : 'Unassigned';
+      
       const lastUpdate = admission?.updated_at || lead.updated_at;
+      const lastContact = lead.last_contacted_at || lead.created_at;
+      
       const waitingHours = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / (1000 * 3600));
+      const hoursSinceContact = Math.floor((Date.now() - new Date(lastContact).getTime()) / (1000 * 3600));
+      
       const conversionProb = lead.conversion_probability || 10;
-      const riskLevel = this.computeRiskLevel(waitingHours, pipelineStage, conversionProb);
+      
+      const leadTasks = tasksMap.get(lead.id) || [];
+      const nextTask = leadTasks.length > 0 ? leadTasks[0] : null;
+      
+      let nextAction = this.suggestNextAction(pipelineStage, waitingHours);
+      let riskLevel = this.computeRiskLevel(waitingHours, pipelineStage, conversionProb);
+      let followupUrgency: 'Low' | 'Normal' | 'High' | 'Critical' = 'Normal';
+      
+      const now = new Date();
+      if (nextTask) {
+        const dueDate = new Date(`${nextTask.due_date}T${nextTask.due_time || '00:00'}`);
+        nextAction = `${nextTask.task_type}: ${nextTask.title}`;
+        if (dueDate < now) {
+          riskLevel = 'High';
+          followupUrgency = 'Critical';
+          nextAction = `OVERDUE: ${nextAction}`;
+        } else if (dueDate.toDateString() === now.toDateString()) {
+          followupUrgency = 'High';
+        }
+      } else if (hoursSinceContact > 48) {
+        riskLevel = 'Critical';
+        followupUrgency = 'Critical';
+        nextAction = 'NO NEXT ACTION / NO CONTACT';
+      }
 
       return {
         id: lead.id,
@@ -228,11 +271,11 @@ export class AdmissionOS {
         ownerName,
         waitingHours,
         riskLevel,
-        nextAction: this.suggestNextAction(pipelineStage, waitingHours),
+        nextAction,
         admissionProbability: conversionProb,
         dropoutProbability: lead.drop_off_risk === 'High' ? 75 : lead.drop_off_risk === 'Medium' ? 40 : 10,
         paymentProbability: lead.payment_probability || conversionProb * 0.8,
-        followupUrgency: waitingHours > 72 ? 'Critical' : waitingHours > 24 ? 'High' : waitingHours > 8 ? 'Normal' : 'Low',
+        followupUrgency,
         bestUniversity: undefined,
         expectedRevenue: admission?.fee_structure || parseFloat(lead.budget) || 0,
         lastActivityAt: lastUpdate,
@@ -341,6 +384,38 @@ export class AdmissionOS {
       avgAdmissionProbability: pipeline.length > 0
         ? Math.round(pipeline.reduce((sum, c) => sum + c.admissionProbability, 0) / pipeline.length)
         : 0,
+    };
+  }
+  static async getProductivityMetrics(userId?: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startOfDay = today.toISOString();
+    
+    // Calls today
+    let activitiesQuery = supabase
+      .from('lead_activities')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', startOfDay)
+      .eq('activity_type', 'Call');
+      
+    if (userId) activitiesQuery = activitiesQuery.eq('created_by', userId);
+    
+    const { count: callsToday } = await activitiesQuery;
+
+    // Followups completed today
+    let tasksQuery = supabase
+      .from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'Completed')
+      .gte('updated_at', startOfDay);
+      
+    if (userId) tasksQuery = tasksQuery.eq('assigned_user', userId);
+    
+    const { count: completedTasks } = await tasksQuery;
+
+    return {
+      callsToday: callsToday || 0,
+      completedFollowups: completedTasks || 0
     };
   }
 }

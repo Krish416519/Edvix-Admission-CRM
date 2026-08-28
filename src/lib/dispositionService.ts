@@ -260,8 +260,8 @@ export const dispositionService = {
         due_date: localDateStr,
         due_time: localTimeStr,
         assigned_user: lead.assigned_counselor || userId,
+        created_by: userId,
         lead_id: leadId
-        // organization_id is auto-set by set_default_organization_id trigger
       });
       if (taskError) console.warn('Task insert failed (non-fatal):', taskError.message);
       

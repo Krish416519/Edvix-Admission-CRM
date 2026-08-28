@@ -30,7 +30,7 @@ export function MobileLeadCard({ lead, statusColors, onClick }: MobileLeadCardPr
 
   const handleCardClick = () => {
     if (onClick) onClick();
-    else navigate(`/leads/${lead.id}`);
+    else navigate(`/all-leads/${lead.id}`);
   };
 
   const handleCall = (e: React.MouseEvent) => {

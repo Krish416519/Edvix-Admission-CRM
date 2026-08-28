@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -151,6 +151,32 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      e.preventDefault();
+    };
+    
+    const handleCopy = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopy);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopy);
+    };
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -174,16 +200,17 @@ export default function App() {
                 <Route element={<ProtectedRoute />}>
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Dashboard />} />
-                    <Route path="leads" element={<LeadsList />} />
-                    <Route path="leads/:id" element={<LeadDetails />} />
+                    <Route path="all-leads" element={<LeadsList />} />
+                    <Route path="all-leads/:id" element={<LeadDetails />} />
                     <Route path="applications" element={<PlaceholderPage title="Applications List" />} />
                     <Route path="applications/:id" element={<ApplicationPage />} />
                     <Route path="/admissions" element={<AdmissionsList />} />
                     <Route path="/ai-dashboard" element={<CounselorDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
                     <Route path="/ai-intelligence" element={<AIIntelligenceDashboard />} />
-                    <Route path="/admission-os" element={<LivePipeline />} />
-                    <Route path="/admission-os/command-center" element={<ExecutiveCommandCenter />} />
+                    <Route path="/smart-view" element={<LivePipeline />} />
+                    <Route path="/smart-view/:id" element={<LeadDetails />} />
+                    <Route path="/smart-view/command-center" element={<ExecutiveCommandCenter />} />
                     
                     <Route path="tasks" element={<TasksList />} />
                     <Route path="whatsapp" element={<WhatsAppCenter />} />
@@ -218,6 +245,7 @@ export default function App() {
                         <Route path="developer" element={<DeveloperSettings />} />
                         <Route path="automation" element={<AutomationBuilder />} />
                         <Route path="webhooks" element={<WebhookDashboard />} />
+                        <Route path="backend" element={<BackendStatus />} />
                       </Route>
                       
                       {/* BI Command Center Routes */}
@@ -230,16 +258,6 @@ export default function App() {
                       </Route>
                     </Route>
                     
-                  </Route>
-                </Route>
-
-                {/* Admin Routes */}
-                <Route element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']} />}>
-                  <Route path="/admin" element={<AdminLayout />}>
-                    <Route index element={<Dashboard />} />
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="settings" element={<PlaceholderPage title="System Settings" />} />
-                    <Route path="backend" element={<BackendStatus />} />
                   </Route>
                 </Route>
 

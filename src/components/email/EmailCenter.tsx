@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Mail, Inbox, Send, Archive, Trash2, Clock, FileText,
-  Search, Star, Eye, PenSquare, Loader2, StarOff
+  Search, Star, Eye, PenSquare, Loader2, StarOff, ArrowLeft
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useEmail } from '../../hooks/useEmail';
@@ -45,27 +45,27 @@ export function EmailCenter() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full relative">
-      <div className="flex justify-between items-end mb-4">
+    <div className="flex flex-col h-[calc(100dvh-11rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full px-2 md:px-0 relative">
+      <div className="flex justify-between items-end mb-3 md:mb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Mail className="w-6 h-6 text-primary" />
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Mail className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             Email Center
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage all student email communications.</p>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">Manage all student email communications.</p>
         </div>
         <button 
           onClick={() => setIsComposing(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-hover transition-colors shadow-sm text-sm"
+          className="flex items-center gap-2 bg-primary text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium hover:bg-primary-hover transition-colors shadow-sm text-xs md:text-sm"
         >
-          <PenSquare className="w-4 h-4" />
+          <PenSquare className="w-3.5 h-3.5 md:w-4 md:h-4" />
           Compose
         </button>
       </div>
 
       <div className="flex-1 bg-card border border-border rounded-xl shadow-sm overflow-hidden flex relative">
         {/* Sidebar */}
-        <div className="w-56 border-r border-border bg-muted/20 py-4 flex flex-col shrink-0">
+        <div className="hidden md:flex w-56 border-r border-border bg-muted/20 py-4 flex-col shrink-0">
           <div className="px-3 space-y-1">
             {folders.map(folder => (
               <button
@@ -96,7 +96,28 @@ export function EmailCenter() {
         </div>
 
         {/* Email List */}
-        <div className="w-[350px] border-r border-border flex flex-col shrink-0 bg-background/50">
+        <div className={cn(
+          "w-full md:w-[350px] border-r border-border flex flex-col shrink-0 bg-background/50",
+          activeEmailId ? "hidden md:flex" : "flex"
+        )}>
+          {/* Mobile Folder Tabs */}
+          <div className="md:hidden flex overflow-x-auto hide-scrollbar border-b border-border bg-muted/20 p-2 gap-2">
+             {folders.map(folder => (
+                <button 
+                  key={folder.id}
+                  onClick={() => { setActiveFolder(folder.id); setActiveEmailId(null); }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    activeFolder === folder.id ? "bg-primary text-white" : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  <folder.icon className="w-3.5 h-3.5" />
+                  {folder.label}
+                  {(folder.count || 0) > 0 && <span className={cn("ml-1 px-1.5 rounded-full text-[10px]", activeFolder === folder.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground")}>{folder.count}</span>}
+                </button>
+             ))}
+          </div>
+
           <div className="p-3 border-b border-border">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -166,12 +187,20 @@ export function EmailCenter() {
         </div>
 
         {/* Reading Pane */}
-        <div className="flex-1 flex flex-col bg-background relative">
+        <div className={cn(
+          "flex-1 flex flex-col bg-background relative w-full",
+          !activeEmailId ? "hidden md:flex" : "flex"
+        )}>
           {activeEmail ? (
             <div className="flex flex-col h-full overflow-hidden">
-              <div className="p-6 border-b border-border">
+              <div className="p-4 md:p-6 border-b border-border shrink-0">
                 <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-bold text-foreground leading-tight">{activeEmail.subject}</h2>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setActiveEmailId(null)} className="md:hidden p-1.5 -ml-1.5 text-muted-foreground hover:bg-muted rounded-full">
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-lg md:text-xl font-bold text-foreground leading-tight line-clamp-2 md:line-clamp-none">{activeEmail.subject}</h2>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => toggleStar(activeEmail.id, activeEmail.is_starred)}
@@ -225,7 +254,7 @@ export function EmailCenter() {
                 </div>
               </div>
 
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1">
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeEmail.body) }}
@@ -245,8 +274,10 @@ export function EmailCenter() {
 
       {/* Floating Composer */}
       {isComposing && (
-        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-end items-end p-4 pointer-events-auto">
-          <EmailComposer onClose={() => setIsComposing(false)} />
+        <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex justify-center md:justify-end items-end p-2 md:p-4 pointer-events-auto animate-in fade-in">
+          <div className="w-full md:w-auto h-full md:h-auto max-h-full md:max-h-none overflow-y-auto md:overflow-visible">
+            <EmailComposer onClose={() => setIsComposing(false)} />
+          </div>
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 
 import { Task, TaskPriority, TaskType } from '../../../types/task';
-import { Phone, MessageCircle, Mail, Video, Bell, Clock, CheckCircle2, Circle, Calendar, AlertCircle } from 'lucide-react';
+import { Phone, MessageCircle, Mail, Video, Bell, Clock, CheckCircle2, Circle, Calendar, AlertCircle, User } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { format, isPast, isToday } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface MobileTaskCardProps {
   key?: React.Key;
@@ -12,6 +13,7 @@ interface MobileTaskCardProps {
 }
 
 export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCardProps) {
+  const navigate = useNavigate();
   const getPriorityColor = (priority: TaskPriority) => {
     switch (priority) {
       case 'Urgent': return 'text-red-600 bg-red-100 dark:bg-red-500/10 dark:text-red-500';
@@ -65,8 +67,24 @@ export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCard
             </h3>
           </div>
           {task.leadName && (
-            <p className="text-xs text-muted-foreground font-medium ml-8">{task.leadName}</p>
+            task.leadId ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/all-leads/${task.leadId}`);
+                }}
+                className="text-xs text-primary font-medium ml-8 hover:underline text-left"
+              >
+                {task.leadName}
+              </button>
+            ) : (
+              <p className="text-xs text-muted-foreground font-medium ml-8">{task.leadName}</p>
+            )
           )}
+          <div className="flex items-center gap-1 mt-1 ml-8 text-[11px] text-muted-foreground/80">
+            <User className="w-3 h-3" />
+            <span>Assigned to {typeof task.assignedTo === 'string' ? task.assignedTo : task.assignedTo?.name || 'Unassigned'}</span>
+          </div>
         </div>
       </div>
 

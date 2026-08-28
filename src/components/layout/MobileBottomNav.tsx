@@ -17,7 +17,7 @@ export function MobileBottomNav() {
   const navItems = [
     { name: 'Home', href: '/', icon: LayoutDashboard },
     ...(showLeads ? [
-      { name: 'Leads', href: '/leads', icon: Users },
+      { name: 'All Leads', href: '/all-leads', icon: Users },
       { name: 'Tasks', href: '/tasks', icon: CheckCircle },
     ] : []),
     showAnalytics 

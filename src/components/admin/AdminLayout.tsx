@@ -28,19 +28,19 @@ export function AdminLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-[90rem] mx-auto w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <ShieldAlert className="w-6 h-6 text-red-500" />
+    <div className="flex flex-col h-[calc(100dvh-11rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-[90rem] mx-auto w-full px-2 md:px-0">
+      <div className="mb-4 md:mb-6 shrink-0">
+        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <ShieldAlert className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
           Super Admin Console
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Centralized control center for system settings, security, and master data.</p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">Centralized control center for system settings, security, and master data.</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 min-h-0">
         {/* Sidebar */}
-        <div className="w-full md:w-64 shrink-0 bg-card border border-border rounded-xl overflow-hidden flex flex-col h-fit max-h-full">
-          <div className="overflow-y-auto p-2 space-y-1 custom-scrollbar">
+        <div className="w-full md:w-64 shrink-0 bg-card border border-border rounded-xl overflow-hidden flex flex-col h-fit md:max-h-full">
+          <div className="flex md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1 md:space-y-1 hide-scrollbar md:custom-scrollbar">
             {ADMIN_TABS.map((tab) => {
               const Icon = tab.icon;
               const path = tab.path ? `/admin/${tab.path}` : '/admin';
@@ -51,13 +51,13 @@ export function AdminLayout() {
                   key={tab.id}
                   to={path}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left",
+                    "flex shrink-0 md:w-full items-center gap-2 md:gap-3 px-3 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-colors text-left whitespace-nowrap",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-primary text-white md:bg-primary/10 md:text-primary shadow-sm md:shadow-none"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground border border-border md:border-transparent"
                   )}
                 >
-                  <Icon className={cn("w-4 h-4", isActive ? "text-primary" : "text-muted-foreground")} />
+                  <Icon className={cn("w-3.5 h-3.5 md:w-4 md:h-4", isActive ? "text-white md:text-primary" : "text-muted-foreground")} />
                   {tab.label}
                 </NavLink>
               );
@@ -67,7 +67,7 @@ export function AdminLayout() {
 
         {/* Content */}
         <div className="flex-1 bg-card border border-border rounded-xl overflow-hidden flex flex-col min-h-0 relative">
-          <div className="overflow-y-auto p-6 custom-scrollbar h-full">
+          <div className="overflow-y-auto p-4 md:p-6 custom-scrollbar h-full">
             <Outlet />
           </div>
         </div>

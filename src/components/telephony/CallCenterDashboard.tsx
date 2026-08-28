@@ -134,11 +134,11 @@ export default function CallCenterDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-[500px]">
+            <div className="lg:col-span-2 h-[400px] md:h-[500px]">
               <CallHistoryPanel calls={recentCalls} isLoading={isLoading} />
             </div>
 
-            <div className="bg-card border border-border rounded-xl shadow-sm h-[500px] flex flex-col">
+            <div className="bg-card border border-border rounded-xl shadow-sm h-[400px] md:h-[500px] flex flex-col">
               <div className="p-4 border-b border-border">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" /> Counselor Performance
@@ -178,7 +178,7 @@ export default function CallCenterDashboard() {
       )}
 
       {activeTab === 'history' && (
-        <div className="h-[75vh] animate-in fade-in duration-300">
+        <div className="h-[calc(100dvh-15rem)] md:h-[75vh] animate-in fade-in duration-300">
            <CallHistoryPanel calls={recentCalls} isLoading={isLoading} />
         </div>
       )}

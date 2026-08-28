@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { Task } from '../../../types/task';
 import { LeadStatus } from '../../../types/schema';
 import { X, Calendar, Clock, CheckCircle2 } from 'lucide-react';
@@ -23,6 +24,17 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
   const [scheduleNext, setScheduleNext] = useState(false);
   const [nextDate, setNextDate] = useState('');
   const [nextTime, setNextTime] = useState('');
+  const [statuses, setStatuses] = useState<string[]>(['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost']);
+
+  useEffect(() => {
+    if (isOpen) {
+      supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle().then(({ data }) => {
+        if (data && data.value && Array.isArray(data.value)) {
+          setStatuses(data.value);
+        }
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -37,7 +49,6 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
     });
   };
 
-  const statuses: LeadStatus[] = ['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost'];
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex flex-col items-center justify-end md:justify-center p-0 md:p-4 animate-in fade-in duration-200">

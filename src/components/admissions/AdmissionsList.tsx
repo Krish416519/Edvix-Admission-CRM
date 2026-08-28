@@ -23,7 +23,58 @@ const stages: AdmissionStage[] = [
   'LMS Issued',
   'Completed',
   'Cancelled',
+  'Completed',
+  'Cancelled',
 ];
+
+const MobileAdmissionCard = ({ adm, onClick, onDelete }: { adm: Admission; onClick: (id: string) => void; onDelete: (adm: Admission) => void }) => {
+  return (
+    <div 
+      onClick={() => onClick(adm.id)}
+      className="bg-card border border-border p-4 rounded-xl flex flex-col gap-3 hover:bg-muted/30 transition-colors cursor-pointer group shadow-sm"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shadow-sm shrink-0">
+            {adm.studentName.charAt(0)}
+          </div>
+          <div>
+            <div className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{adm.studentName}</div>
+            <div className="text-xs text-muted-foreground">{adm.admissionNumber || adm.id.slice(0, 8)}</div>
+          </div>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(adm); }}
+          className="p-2 rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 text-sm bg-muted/30 p-2.5 rounded-lg border border-border/50">
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 font-semibold">Program & Univ</div>
+          <div className="font-medium text-xs truncate" title={adm.course}>{adm.course}</div>
+          <div className="text-xs truncate text-muted-foreground" title={adm.university}>{adm.university}</div>
+        </div>
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5 font-semibold">Intake</div>
+          <div className="font-medium text-xs truncate">{adm.intake || 'N/A'} {adm.academicSession}</div>
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between mt-1">
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider truncate max-w-[150px]">
+          {adm.currentStage || adm.stage}
+        </span>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+          <User className="w-3.5 h-3.5" />
+          <span className="truncate max-w-[100px]">{adm.counselorName || 'Unassigned'}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export function AdmissionsList() {
   const navigate = useNavigate();
@@ -79,7 +130,7 @@ export function AdmissionsList() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in duration-500">
+    <div className="flex flex-col animate-in fade-in duration-500 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Admissions</h1>
@@ -154,8 +205,42 @@ export function AdmissionsList() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="flex-1 overflow-auto relative">
+        {/* Mobile View */}
+        <div className="md:hidden flex flex-col gap-3 p-4 bg-muted/5 border-t border-border">
+          {isLoading && (
+            <div className="flex flex-col gap-3">
+               <Skeleton className="h-[180px] w-full rounded-xl" />
+               <Skeleton className="h-[180px] w-full rounded-xl" />
+            </div>
+          )}
+          {!isLoading && filteredAdmissions.map((adm) => (
+             <MobileAdmissionCard key={adm.id} adm={adm} onClick={(id) => navigate(`/applications/${id}`)} onDelete={setDeleteTarget} />
+          ))}
+          {!isLoading && filteredAdmissions.length === 0 && (
+            <EmptyState
+              icon={GraduationCap}
+              title="No admissions found"
+              description="We couldn't find any admissions matching your current filters."
+              action={
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStageFilter('All');
+                    setUniversityFilter('All');
+                    setIntakeFilter('All');
+                    setCounselorFilter('All');
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+                >
+                  Clear Filters
+                </button>
+              }
+            />
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden md:block flex-1 overflow-auto relative">
           {isLoading && (
             <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8">
                <Skeleton className="h-12 w-full rounded-lg mb-4" />

@@ -1,0 +1,1 @@
+select qual, with_check from pg_policies where policyname = 'Allow service role to insert users';

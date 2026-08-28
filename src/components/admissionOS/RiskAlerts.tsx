@@ -128,7 +128,7 @@ export function RiskAlerts() {
                   <p className="text-xs text-muted-foreground mb-2">{alert.description}</p>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => navigate(`/leads/${alert.entityId}`)}
+                      onClick={() => navigate(`/all-leads/${alert.entityId}`)}
                       className="text-xs bg-primary/10 text-primary hover:bg-primary/20 px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1"
                     >
                       <ChevronRight className="w-3 h-3" /> {alert.suggestedAction}

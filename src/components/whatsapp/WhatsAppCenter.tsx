@@ -35,7 +35,7 @@ export function WhatsAppCenter() {
     conv.whatsapp_contacts?.phone_number || '';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full px-2 md:px-0">
+    <div className="flex flex-col h-[calc(100dvh-11rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-7xl mx-auto w-full px-2 md:px-0">
       <div className="flex justify-between items-end mb-3 md:mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">

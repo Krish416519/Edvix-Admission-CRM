@@ -9,9 +9,11 @@ interface TaskFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (task: Partial<Task>) => void;
+  defaultLeadId?: string;
+  defaultLeadName?: string;
 }
 
-export function TaskFormDialog({ task, isOpen, onClose, onSave }: TaskFormDialogProps) {
+export function TaskFormDialog({ task, isOpen, onClose, onSave, defaultLeadId, defaultLeadName }: TaskFormDialogProps) {
   const { leads } = useLeads();
   const [formData, setFormData] = useState<Partial<Task>>(
     task || {
@@ -21,7 +23,7 @@ export function TaskFormDialog({ task, isOpen, onClose, onSave }: TaskFormDialog
       dueDate: new Date().toISOString().split('T')[0],
       dueTime: '10:00',
       description: '',
-      leadId: '',
+      leadId: defaultLeadId || '',
     }
   );
 
@@ -116,20 +118,29 @@ export function TaskFormDialog({ task, isOpen, onClose, onSave }: TaskFormDialog
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block flex items-center gap-2"><User className="w-4 h-4"/> Related Lead (Optional)</label>
-                <select 
-                  name="leadId"
-                  value={formData.leadId || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option value="">Select a lead...</option>
-                  {leads.map(lead => (
-                    <option key={lead.id} value={lead.id}>{lead.name} ({lead.id})</option>
-                  ))}
-                </select>
-              </div>
+              {/* Hide lead selector when opened from inside a lead profile */}
+              {defaultLeadId ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/40 border border-border rounded-lg">
+                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-foreground font-medium">{defaultLeadName || 'Current Lead'}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">Auto-linked</span>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block flex items-center gap-2"><User className="w-4 h-4"/> Related Lead (Optional)</label>
+                  <select 
+                    name="leadId"
+                    value={formData.leadId || ''}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">Select a lead...</option>
+                    {leads.map(lead => (
+                      <option key={lead.id} value={lead.id}>{lead.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block flex items-center gap-2"><FileText className="w-4 h-4"/> Description & Notes</label>

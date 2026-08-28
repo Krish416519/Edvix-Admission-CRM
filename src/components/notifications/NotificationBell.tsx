@@ -47,7 +47,7 @@ export function NotificationBell() {
 
     // Direct routing for Leads
     if (notification.module === 'Leads' && notification.moduleRecordId) {
-      navigate(`/leads/${notification.moduleRecordId}`);
+      navigate(`/all-leads/${notification.moduleRecordId}`);
       setIsOpen(false);
       return;
     }

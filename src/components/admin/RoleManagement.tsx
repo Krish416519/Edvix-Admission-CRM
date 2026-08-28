@@ -102,13 +102,13 @@ export function RoleManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground flex items-center gap-2">
             <Shield className="w-5 h-5 text-emerald-500" />
             Roles & Permissions
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">Define granular access control for different team members.</p>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">Define granular access control for different team members.</p>
         </div>
         <button 
           onClick={handleCreateRole}
@@ -125,33 +125,35 @@ export function RoleManagement() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Roles List */}
-        <div className="lg:col-span-1 space-y-3">
-          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider mb-2">Available Roles</h3>
-          {roles.map((role) => (
-            <div 
-              key={role.id}
-              onClick={() => handleSelectRole(role)}
-              className={`p-4 border rounded-xl cursor-pointer transition-all ${
-                selectedRole?.id === role.id 
-                  ? 'border-primary bg-primary/5 shadow-sm' 
-                  : 'border-border bg-card hover:border-primary/30'
-              }`}
-            >
-              <h4 className={`font-semibold ${selectedRole?.id === role.id ? 'text-primary' : 'text-foreground'}`}>{role.name}</h4>
-              {role.description && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{role.description}</p>}
-            </div>
-          ))}
+        <div className="lg:col-span-1 flex flex-col">
+          <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider mb-2 shrink-0">Available Roles</h3>
+          <div className="flex flex-row lg:flex-col gap-3 overflow-x-auto lg:overflow-visible hide-scrollbar pb-2 lg:pb-0">
+            {roles.map((role) => (
+              <div 
+                key={role.id}
+                onClick={() => handleSelectRole(role)}
+                className={`p-4 border rounded-xl cursor-pointer transition-all min-w-[220px] lg:min-w-0 shrink-0 ${
+                  selectedRole?.id === role.id 
+                    ? 'border-primary bg-primary/5 shadow-sm' 
+                    : 'border-border bg-card hover:border-primary/30'
+                }`}
+              >
+                <h4 className={`font-semibold text-sm md:text-base ${selectedRole?.id === role.id ? 'text-primary' : 'text-foreground'}`}>{role.name}</h4>
+                {role.description && <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{role.description}</p>}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Permission Builder */}
         <div className="lg:col-span-3">
           <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
-            <div className="p-5 border-b border-border bg-muted/20 flex justify-between items-center">
+            <div className="p-4 md:p-5 border-b border-border bg-muted/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h3 className="font-semibold text-lg flex items-center gap-2">
+                <h3 className="font-semibold text-base md:text-lg flex items-center gap-2">
                   Editing Role: <span className="text-primary">{selectedRole?.name || 'None'}</span>
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">Check the boxes below to grant permissions to this role.</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">Check the boxes below to grant permissions to this role.</p>
               </div>
               <button 
                 onClick={handleSavePermissions}

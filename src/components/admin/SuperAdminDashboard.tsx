@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { 
-  Users, Activity, Database, Server, Zap, IndianRupee, FileText, CheckCircle, 
-  MessageSquare, Mail, Workflow, ShieldAlert
+  Users, Activity, Database, Server, Zap, IndianRupee, FileText, CheckCircle 
 } from 'lucide-react';
 import { fetchSystemMetrics } from '../../lib/adminService';
 import { SystemMetrics } from '../../types/admin';

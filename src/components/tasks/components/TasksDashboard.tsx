@@ -40,11 +40,11 @@ export function TasksDashboard({ tasks }: { tasks: Task[] }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {cards.map((card, index) => {
         const Icon = card.icon;
         return (
-          <div key={index} className="bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
+          <div key={index} className="w-full bg-card border border-border rounded-xl p-4 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-2">
               <span className="text-sm font-medium text-muted-foreground">{card.label}</span>
               <div className={cn("p-1.5 rounded-lg", card.bg, card.color)}>

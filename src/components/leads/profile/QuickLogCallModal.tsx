@@ -19,7 +19,6 @@ interface QuickLogCallModalProps {
 
 export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickLogCallModalProps) {
   const { user } = useAuth();
-  const [step, setStep] = useState<'log' | 'followup'>('log');
   const [isSaving, setIsSaving] = useState(false);
 
   const [callData, setCallData] = useState({
@@ -87,28 +86,36 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
         const dueTimeStr = followup.time || '09:00';
         const dueDate = new Date(`${dueDateStr}T${dueTimeStr}`);
         
-        await supabase.from('tasks').insert({
+        const { error: taskError } = await supabase.from('tasks').insert({
           lead_id: leadId,
           title: `${followup.type} follow-up with ${leadName}`,
+          description: callData.notes || `Follow-up created from call log (${callData.contactResult})`,
           task_type: followup.type,
           due_date: dueDateStr,
           due_time: dueTimeStr,
           priority: 'High',
           status: 'Pending',
           assigned_user: user?.id,
+          created_by: user?.id,
         });
-
-        await supabase.from('leads').update({
-          next_action_date: dueDate.toISOString(),
-        }).eq('id', leadId);
+        
+        if (taskError) {
+          // Non-fatal: log the error but don't block the call log from saving
+          console.error("Task insert error:", taskError);
+          toast.warning('Call logged, but follow-up task could not be created. Please add it manually.');
+        } else {
+          await supabase.from('leads').update({
+            next_action_date: dueDate.toISOString(),
+          }).eq('id', leadId);
+        }
       }
 
       toast.success('Call logged successfully');
       onSaved();
       onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to log call');
+    } catch (err: any) {
+      console.error("LOG CALL ERROR:", err);
+      toast.error(`Failed to log call: ${err.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
@@ -118,10 +125,10 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div
         ref={modalRef}
-        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200"
+        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
               <Phone className="w-4 h-4 text-blue-500" />
@@ -136,7 +143,7 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto">
           {/* Duration */}
           <div className="flex items-center gap-3">
             <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -201,14 +208,14 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
                 onChange={e => setCallData(p => ({ ...p, lostReason: e.target.value }))}
                 className="w-full px-3 py-2 bg-destructive/5 border border-destructive/20 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-destructive appearance-none text-foreground"
               >
-                <option value="">Select Reason</option>
-                <option value="Budget Issue">Budget Issue</option>
-                <option value="Eligibility Issue">Eligibility Issue</option>
-                <option value="Chose Offline Program">Chose Offline Program</option>
-                <option value="Competitor Selected">Competitor Selected</option>
-                <option value="Duplicate Lead">Duplicate Lead</option>
-                <option value="Not Interested">Not Interested</option>
-                <option value="Other">Other</option>
+                <option value="" className="bg-background text-foreground">Select Reason</option>
+                <option value="Budget Issue" className="bg-background text-foreground">Budget Issue</option>
+                <option value="Eligibility Issue" className="bg-background text-foreground">Eligibility Issue</option>
+                <option value="Chose Offline Program" className="bg-background text-foreground">Chose Offline Program</option>
+                <option value="Competitor Selected" className="bg-background text-foreground">Competitor Selected</option>
+                <option value="Duplicate Lead" className="bg-background text-foreground">Duplicate Lead</option>
+                <option value="Not Interested" className="bg-background text-foreground">Not Interested</option>
+                <option value="Other" className="bg-background text-foreground">Other</option>
               </select>
             </div>
           )}
@@ -276,7 +283,7 @@ export function QuickLogCallModal({ leadId, leadName, onClose, onSaved }: QuickL
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-5 py-4 border-t border-border">
+        <div className="flex gap-3 px-5 py-4 border-t border-border shrink-0">
           <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-muted rounded-xl text-sm font-semibold hover:bg-muted/80 transition-colors">
             Cancel
           </button>

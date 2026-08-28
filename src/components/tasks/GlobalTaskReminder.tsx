@@ -111,7 +111,7 @@ export function GlobalTaskReminder() {
                     onClick={() => {
                       if (typeof t === 'number' || typeof t === 'string') toast.dismiss(t); else toast.dismiss();
                       if (task.lead_id) {
-                        navigate(`/leads/${task.lead_id}`);
+                        navigate(`/all-leads/${task.lead_id}`);
                       } else {
                         navigate('/tasks');
                       }

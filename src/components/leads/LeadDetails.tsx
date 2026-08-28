@@ -87,7 +87,7 @@ export function LeadDetails() {
       <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] px-4">
         <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-center">Lead Not Found</h2>
         <button 
-          onClick={() => navigate('/leads')}
+          onClick={() => navigate('/all-leads')}
           className="px-4 py-2 bg-primary text-white rounded-lg text-sm md:text-base"
         >
           Back to Leads
@@ -246,7 +246,13 @@ export function LeadDetails() {
       <LeadProfileHeader 
         lead={lead} 
         actionButtons={actionButtons} 
-        onBack={() => navigate('/leads')}
+        onBack={() => {
+          if (window.history.length > 2) {
+            navigate(-1);
+          } else {
+            navigate('/all-leads');
+          }
+        }}
       />
 
       {/* Main Content Area */}

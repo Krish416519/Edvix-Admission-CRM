@@ -93,6 +93,10 @@
     text-size-adjust: 100%;
     /* Enable momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
+    
+    /* Prevent text selection globally */
+    -webkit-user-select: none;
+    user-select: none;
   }
   
   h1, h2, h3, h4, h5, h6 {

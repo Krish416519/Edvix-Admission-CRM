@@ -20,7 +20,21 @@ export function useTasks(options: UseTasksOptions = {}) {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Fetch the user's organization on mount
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('organization_users')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.organization_id) setOrganizationId(data.organization_id);
+      });
+  }, [user]);
 
   const {
     leadId,
@@ -153,7 +167,8 @@ export function useTasks(options: UseTasksOptions = {}) {
         due_time: task.dueTime,
         assigned_user: task.assignedUser || user?.id,
         lead_id: task.leadId || null,
-        created_by: user?.id
+        created_by: user?.id,
+        // organization_id is auto-set by trg_set_org_id_tasks trigger on INSERT
       };
 
       const { data, error } = await supabase

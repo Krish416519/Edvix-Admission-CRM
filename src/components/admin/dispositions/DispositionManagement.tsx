@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { dispositionService } from '../../../lib/dispositionService';
 import { DispositionCategory, Disposition } from '../../../types/disposition';
-import { Plus, Edit2, CheckCircle, XCircle, ChevronDown, ChevronRight, Settings, Trash2, X, AlertTriangle, Loader2, Clock } from 'lucide-react';
+import { Plus, Edit2, CheckCircle, XCircle, ChevronDown, ChevronRight, Settings, Trash2, X, AlertTriangle, Loader2, Clock, GripVertical, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../../../lib/utils';
 
@@ -10,6 +10,9 @@ export function DispositionManagement() {
   const [categories, setCategories] = useState<DispositionCategory[]>([]);
   const [dispositions, setDispositions] = useState<Record<string, Disposition[]>>({});
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
+  const [pipelineStages, setPipelineStages] = useState<string[]>([]);
+  const [editingStageIdx, setEditingStageIdx] = useState<number | null>(null);
+  const [isSavingStages, setIsSavingStages] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals state
@@ -48,6 +51,14 @@ export function DispositionManagement() {
         dispMap[cat.id] = await dispositionService.getDispositions(cat.id);
       }
       setDispositions(dispMap);
+
+      // Fetch Pipeline Stages
+      const { data: psData } = await supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle();
+      if (psData && psData.value && Array.isArray(psData.value)) {
+        setPipelineStages(psData.value);
+      } else {
+        setPipelineStages(['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost']);
+      }
     } catch (error) {
       toast.error('Failed to load dispositions');
     } finally {
@@ -57,6 +68,21 @@ export function DispositionManagement() {
 
   const toggleCategory = (id: string) => {
     setExpandedCats(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleSavePipelineStages = async () => {
+    setIsSavingStages(true);
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'pipeline_stages', value: pipelineStages, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) throw error;
+      toast.success('Pipeline stages saved successfully');
+    } catch (err: any) {
+      toast.error('Failed to save pipeline stages');
+    } finally {
+      setIsSavingStages(false);
+    }
   };
 
   // --- Category Handlers ---
@@ -200,7 +226,6 @@ export function DispositionManagement() {
     );
   }
 
-  const LEAD_STATUSES = ['New', 'Contacted', 'Attempted', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Offer Received', 'Admission Done', 'Lost'];
 
   return (
     <div className="space-y-6">
@@ -216,6 +241,118 @@ export function DispositionManagement() {
           <Plus className="w-4 h-4" />
           Add Category
         </button>
+      </div>
+
+      {/* Pipeline Stages Card */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm p-6 mb-6">
+        <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+          <div>
+            <h3 className="font-semibold text-lg text-foreground">Pipeline Stages</h3>
+            <p className="text-sm text-muted-foreground">Drag to reorder. These stages appear in the Smart View and Lead filters.</p>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const currentLength = Array.isArray(pipelineStages) ? pipelineStages.length : 0;
+                setPipelineStages(prev => {
+                  const current = Array.isArray(prev) ? prev : [];
+                  return [...current, `New Stage ${current.length + 1}`];
+                });
+                setEditingStageIdx(currentLength);
+              }} 
+              className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg flex items-center gap-1 transition-colors cursor-pointer relative z-10"
+            >
+              <Plus className="w-4 h-4 pointer-events-none" /> Add Stage
+            </button>
+            <button 
+              type="button"
+              onClick={handleSavePipelineStages}
+              disabled={isSavingStages}
+              className="px-4 py-1.5 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg flex items-center gap-2 transition-colors disabled:opacity-70 cursor-pointer"
+            >
+              {isSavingStages ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Save Stages
+            </button>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          {pipelineStages.map((stage: string, index: number) => (
+            <div 
+              key={`${stage}-${index}`}
+              draggable={true}
+              onDragStart={(e) => {
+                e.dataTransfer.setData('stageDragIndex', index.toString());
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const dragIdxStr = e.dataTransfer.getData('stageDragIndex');
+                if (dragIdxStr) {
+                  const dragIdx = Number(dragIdxStr);
+                  const dropIdx = index;
+                  if (dragIdx === dropIdx) return;
+                  const newStages = [...pipelineStages];
+                  const [removed] = newStages.splice(dragIdx, 1);
+                  newStages.splice(dropIdx, 0, removed);
+                  setPipelineStages(newStages);
+                }
+              }}
+              className="flex items-center gap-3 p-3 bg-muted/30 border border-border rounded-xl group transition-all"
+            >
+              <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground">
+                <GripVertical className="w-5 h-5" />
+              </div>
+              
+              {editingStageIdx === index ? (
+                <input 
+                  autoFocus
+                  type="text" 
+                  value={stage}
+                  onChange={(e) => {
+                    const newStages = [...pipelineStages];
+                    newStages[index] = e.target.value;
+                    setPipelineStages(newStages);
+                  }}
+                  onBlur={() => setEditingStageIdx(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingStageIdx(null)}
+                  className="flex-1 bg-background border border-primary focus:ring-1 focus:ring-primary rounded-lg px-3 py-1.5 text-sm font-medium outline-none"
+                />
+              ) : (
+                <div className="flex-1 text-sm font-medium px-3 py-1.5 select-none">
+                  {stage}
+                </div>
+              )}
+
+              <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                {editingStageIdx !== index && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingStageIdx(index)}
+                    className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                    title="Edit Stage"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newStages = pipelineStages.filter((_, i) => i !== index);
+                    setPipelineStages(newStages);
+                  }}
+                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                  title="Delete Stage"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden divide-y divide-border/50">
@@ -403,7 +540,7 @@ export function DispositionManagement() {
                   className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
                 >
                   <option value="">-- No automatic status change --</option>
-                  {LEAD_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  {pipelineStages.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 

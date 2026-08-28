@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
-  Search, Filter, Download, Upload, Plus, ChevronDown, MoreHorizontal, 
+  Search, Filter, Upload, Plus, ChevronDown, 
   ArrowUpDown, Users, Trash2, Edit2, UserPlus, FileSpreadsheet, Clock,
-  X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Layers, Merge, Check, Columns
+  X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Merge, Check, Columns, GripVertical
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
@@ -23,7 +24,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 
-import { addAuditLog } from '../../data/mockAuditLogs';
+
 
 // ── CSV Import Types ─────────────────────────────────────────────────────────
 interface CsvRow { [key: string]: string; }
@@ -88,15 +89,75 @@ function autoMap(headers: string[]): Record<string, string> {
   return mapping;
 }
 
-export function LeadsList() {
+interface LeadsListProps {
+  onLeadSelect?: (lead: Lead) => void;
+  showSmartStages?: boolean;
+}
+
+export function LeadsList({ showSmartStages }: LeadsListProps) {
   const navigate = useNavigate();
   const { confirm } = useConfirm();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilter = searchParams.get('filter');
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>('All');
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>(
+    initialFilter === 'docs_pending' ? 'Documents Pending' : 'All'
+  );
+  const [minScoreFilter, setMinScoreFilter] = useState<number | undefined>(
+    initialFilter === 'hot' ? 80 : initialFilter === 'high_conversion' ? 85 : undefined
+  );
+
+  // Clear query params after initial read so they don't persist on reload after user changes filters
+  useEffect(() => {
+    if (initialFilter) {
+      searchParams.delete('filter');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const [stagesOrder, setStagesOrder] = useState<string[]>([
+    'New', 'Attempted', 'Connected', 'Interested', 'Qualified',
+    'Application Started', 'Documents Pending', 'Admission Done', 'Lost'
+  ]);
+
+  useEffect(() => {
+    supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle().then(({ data }) => {
+      if (data && data.value && Array.isArray(data.value)) {
+        setStagesOrder(data.value);
+      }
+    });
+  }, []);
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+    const newStages = Array.from(stagesOrder);
+    const [reorderedItem] = newStages.splice(result.source.index, 1);
+    newStages.splice(result.destination.index, 0, reorderedItem);
+    
+    setStagesOrder(newStages);
+    
+    // Check role from AuthContext (we destructure `user` below, but for now we'll do it safely)
+    const storedUser = localStorage.getItem('crm_user');
+    const role = storedUser ? JSON.parse(storedUser).role : '';
+    const isCounselorRole = role?.toLowerCase().includes('counsel');
+    
+    if (!isCounselorRole) {
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({ key: 'pipeline_stages', value: newStages });
+        
+      if (error) {
+        toast.error('Failed to save stage order globally');
+      } else {
+        toast.success('Stage order updated successfully');
+      }
+    }
+  };
   
   // Advanced Filters
   const [showDeleted, setShowDeleted] = useState(false);
@@ -227,7 +288,7 @@ export function LeadsList() {
 
   const { leads, totalCount, isLoading, addLead, updateLead, deleteLead, bulkDeleteLeads,
     restoreLead,
-    duplicateLead, mergeLeads, bulkUpdateLeads, refresh } = useLeads({
+    duplicateLead, mergeLeads, bulkUpdateLeads, refresh, statusCounts, totalUnfilteredCount } = useLeads({
     page: currentPage,
     pageSize: pageSize,
     search: searchTerm,
@@ -236,13 +297,16 @@ export function LeadsList() {
       source: sourceFilter,
       counselorId: counselorFilter,
       dispositionCategory: dispositionFilter,
-      showDeleted: showDeleted
+      showDeleted: showDeleted,
+      minScore: minScoreFilter
     },
     sort: { field: sortField as string, direction: sortDirection }
   });
 
   const { allUsers, assignLead, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
+  
+  const isCounselor = user?.role?.toLowerCase().includes('counsel');
   
   const canDelete = hasPermission('Delete Leads', 'Lead Management');
   const canAssign = hasPermission('Edit Leads', 'Lead Management');
@@ -545,43 +609,159 @@ export function LeadsList() {
   return (
     <div className="flex flex-col animate-in fade-in duration-500 pb-10">
       
+      {/* Smart Stages Tabs */}
+      {showSmartStages && (
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide pt-1 px-1 touch-pan-x">
+          <button
+            onClick={() => {
+              setStatusFilter('All');
+              setSearchTerm('');
+              setCurrentPage(1);
+            }}
+            className={cn(
+              "shrink-0 px-3 py-1.5 md:px-5 md:py-2.5 text-sm md:text-base rounded-xl font-semibold transition-all whitespace-nowrap shadow-sm border",
+              statusFilter === 'All' && !searchTerm
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-foreground border-border hover:bg-muted"
+            )}
+          >
+            All Stages
+            <span className={cn(
+              "ml-2 px-1.5 py-0.5 rounded-full text-[10px] md:text-xs",
+              statusFilter === 'All' && !searchTerm
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-muted-foreground/10 text-muted-foreground"
+            )}>
+              {totalUnfilteredCount}
+            </span>
+          </button>
+          
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="stages" direction="horizontal">
+              {(provided) => (
+                <div 
+                  ref={provided.innerRef} 
+                  {...provided.droppableProps}
+                  className="flex gap-2 h-full"
+                >
+                  {stagesOrder.map((stage, index) => {
+                    const count = statusCounts[stage] || 0;
+                    return (
+                      <Draggable key={stage} draggableId={stage} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="shrink-0 h-full"
+                            style={{
+                              ...provided.draggableProps.style,
+                              opacity: snapshot.isDragging ? 0.9 : 1,
+                              transform: snapshot.isDragging ? `${provided.draggableProps.style?.transform} scale(1.02)` : provided.draggableProps.style?.transform,
+                            }}
+                          >
+                            <div
+                              className={cn(
+                                "group relative px-3 py-1.5 md:px-5 md:py-2.5 text-sm md:text-base rounded-xl font-semibold transition-all shadow-sm border w-full h-full text-left flex items-center justify-between gap-2 overflow-hidden",
+                                statusFilter === stage
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-card text-foreground border-border hover:bg-muted",
+                                snapshot.isDragging && "shadow-xl ring-2 ring-primary/20"
+                              )}
+                            >
+                              {/* Drag Handle (Visible on Desktop hover or always) */}
+                              <div
+                                {...provided.dragHandleProps}
+                                className="hidden md:flex items-center justify-center p-1 -ml-2 text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <GripVertical className="w-4 h-4" />
+                              </div>
+                              
+                              <button
+                                onClick={() => {
+                                  setStatusFilter(stage);
+                                  setSearchTerm('');
+                                  setCurrentPage(1);
+                                }}
+                                className="flex-1 text-left whitespace-nowrap focus:outline-none"
+                              >
+                                {stage}
+                              </button>
+                              
+                              <span className={cn(
+                                "px-1.5 py-0.5 rounded-full text-[10px] md:text-xs",
+                                statusFilter === stage
+                                  ? "bg-primary-foreground/20 text-primary-foreground"
+                                  : "bg-muted-foreground/10 text-muted-foreground"
+                              )}>
+                                {count}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
+      )}
+
       {/* Mobile Header */}
       <div className="md:hidden flex items-center justify-between mb-4 mt-2 px-1">
         <div>
-          <h1 className="text-2xl font-black text-foreground leading-tight">Leads</h1>
+          <h1 className="text-2xl font-black text-foreground leading-tight">All Leads</h1>
           <p className="text-xs text-muted-foreground font-medium">{totalLeads} Total Leads</p>
         </div>
-        <button 
-          onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
-          className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg font-bold transition-all text-sm shadow-sm active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          Lead
-        </button>
+        {!isCounselor && (
+          <button 
+            onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
+            className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg font-bold transition-all text-sm shadow-sm active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            Lead
+          </button>
+        )}
       </div>
 
       {/* Mobile Search & Filter Bar */}
-      <div className="md:hidden flex items-center gap-2 mb-4 px-1">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="Search leads..." 
-            value={searchTerm}
-            onChange={e => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          />
-        </div>
+      <div className="md:hidden flex flex-col gap-2 mb-4 px-1">
+        {minScoreFilter === 80 && (
+          <div className="flex items-center justify-between px-3 py-2 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 rounded-xl text-sm font-semibold border border-orange-200 dark:border-orange-500/30">
+            <span>🔥 Hot Leads Only</span>
+            <button onClick={() => setMinScoreFilter(undefined)} className="p-1 hover:bg-orange-200 dark:hover:bg-orange-500/30 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+          </div>
+        )}
+        {minScoreFilter === 85 && (
+          <div className="flex items-center justify-between px-3 py-2 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 rounded-xl text-sm font-semibold border border-green-200 dark:border-green-500/30">
+            <span>📈 High-Conversion Only</span>
+            <button onClick={() => setMinScoreFilter(undefined)} className="p-1 hover:bg-green-200 dark:hover:bg-green-500/30 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input 
+              type="text" 
+              placeholder="Search leads..." 
+              value={searchTerm}
+              onChange={e => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            />
+          </div>
         <button 
           onClick={() => setIsFiltersSheetOpen(true)}
           className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 relative shrink-0"
         >
           <Filter className="w-5 h-5" />
-          {(statusFilter !== 'All' || showDeleted) && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full" />
+          {(statusFilter !== 'All' || showDeleted || minScoreFilter !== undefined) && (
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
           )}
         </button>
         <button 
@@ -590,113 +770,120 @@ export function LeadsList() {
         >
           <ArrowUpDown className="w-5 h-5" />
         </button>
+        </div>
       </div>
 
       {/* Desktop Header & Actions */}
-      <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Leads Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage and track your admission pipeline efficiently.</p>
+      {!isCounselor && (
+        <div className="hidden md:flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">All Leads</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage and track your admission pipeline efficiently.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Hidden file input */}
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <button 
+              onClick={() => csvInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg text-sm font-semibold hover:bg-muted transition-colors shadow-sm text-foreground"
+            >
+              <Upload className="w-4 h-4" />
+              Import
+            </button>
+            <button 
+              onClick={handleExport}
+              className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg text-sm font-semibold hover:bg-muted transition-colors shadow-sm text-foreground"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-green-600" />
+              Export
+            </button>
+            <button 
+              onClick={() => setIsMergeModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-colors shadow-sm"
+            >
+              <Merge className="w-4 h-4" />
+              Merge
+            </button>
+            <button 
+              onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
+              className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-1.5 rounded-lg font-semibold transition-all text-sm shadow-sm active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              Add Lead
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Hidden file input */}
-          <input
-            ref={csvInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-          <button 
-            onClick={() => csvInputRef.current?.click()}
-            className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg text-sm font-semibold hover:bg-muted transition-colors shadow-sm text-foreground"
-          >
-            <Upload className="w-4 h-4" />
-            Import
-          </button>
-          <button 
-            onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-lg text-sm font-semibold hover:bg-muted transition-colors shadow-sm text-foreground"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-green-600" />
-            Export
-          </button>
-          <button 
-            onClick={() => setIsMergeModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-colors shadow-sm"
-          >
-            <Merge className="w-4 h-4" />
-            Merge
-          </button>
-          <button 
-            onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-1.5 rounded-lg font-semibold transition-all text-sm shadow-sm active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            Add Lead
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Summary Cards */}
-      <div className="hidden md:grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground font-medium">Total Leads</p>
-            <h3 className="text-2xl font-bold mt-1">{totalLeads}</h3>
+      {!isCounselor && (
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Total Leads</p>
+              <h3 className="text-2xl font-bold mt-1">{totalLeads}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <Users className="w-5 h-5" />
+            </div>
           </div>
-          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-            <Users className="w-5 h-5" />
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">New Leads</p>
+              <h3 className="text-2xl font-bold mt-1">{newLeadsCount}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+              <UserPlus className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Admissions</p>
+              <h3 className="text-2xl font-bold mt-1">{admissionsCount}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground font-medium">Conversion Rate</p>
+              <h3 className="text-2xl font-bold mt-1">{conversionRate}%</h3>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground font-medium">New Leads</p>
-            <h3 className="text-2xl font-bold mt-1">{newLeadsCount}</h3>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
-            <UserPlus className="w-5 h-5" />
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground font-medium">Admissions</p>
-            <h3 className="text-2xl font-bold mt-1">{admissionsCount}</h3>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground font-medium">Conversion Rate</p>
-            <h3 className="text-2xl font-bold mt-1">{conversionRate}%</h3>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Mobile KPI horizontal scroll */}
-      <div className="md:hidden flex gap-3 px-1 mb-3 overflow-x-auto hide-scrollbar pb-1">
-        {[
-          { label: 'Total', value: totalLeads, color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10' },
-          { label: 'New', value: newLeadsCount, color: 'text-violet-600 bg-violet-50 dark:bg-violet-500/10' },
-          { label: 'Qualified', value: qualifiedCount, color: 'text-teal-600 bg-teal-50 dark:bg-teal-500/10' },
-          { label: '🔥 Hot', value: hotLeadsCount, color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' },
-          { label: 'Lost', value: lostCount, color: 'text-red-600 bg-red-50 dark:bg-red-500/10' },
-        ].map(kpi => (
-          <div key={kpi.label} className={cn('shrink-0 px-3.5 py-2 rounded-xl flex flex-col items-center', kpi.color)}>
-            <span className="text-[11px] font-semibold whitespace-nowrap">{kpi.label}</span>
-            <span className="text-lg font-black">{kpi.value}</span>
-          </div>
-        ))}
-      </div>
+      {!isCounselor && (
+        <div className="md:hidden flex gap-3 px-1 mb-3 overflow-x-auto hide-scrollbar pb-1">
+          {[
+            { label: 'Total', value: totalLeads, color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10' },
+            { label: 'New', value: newLeadsCount, color: 'text-violet-600 bg-violet-50 dark:bg-violet-500/10' },
+            { label: 'Qualified', value: qualifiedCount, color: 'text-teal-600 bg-teal-50 dark:bg-teal-500/10' },
+            { label: '🔥 Hot', value: hotLeadsCount, color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' },
+            { label: 'Lost', value: lostCount, color: 'text-red-600 bg-red-50 dark:bg-red-500/10' },
+          ].map(kpi => (
+            <div key={kpi.label} className={cn('shrink-0 px-3.5 py-2 rounded-xl flex flex-col items-center', kpi.color)}>
+              <span className="text-[11px] font-semibold whitespace-nowrap">{kpi.label}</span>
+              <span className="text-lg font-black">{kpi.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col -mx-4 sm:mx-0">
         
@@ -716,6 +903,18 @@ export function LeadsList() {
                 className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-shadow"
               />
             </div>
+            {minScoreFilter === 80 && (
+              <span className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 rounded-lg text-sm font-semibold border border-orange-200 dark:border-orange-500/30 shrink-0">
+                🔥 Hot Leads Only
+                <button onClick={() => setMinScoreFilter(undefined)} className="hover:text-orange-900 dark:hover:text-orange-200 ml-1"><X className="w-3 h-3" /></button>
+              </span>
+            )}
+            {minScoreFilter === 85 && (
+              <span className="hidden lg:flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 rounded-lg text-sm font-semibold border border-green-200 dark:border-green-500/30 shrink-0">
+                📈 High-Conversion Only
+                <button onClick={() => setMinScoreFilter(undefined)} className="hover:text-green-900 dark:hover:text-green-200 ml-1"><X className="w-3 h-3" /></button>
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {selectedIds.size > 0 && (
@@ -872,26 +1071,28 @@ export function LeadsList() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 w-48">
-              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Counselor</label>
-              <div className="relative">
-                <select 
-                  value={counselorFilter}
-                  onChange={e => {
-                    setCounselorFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-                >
-                  <option value="All">All Counselors</option>
-                  <option value="Unassigned">Unassigned</option>
-                  {allUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            {!isCounselor && (
+              <div className="flex flex-col gap-1.5 w-48">
+                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Counselor</label>
+                <div className="relative">
+                  <select 
+                    value={counselorFilter}
+                    onChange={e => {
+                      setCounselorFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
+                  >
+                    <option value="All">All Counselors</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-1.5 w-48">
               <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Disposition</label>
@@ -938,7 +1139,9 @@ export function LeadsList() {
             <div className="ml-auto">
                <button 
                  onClick={() => {
+                   setSearchTerm('');
                    setStatusFilter('All');
+                   setMinScoreFilter(undefined);
                    setSourceFilter('All');
                    setCounselorFilter('All');
                    setDispositionFilter('All');
@@ -954,7 +1157,11 @@ export function LeadsList() {
 
 
           <>
-            <div className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8">
+            <div 
+              className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8 select-none"
+              onContextMenu={(e) => e.preventDefault()}
+              onCopy={(e) => e.preventDefault()}
+            >
               {isLoading ? (
                 // Skeleton cards for mobile
                 Array.from({ length: 5 }).map((_, i) => (
@@ -988,7 +1195,7 @@ export function LeadsList() {
                   description="We couldn't find any leads matching your current filters."
                   action={
                     <button
-                      onClick={() => { setSearchTerm(''); setStatusFilter('All'); }}
+                      onClick={() => { setSearchTerm(''); setStatusFilter('All'); setMinScoreFilter(undefined); }}
                       className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                       Clear Filters
@@ -1026,12 +1233,14 @@ export function LeadsList() {
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50 sticky top-0 z-10 border-b border-border">
                   <tr>
                     <th scope="col" className="px-4 py-3 font-semibold w-10">
-                      <input 
-                        type="checkbox"
-                        checked={paginatedLeads.length > 0 && selectedIds.size === paginatedLeads.length}
-                        onChange={handleSelectAll}
-                        className="rounded border-border text-primary focus:ring-primary cursor-pointer"
-                      />
+                      {!isCounselor && (
+                        <input 
+                          type="checkbox"
+                          checked={paginatedLeads.length > 0 && selectedIds.size === paginatedLeads.length}
+                          onChange={handleSelectAll}
+                          className="rounded border-border text-primary focus:ring-primary cursor-pointer"
+                        />
+                      )}
                     </th>
                     {visibleColumns.leadDetails && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
@@ -1058,7 +1267,7 @@ export function LeadsList() {
                        <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
                     )}
-                    {visibleColumns.counselor && (
+                    {!isCounselor && visibleColumns.counselor && (
                     <th scope="col" className="px-4 py-3 font-semibold">Counselor</th>
                     )}
                     {visibleColumns.createdOn && (
@@ -1166,10 +1375,16 @@ export function LeadsList() {
                       <div className="flex items-center gap-1">Transition to Screening <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
                     )}
-                    <th scope="col" className="px-4 py-3 font-semibold text-right">Actions</th>
+                    {!isCounselor && (
+                      <th scope="col" className="px-4 py-3 font-semibold text-right">Actions</th>
+                    )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody 
+                  className="divide-y divide-border select-none"
+                  onContextMenu={(e) => e.preventDefault()}
+                  onCopy={(e) => e.preventDefault()}
+                >
                   {paginatedLeads.map((lead) => (
                     <tr 
                       key={lead.id} 
@@ -1177,18 +1392,20 @@ export function LeadsList() {
                         // Prevent navigation if clicking on checkbox or action buttons
                         const target = e.target as HTMLElement;
                         if (!target.closest('button') && !target.closest('input[type="checkbox"]')) {
-                          navigate(`/leads/${lead.id}`);
+                          navigate(`/all-leads/${lead.id}`);
                         }
                       }}
                       className={cn("hover:bg-muted/30 transition-colors cursor-pointer group", selectedIds.has(lead.id) && "bg-primary/5")}
                     >
                       <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
-                        <input 
-                          type="checkbox"
-                          checked={selectedIds.has(lead.id)}
-                          onChange={() => handleSelectOne(lead.id)}
-                          className="rounded border-border text-primary focus:ring-primary cursor-pointer"
-                        />
+                        {!isCounselor && (
+                          <input 
+                            type="checkbox"
+                            checked={selectedIds.has(lead.id)}
+                            onChange={() => handleSelectOne(lead.id)}
+                            className="rounded border-border text-primary focus:ring-primary cursor-pointer"
+                          />
+                        )}
                       </td>
                       {visibleColumns.leadDetails && (
                       <td className="px-4 py-4">
@@ -1210,8 +1427,8 @@ export function LeadsList() {
                       {visibleColumns.courseUni && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-medium text-foreground">{lead.course || 'Not specified'}</span>
-                          <span className="text-xs text-muted-foreground">{lead.university || 'Not specified'}</span>
+                          <span className="font-medium text-foreground">{typeof lead.course === 'string' ? lead.course : (lead.course?.name || 'Not specified')}</span>
+                          <span className="text-xs text-muted-foreground">{typeof lead.university === 'string' ? lead.university : (lead.university?.name || 'Not specified')}</span>
                         </div>
                       </td>
                       )}
@@ -1252,7 +1469,7 @@ export function LeadsList() {
                         </span>
                       </td>
                       )}
-                      {visibleColumns.counselor && (
+                      {!isCounselor && visibleColumns.counselor && (
                       <td className="px-4 py-4 font-medium text-sm" onClick={e => e.stopPropagation()}>
                         <select
                           value={lead.assignedCounselor || lead.counselorId || ''}
@@ -1304,74 +1521,76 @@ export function LeadsList() {
                       {visibleColumns.transitionToVerificationPending && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToVerificationPending || 'N/A'}</td>}
                       {visibleColumns.transitionToConverted && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToConverted || 'N/A'}</td>}
                       {visibleColumns.transitionToScreening && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToScreening || 'N/A'}</td>}
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLead(lead);
-                              setIsFormOpen(true);
-                            }}
-                            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                            title="Edit Lead"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Duplicate Action */}
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (await confirm({
-                                title: 'Duplicate Lead',
-                                message: 'Are you sure you want to duplicate this lead?',
-                                confirmLabel: 'Duplicate'
-                              })) {
-                                const res = await duplicateLead(lead.id);
-                                if (res.success) toast.success('Lead duplicated successfully');
-                              }
-                            }}
-                            className="p-1.5 rounded-md hover:bg-blue-50 text-muted-foreground hover:text-blue-600 transition-colors"
-                            title="Duplicate Lead"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-
-                          {/* Restore or Delete Action depending on deleted status */}
-                          {lead.deleted_at ? (
+                      {!isCounselor && (
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button 
-                              onClick={async (e) => {
+                              onClick={(e) => {
                                 e.stopPropagation();
-                                const res = await restoreLead(lead.id);
-                                if (res.success) toast.success('Lead restored successfully');
+                                setSelectedLead(lead);
+                                setIsFormOpen(true);
                               }}
-                              className="p-1.5 rounded-md hover:bg-green-50 text-muted-foreground hover:text-green-600 transition-colors"
-                              title="Restore Lead"
+                              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              title="Edit Lead"
                             >
-                              <ArchiveRestore className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4" />
                             </button>
-                          ) : (
+                            
+                            {/* Duplicate Action */}
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (await confirm({
-                                  title: 'Delete Lead',
-                                  message: 'Are you sure you want to delete this lead?',
-                                  confirmLabel: 'Delete',
-                                  variant: 'danger'
+                                  title: 'Duplicate Lead',
+                                  message: 'Are you sure you want to duplicate this lead?',
+                                  confirmLabel: 'Duplicate'
                                 })) {
-                                  await deleteLead(lead.id);
-                                  toast.success('Lead deleted successfully');
+                                  const res = await duplicateLead(lead.id);
+                                  if (res.success) toast.success('Lead duplicated successfully');
                                 }
                               }}
-                              className="p-1.5 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
-                              title="Delete Lead"
+                              className="p-1.5 rounded-md hover:bg-blue-50 text-muted-foreground hover:text-blue-600 transition-colors"
+                              title="Duplicate Lead"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Copy className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
-                      </td>
+  
+                            {/* Restore or Delete Action depending on deleted status */}
+                            {lead.deletedAt ? (
+                              <button 
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const res = await restoreLead(lead.id);
+                                  if (res.success) toast.success('Lead restored successfully');
+                                }}
+                                className="p-1.5 rounded-md hover:bg-green-50 text-muted-foreground hover:text-green-600 transition-colors"
+                                title="Restore Lead"
+                              >
+                                <ArchiveRestore className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (await confirm({
+                                    title: 'Delete Lead',
+                                    message: 'Are you sure you want to delete this lead?',
+                                    confirmLabel: 'Delete',
+                                    variant: 'danger'
+                                  })) {
+                                    await deleteLead(lead.id);
+                                    toast.success('Lead deleted successfully');
+                                  }
+                                }}
+                                className="p-1.5 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
+                                title="Delete Lead"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {paginatedLeads.length === 0 && (

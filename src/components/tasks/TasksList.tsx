@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Task, TaskStatus, TaskPriority, TaskType } from '../../types/task';
 import { LeadStatus } from '../../types/schema';
 import { cn } from '../../lib/utils';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import { useTasks } from '../../hooks/useTasks';
 
 export function TasksList() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'All'>('All');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -267,6 +269,7 @@ export function TasksList() {
                     <th className="px-6 py-4 font-semibold">Task</th>
                     <th className="px-6 py-4 font-semibold">Type</th>
                     <th className="px-6 py-4 font-semibold">Related Lead</th>
+                    <th className="px-6 py-4 font-semibold">Assigned To</th>
                     <th className="px-6 py-4 font-semibold">Priority</th>
                     <th className="px-6 py-4 font-semibold">Due Date</th>
                     <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -306,8 +309,8 @@ export function TasksList() {
                         <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
                           {task.title}
                         </div>
-                        {task.notes && (
-                          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.notes}</div>
+                        {task.description && (
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.description}</div>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -318,10 +321,27 @@ export function TasksList() {
                       </td>
                       <td className="px-6 py-4">
                         {task.leadName ? (
-                          <span className="font-medium text-foreground">{task.leadName}</span>
+                          task.leadId ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/all-leads/${task.leadId}`);
+                              }}
+                              className="font-medium text-primary hover:underline"
+                            >
+                              {task.leadName}
+                            </button>
+                          ) : (
+                            <span className="font-medium text-foreground">{task.leadName}</span>
+                          )
                         ) : (
                           <span className="text-muted-foreground italic">None</span>
                         )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-foreground">
+                          {typeof task.assignedTo === 'string' ? task.assignedTo : task.assignedTo?.name || 'Unassigned'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">

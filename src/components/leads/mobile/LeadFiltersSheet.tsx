@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 import { LeadStatus } from '../../../types/schema';
 import { cn } from '../../../lib/utils';
 
@@ -12,15 +13,24 @@ interface LeadFiltersSheetProps {
   setShowDeleted: (show: boolean) => void;
 }
 
-const STATUSES: (LeadStatus | 'All')[] = [
-  'All', 'New', 'Attempted', 'Connected', 'Interested', 'Qualified', 
-  'Application Started', 'Documents Pending', 'Admission Done', 'Lost'
-];
+
 
 export function LeadFiltersSheet({
   isOpen, onClose, statusFilter, setStatusFilter, showDeleted, setShowDeleted
 }: LeadFiltersSheetProps) {
   
+  const [statuses, setStatuses] = useState<string[]>(['All', 'New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost']);
+
+  useEffect(() => {
+    if (isOpen) {
+      supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle().then(({ data }) => {
+        if (data && data.value && Array.isArray(data.value)) {
+          setStatuses(['All', ...data.value]);
+        }
+      });
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -70,7 +80,7 @@ export function LeadFiltersSheet({
           <div className="mb-8">
             <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Lead Status</h3>
             <div className="space-y-2">
-              {STATUSES.map(status => (
+              {statuses.map(status => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}

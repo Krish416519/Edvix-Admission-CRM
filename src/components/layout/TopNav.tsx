@@ -213,7 +213,7 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
                   </div>
                   <span className="text-xs text-muted-foreground">Admin</span>
                 </button>
-                <button onClick={() => { navigate('/leads'); setShowGlobalSearch(false); }} className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted text-left">
+                <button onClick={() => { navigate('/all-leads'); setShowGlobalSearch(false); }} className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted text-left">
                   <div className="flex items-center gap-3">
                     <Search className="w-4 h-4 text-emerald-500" />
                     <span className="font-medium text-foreground">Recent Leads</span>

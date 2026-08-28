@@ -19,6 +19,7 @@ export interface UseLeadsOptions {
     dispositionCategory?: string;
     showDeleted?: boolean;
     dateRange?: { start: Date; end: Date } | null;
+    minScore?: number;
   };
   sort?: { field: string; direction: 'asc' | 'desc' } | null;
 }
@@ -26,6 +27,8 @@ export interface UseLeadsOptions {
 export function useLeads(options?: UseLeadsOptions) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [totalUnfilteredCount, setTotalUnfilteredCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -59,15 +62,15 @@ export function useLeads(options?: UseLeadsOptions) {
           }
         }
         
-        const buildQuery = () => {
-          let query = supabase
-            .from('leads')
-            .select(`
+        const buildQuery = (excludeStatusFilter = false, columns = `
               *,
               counselor:users!leads_counselor_id_fkey(name),
               university:universities(name),
               course:courses(name)
-            `, { count: 'exact' });
+            `) => {
+          let query = supabase
+            .from('leads')
+            .select(columns, { count: 'exact' });
     
           if (options?.filters?.showDeleted) {
             query = query.not('deleted_at', 'is', null);
@@ -91,7 +94,7 @@ export function useLeads(options?: UseLeadsOptions) {
           }
   
         // Apply Filters
-        if (options?.filters?.status && options.filters.status !== 'All') {
+        if (!excludeStatusFilter && options?.filters?.status && options.filters.status !== 'All') {
           query = query.eq('lead_status', options.filters.status);
         }
         if (options?.filters?.priority && options.filters.priority !== 'All') {
@@ -123,6 +126,9 @@ export function useLeads(options?: UseLeadsOptions) {
           query = query.gte('created_at', options.filters.dateRange.start.toISOString());
           query = query.lte('created_at', options.filters.dateRange.end.toISOString());
         }
+        if (options?.filters?.minScore !== undefined) {
+          query = query.gte('lead_score', options.filters.minScore);
+        }
   
         // Apply Sorting
         if (options?.sort) {
@@ -150,20 +156,24 @@ export function useLeads(options?: UseLeadsOptions) {
       
       let allData: any[] = [];
       let finalCount = 0;
-      const fetchChunkSize = 1000;
-      const ranges = [];
-      for (let i = start; i <= end; i += fetchChunkSize) {
-        ranges.push({ s: i, e: Math.min(i + fetchChunkSize - 1, end) });
-      }
+      let statusCounts: Record<string, number> = {};
+      let totalUnfilteredCount = 0;
 
-      const results = await Promise.all(ranges.map(r => buildQuery().range(r.s, r.e)));
+      const { data, count, error } = await buildQuery().range(start, end);
+      
+      if (error) throw error;
+      if (data) allData = data;
+      if (count !== null) finalCount = count;
 
-      for (const res of results) {
-        if (res.error) throw res.error;
-        if (res.data) allData.push(...res.data);
-        if (res.count !== null && res.count !== undefined) {
-          finalCount = Math.max(finalCount, res.count);
-        }
+      // Fetch status counts ignoring the status filter
+      const { data: statusData, error: statusError } = await buildQuery(true, 'lead_status');
+      
+      if (!statusError && statusData) {
+        totalUnfilteredCount = statusData.length;
+        statusData.forEach(row => {
+          const status = row.lead_status || 'New';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
       }
 
       // Map the database snake_case fields to our frontend camelCase types
@@ -215,6 +225,8 @@ export function useLeads(options?: UseLeadsOptions) {
 
       setLeads(mappedLeads);
       setTotalCount(finalCount);
+      setStatusCounts(statusCounts);
+      setTotalUnfilteredCount(totalUnfilteredCount);
     } catch (err: any) {
       console.error('Error fetching leads:', err);
       setError(err.message);
@@ -508,5 +520,5 @@ export function useLeads(options?: UseLeadsOptions) {
     }
   };
 
-  return { leads, totalCount, isLoading, error, addLead, updateLead, deleteLead, bulkDeleteLeads, restoreLead, duplicateLead, mergeLeads, bulkUpdateLeads, refresh: fetchLeads };
+  return { leads, totalCount, isLoading, error, addLead, updateLead, deleteLead, bulkDeleteLeads, restoreLead, duplicateLead, mergeLeads, bulkUpdateLeads, refresh: fetchLeads, statusCounts, totalUnfilteredCount };
 }
