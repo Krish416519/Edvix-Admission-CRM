@@ -21,12 +21,12 @@ export const mockActivities: Activity[] = [
     id: 'ACT-002',
     leadId: 'LD-1001',
     type: 'status_change',
-    content: 'Status changed from New to Attempted.',
+    content: 'Status changed from Inquiry to Cold.',
     date: threeDaysAgo.toISOString(),
     author: 'Ankit Sharma',
     metadata: {
-      oldStatus: 'New',
-      newStatus: 'Attempted'
+      oldStatus: 'Inquiry',
+      newStatus: 'Cold'
     }
   },
   {
@@ -43,12 +43,12 @@ export const mockActivities: Activity[] = [
     id: 'ACT-004',
     leadId: 'LD-1001',
     type: 'status_change',
-    content: 'Status changed from Attempted to Connected.',
+    content: 'Status changed from Cold to Warm.',
     date: twoDaysAgo.toISOString(),
     author: 'Ankit Sharma',
     metadata: {
-      oldStatus: 'Attempted',
-      newStatus: 'Connected'
+      oldStatus: 'Cold',
+      newStatus: 'Warm'
     }
   },
   {

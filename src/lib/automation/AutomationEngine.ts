@@ -15,7 +15,7 @@ export class AutomationEngine {
       const { data: workflows, error } = await supabase
         .from('automation_workflows')
         .select(`
-          id, name,
+          id, name, organization_id,
           automation_conditions(id, field, operator, value_text, logic, sort_order),
           automation_actions(id, action_type, metadata, sort_order)
         `)
@@ -132,7 +132,7 @@ export class AutomationEngine {
       for (const action of actions) {
         console.log(`[AutomationEngine] Executing Action: ${action.action_type}`);
         
-        await this.executeAction(action, payload);
+         await this.executeAction(action, payload, workflow);
         executedActions.push(action.action_type);
         
         // Handle explicit delays
@@ -172,7 +172,7 @@ export class AutomationEngine {
   /**
    * Executes a specific action.
    */
-  private static async executeAction(action: any, payload: any) {
+   private static async executeAction(action: any, payload: any, workflow: any) {
     const lead = payload.lead;
     if (!lead) return; // Most actions require a lead context for now
 
@@ -191,19 +191,21 @@ export class AutomationEngine {
       
       case 'Update Lead Status':
         if (action.metadata?.status) {
-          await supabase.from('leads').update({ status: action.metadata.status }).eq('id', lead.id);
+          await supabase.from('leads').update({ lead_status: action.metadata.status }).eq('id', lead.id);
         }
         break;
 
       case 'Send Notification':
         await supabase.from('notifications').insert({
-          user_id: lead.assigned_user, // send to assigned counselor
+          recipient_id: lead.assigned_counselor, // send to assigned counselor
+          organization_id: workflow?.organization_id,
           title: action.metadata?.is_escalation ? 'ESCALATION ALERT' : 'Automated Alert',
-          message: action.metadata?.message || `System notification regarding ${lead.full_name}`,
-          type: 'alert',
-          is_read: false,
-          reference_id: lead.id,
-          reference_type: 'lead'
+          message: action.metadata?.message || `System notification regarding ${lead.first_name} ${lead.last_name || ''}`.trim(),
+          category: 'lead',
+          module: 'leads',
+          module_record_id: lead.id,
+          status: 'Unread',
+          priority: action.metadata?.is_escalation ? 'High' : 'Medium',
         });
         break;
         
@@ -213,9 +215,9 @@ export class AutomationEngine {
         await supabase.from('lead_activities').insert({
           lead_id: lead.id,
           type: 'Note',
-          title: 'AI Summary Generated',
-          description: 'The AI Assistant summarized the profile automatically.',
-          created_by: lead.assigned_user
+          subject: 'AI Summary Generated',
+          content: 'The AI Assistant summarized the profile automatically.',
+          author: 'System',
         });
         break;
         
@@ -237,7 +239,7 @@ export class AutomationEngine {
             
           if (template) {
             const vars = {
-              student_name: lead.full_name || 'Student',
+              student_name: lead.first_name ? `${lead.first_name} ${lead.last_name || ''}`.trim() : 'Student',
               course: lead.course || '',
               university: lead.university || '',
               counselor: 'Your Counselor',
@@ -252,7 +254,7 @@ export class AutomationEngine {
               leadId: lead.id,
               templateId: template.id,
               recipientEmail: lead.email,
-              recipientName: lead.full_name,
+              recipientName: lead.first_name ? `${lead.first_name} ${lead.last_name || ''}`.trim() : '',
               subject: renderedSubject,
               body: renderedBody
             });
@@ -263,7 +265,7 @@ export class AutomationEngine {
       case 'Send WhatsApp':
         if (action.metadata?.template_id && lead.phone) {
           const { whatsAppCoreService } = await import('../whatsapp/WhatsAppService');
-          const convId = await whatsAppCoreService.getOrCreateConversation(lead.id, lead.phone, lead.full_name);
+          const convId = await whatsAppCoreService.getOrCreateConversation(lead.id, lead.phone, lead.first_name ? `${lead.first_name} ${lead.last_name || ''}`.trim() : '');
           
           const { data: template } = await supabase
             .from('whatsapp_templates')
@@ -273,7 +275,7 @@ export class AutomationEngine {
             
           if (template) {
             // Simplified template replacement for demo
-            const content = template.content.replace(/\{\{name\}\}/g, lead.full_name || 'Student')
+            const content = template.content.replace(/\{\{name\}\}/g, lead.first_name ? `${lead.first_name} ${lead.last_name || ''}`.trim() : 'Student')
                                             .replace(/\{\{course\}\}/g, lead.course || '')
                                             .replace(/\{\{university\}\}/g, lead.university || '');
             

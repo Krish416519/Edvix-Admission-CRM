@@ -5,31 +5,19 @@ import { OverviewTab } from './tabs/OverviewTab';
 import { TimelineTab } from './tabs/TimelineTab';
 
 import { TasksTab } from './tabs/TasksTab';
-import { DocumentsTab } from './tabs/DocumentsTab';
-import { AdmissionTab } from './tabs/AdmissionTab';
-import { PaymentsTab } from './tabs/PaymentsTab';
-import { CommunicationTab } from './tabs/CommunicationTab';
-import { LeadWhatsAppChat } from '../../whatsapp/LeadWhatsAppChat';
-import { LeadEmailTab } from '../../email/LeadEmailTab';
 import { CallHistoryTab } from './tabs/CallHistoryTab';
-import { MatchRecommendTab } from './tabs/MatchRecommendTab';
+import { LeadWhatsAppChat } from '../../whatsapp/LeadWhatsAppChat';
 import { DispositionHistory } from './DispositionHistory';
 
-type Tab = 'Overview' | 'Timeline' | 'Match & Recommend' | 'Tasks' | 'Calls' | 'Dispositions' | 'Documents' | 'Admission' | 'Payments' | 'WhatsApp' | 'Email' | 'Communication';
+type Tab = 'Overview' | 'Timeline' | 'Tasks' | 'Calls' | 'Dispositions' | 'WhatsApp';
 
 const tabs: Tab[] = [
   'Overview',
   'Timeline',
-  'Match & Recommend',
   'Tasks',
   'Calls',
   'Dispositions',
-  'Documents',
-  'Admission',
-  'Payments',
-  'WhatsApp',
-  'Email',
-  'Communication'
+  'WhatsApp'
 ];
 
 interface LeadProfileTabsProps {
@@ -67,16 +55,10 @@ export function LeadProfileTabs({ lead, onUpdateLead, activities, setActivities,
       <div className="bg-card relative overflow-auto">
         {activeTab === 'Overview' && <OverviewTab lead={lead} onUpdateLead={onUpdateLead} />}
         {activeTab === 'Timeline' && <TimelineTab lead={lead} refreshKey={activityRefreshKey} />}
-        {activeTab === 'Match & Recommend' && <div className="p-3 md:p-4 h-full"><MatchRecommendTab lead={lead} /></div>}
         {activeTab === 'Tasks' && <TasksTab lead={lead} refreshKey={activityRefreshKey} />}
         {activeTab === 'Calls' && <CallHistoryTab lead={lead} />}
         {activeTab === 'Dispositions' && <div className="p-3 md:p-4 h-full"><DispositionHistory leadId={lead.id} refreshKey={activityRefreshKey} /></div>}
-        {activeTab === 'Documents' && <DocumentsTab lead={lead} />}
-        {activeTab === 'Admission' && <AdmissionTab lead={lead} />}
-        {activeTab === 'Payments' && <PaymentsTab lead={lead} />}
         {activeTab === 'WhatsApp' && <div className="p-3 md:p-4 h-full"><LeadWhatsAppChat lead={lead} /></div>}
-        {activeTab === 'Email' && <div className="p-3 md:p-4 h-full"><LeadEmailTab lead={lead} /></div>}
-        {activeTab === 'Communication' && <CommunicationTab lead={lead} />}
       </div>
     </div>
   );

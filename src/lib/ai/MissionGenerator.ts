@@ -85,7 +85,7 @@ export class MissionGenerator {
       .select('id, first_name, last_name')
       .eq('assigned_counselor', userId)
       .lt('updated_at', cutoff)
-      .not('lead_status', 'in', '("Lost","Admission Done")')
+      .not('lead_status', 'in', '("Rejected","Admitted")')
       .is('deleted_at', null)
       .limit(5);
 

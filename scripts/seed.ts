@@ -166,14 +166,16 @@ async function createLeads(counselors: any[]) {
   await supabase.from('leads').delete();
 
   const leadStatuses = [
-    { s: 'New', p: 0.20 },
-    { s: 'Contacted', p: 0.25 },
+    { s: 'Inquiry', p: 0.20 },
+    { s: 'Not Connected', p: 0.15 },
+    { s: 'Cold', p: 0.25 },
+    { s: 'Warm', p: 0.10 },
+    { s: 'Hot', p: 0.10 },
     { s: 'Qualified', p: 0.20 },
-    { s: 'Interested', p: 0.10 },
-    { s: 'Documents Pending', p: 0.08 },
-    { s: 'Admission Submitted', p: 0.05 },
-    { s: 'Admission Confirmed', p: 0.04 },
-    { s: 'Lost', p: 0.05 },
+    { s: 'Application', p: 0.08 },
+    { s: 'Docs Pending', p: 0.05 },
+    { s: 'Admitted', p: 0.04 },
+    { s: 'Rejected', p: 0.05 },
     { s: 'Not Interested', p: 0.03 }
   ];
 

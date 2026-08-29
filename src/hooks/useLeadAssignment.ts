@@ -310,16 +310,18 @@ export function useLeadAssignment(leadId?: string) {
         lead_id: targetLeadId,
         type: 'assignment',
         content: `Lead assigned to ${assigneeName}${notes ? '. Note: ' + notes : ''}`,
-        author: user.user_metadata?.name || user.email || 'System',
+        author: user.name || user.email || 'System',
       });
 
       // 6. Create notification
+      const orgId = user.activeOrganizationId || user.organizations?.[0]?.id;
       await supabase.from('notifications').insert({
         recipient_id: assigneeId,
+        organization_id: orgId,
         module: 'leads',
         module_record_id: targetLeadId,
         title: 'New Lead Assigned',
-        message: `You have been assigned a lead by ${user.user_metadata?.name || 'Admin'}`,
+        message: `You have been assigned a lead by ${user.name || 'Admin'}`,
         channel: 'In-App',
         priority: 'High',
         category: 'Assignment',
@@ -402,7 +404,7 @@ export function useLeadAssignment(leadId?: string) {
         lead_id: targetLeadId,
         type: 'assignment',
         content: 'Lead assignment removed',
-        author: user.user_metadata?.name || user.email || 'System',
+        author: user.name || user.email || 'System',
       });
 
       setCurrentAssignee(null);

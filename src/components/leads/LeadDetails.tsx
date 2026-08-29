@@ -12,7 +12,6 @@ import { MobileActionBar } from './mobile/MobileActionBar';
 import { automationService } from '../../lib/automationService';
 import { DispositionWidget } from './profile/DispositionWidget';
 import { CounselingSnapshot } from './profile/CounselingSnapshot';
-import { QuickLogCallModal } from './profile/QuickLogCallModal';
 import { LeadAssignmentPanel } from './profile/LeadAssignmentPanel';
 
 import { useLead } from '../../hooks/useLead';
@@ -24,7 +23,6 @@ export function LeadDetails() {
   const navigate = useNavigate();
   
   const [showDisposition, setShowDisposition] = useState(false);
-  const [showQuickCall, setShowQuickCall] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { lead, isLoading, updateLead, refreshLead } = useLead(id);
@@ -139,7 +137,6 @@ export function LeadDetails() {
     toast.success(`Status updated to ${newStatus}`);
   };
 
-  const displayName = lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'Unknown';
   const displayStatus = (lead.leadStatus || lead.status || 'New') as LeadStatus;
 
   const handleCall = () => {
@@ -195,16 +192,6 @@ export function LeadDetails() {
         <span className="hidden lg:inline">{showDisposition ? 'Close' : 'Add Activity'}</span>
         <span className="lg:hidden">Activity</span>
       </button>
-      {lead.phone && (
-        <button
-          onClick={() => setShowQuickCall(true)}
-          title="Quick Log Call"
-          className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg bg-primary text-white font-semibold text-xs md:text-sm hover:bg-primary/90 transition-colors shadow-sm"
-        >
-          <Phone className="w-3.5 h-3.5 md:w-4 md:h-4" />
-          <span className="hidden lg:inline">Log Call</span>
-        </button>
-      )}
     </>
   );
 
@@ -269,15 +256,6 @@ export function LeadDetails() {
           <LeadProfileTabs lead={lead} onUpdateLead={handleUpdateLead} activities={activities} setActivities={setActivities} activityRefreshKey={activityRefreshKey} />
         </div>
       </div>
-
-      {showQuickCall && (
-        <QuickLogCallModal
-          leadId={lead.id}
-          leadName={displayName}
-          onClose={() => setShowQuickCall(false)}
-          onSaved={() => updateLead({ id: lead.id } as any)}
-        />
-      )}
 
       <MobileActionBar
         leadId={lead.id}

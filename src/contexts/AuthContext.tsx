@@ -207,16 +207,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        // Update last_login
-        await supabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', data.user.id);
+        // Update last_login (non-blocking - don't fail login if this fails)
+        try {
+          await supabase.from('users').update({ last_login: new Date().toISOString() }).eq('id', data.user.id);
+        } catch (updateErr) {
+          console.warn('Could not update last_login:', updateErr);
+        }
         
-        const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).single();
+        const { data: profile } = await supabase.from('users').select('*, roles(name)').eq('id', data.user.id).single();
         const { data: orgData } = await supabase.from('organization_users').select('*, organizations(*)').eq('user_id', data.user.id).eq('status', 'Active');
-        
-        // Fetch permissions during login
-        const { data: permsData } = await supabase.rpc('get_user_permissions', { p_user_id: data.user.id });
-        if (permsData) {
-          setPermissions(permsData);
+
+        // Fetch permissions during login (non-blocking - don't fail login if this fails)
+        try {
+          const { data: permsData } = await supabase.rpc('get_user_permissions', { p_user_id: data.user.id });
+          if (permsData) {
+            setPermissions(permsData);
+          }
+        } catch (permsErr) {
+          console.warn('Could not fetch permissions:', permsErr);
         }
 
         setUser(parseSupabaseUser(data.user, profile, orgData || []));

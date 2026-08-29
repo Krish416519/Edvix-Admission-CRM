@@ -76,14 +76,14 @@ export function TasksList() {
       toast.info(`Lead status updated to ${data.newLeadStatus}`);
       
       // Automations based on status change
-      if (data.newLeadStatus === 'Admission Done' && followUpTask.leadId) {
+      if (data.newLeadStatus === 'Admitted' && followUpTask.leadId) {
         // Find pending tasks for this lead
         const pendingTasks = tasks.filter(t => t.leadId === followUpTask.leadId && t.status === 'Pending');
         for (const pt of pendingTasks) {
           await updateTask(pt.id, { status: 'Cancelled' });
         }
         toast.info('Auto-cancelled pending tasks for admitted lead');
-      } else if (data.newLeadStatus === 'Interested' && followUpTask.leadId) {
+      } else if (data.newLeadStatus === 'Hot' && followUpTask.leadId) {
         // Create follow-up in 2 days
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 2);
@@ -96,8 +96,8 @@ export function TasksList() {
           assignedUser: followUpTask.assignedUser,
           leadId: followUpTask.leadId
         });
-        toast.info('Auto-scheduled follow-up in 2 days for Interested lead');
-      } else if (data.newLeadStatus === 'Documents Pending' && followUpTask.leadId) {
+        toast.info('Auto-scheduled follow-up in 2 days for Hot lead');
+      } else if (data.newLeadStatus === 'Docs Pending' && followUpTask.leadId) {
         // Reminder in 3 days
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 3);

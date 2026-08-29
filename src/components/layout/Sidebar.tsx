@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, GraduationCap, FileText, CheckCircle, X, LogOut, IndianRupee, Bell, PieChart, Workflow, MessageSquare, Mail, Network, ShieldAlert, Megaphone, Server, Phone, Sparkles, ChevronLeft, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, CheckCircle, X, LogOut, Bell, PieChart, Workflow, MessageSquare, Network, ShieldAlert, Megaphone, Server, Phone, Sparkles, ChevronLeft, Building2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -13,10 +13,7 @@ const navigation = [
   { name: 'Command Center', href: '/smart-view/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
   { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
   { name: 'AI Intelligence', href: '/ai-intelligence', icon: Sparkles },
-  { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
-  { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },
   { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
-  { name: 'Email', href: '/email', icon: Mail, resource: 'Communication' },
   { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },
   { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
   { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
@@ -25,7 +22,6 @@ const navigation = [
   { name: 'Admin Console', href: '/admin', icon: ShieldAlert, permission: { action: 'Manage Settings', resource: 'System Settings' } },
   { name: 'Founder AI Briefing', href: '/admin/founder', icon: Sparkles, roles: ['Super Admin'] },
   { name: 'Backend Status', href: '/admin/backend', icon: Server, permission: { action: 'Manage Settings', resource: 'System Settings' } },
-  { name: 'Finance', href: '/finance', icon: IndianRupee, permission: { action: 'Read', resource: 'Finance' } },
   { name: 'Marketing Hub', href: '/marketing', icon: Megaphone, roles: ['Super Admin', 'Admin', 'Marketing'] },
   { name: 'Partner Portal', href: '/partner', icon: Network, roles: ['Super Admin', 'Admin', 'Partner'] },
   { name: 'University Portal', href: '/university', icon: GraduationCap, roles: ['Super Admin', 'Admin', 'University'] },
@@ -39,7 +35,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   });
   const location = useLocation();
   const { user, logout, hasRole, hasPermission, hasResourceAccess } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, hasHighPriorityUnread } = useNotifications();
 
   const toggleCollapse = () => {
     const newVal = !isCollapsed;
@@ -51,12 +47,12 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     <>
       {/* Mobile overlay */}
       {open && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
-      
+
       {/* Sidebar */}
       <div className={cn(
         "fixed inset-y-0 left-0 z-50 md:my-4 md:ml-4 md:rounded-2xl bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/40 shadow-2xl transition-all duration-300 ease-in-out md:translate-x-0 md:static flex flex-col group overflow-hidden",
@@ -74,15 +70,15 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         {/* Collapse Toggle Button (Desktop only) */}
-        <button 
+        <button
           onClick={toggleCollapse}
           className="hidden md:flex absolute -right-3 top-20 bg-background border border-border/60 rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 shadow-sm z-50 transition-all"
         >
           <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform duration-300", isCollapsed && "rotate-180")} />
         </button>
-        
+
         <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5 custom-scrollbar relative">
           <nav className="flex-1 space-y-1.5">
             {navigation.map((item) => {
@@ -93,7 +89,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
               // Check specific action permissions
               if (item.permission && !hasPermission(item.permission.action, item.permission.resource)) return null;
-              
+
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -102,8 +98,8 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                   title={isCollapsed ? item.name : undefined}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden group/link",
-                    isActive 
-                      ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary shadow-[inset_3px_0_0_0_currentColor]" 
+                    isActive
+                      ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary shadow-[inset_3px_0_0_0_currentColor]"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                     isCollapsed ? "justify-center p-3" : ""
                   )}
@@ -113,14 +109,16 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     <div className="absolute inset-0 bg-primary/5 opacity-50 blur-xl rounded-xl" />
                   )}
                   <item.icon className={cn(
-                    "w-5 h-5 shrink-0 transition-transform duration-300 group-hover/link:scale-110 group-hover/link:-rotate-3 relative z-10", 
-                    isActive ? "text-primary drop-shadow-md" : "text-muted-foreground"
+                    "w-5 h-5 shrink-0 transition-transform duration-300 group-hover/link:scale-110 group-hover/link:-rotate-3 relative z-10",
+                    isActive ? "text-primary drop-shadow-md" : "text-muted-foreground",
+                    item.name === 'Notifications' && hasHighPriorityUnread && "text-red-500 animate-pulse"
                   )} />
                   {!isCollapsed && <span className="truncate animate-in fade-in relative z-10 font-semibold">{item.name}</span>}
-                  
+
                   {item.name === 'Notifications' && unreadCount > 0 && (
                     <span className={cn(
-                      "bg-primary text-white text-[10px] font-bold rounded-full min-w-[20px] text-center shadow-sm",
+                      "text-white text-[10px] font-bold rounded-full min-w-[20px] text-center shadow-sm",
+                      hasHighPriorityUnread ? "bg-red-500 animate-pulse" : "bg-primary",
                       isCollapsed ? "absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[8px] min-w-0" : "ml-auto px-1.5 py-0.5"
                     )}>
                       {isCollapsed ? '' : (unreadCount > 9 ? '9+' : unreadCount)}
@@ -131,7 +129,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
             })}
           </nav>
         </div>
-        
+
         <div className="p-4 border-t border-border/40">
           <div className={cn("flex items-center rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors group relative border border-transparent hover:border-border/50", isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5")}>
             <div className="w-9 h-9 shrink-0 rounded-full bg-background shadow-inner overflow-hidden flex items-center justify-center border border-border/60">
@@ -149,7 +147,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                   <span className="text-sm font-semibold truncate text-foreground">{user?.name || 'User'}</span>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground/80 truncate tracking-wider">{user?.role || 'Staff'}</span>
                 </div>
-                <button 
+                <button
                   onClick={logout}
                   className="text-muted-foreground hover:text-red-500 transition-all duration-200 p-1.5 rounded-md hover:bg-red-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
                   title="Logout"
@@ -159,7 +157,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               </>
             )}
             {isCollapsed && (
-              <button 
+              <button
                 onClick={logout}
                 className="absolute -top-12 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-red-500 bg-card border border-border/60 shadow-lg p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all z-50 pointer-events-none group-hover:pointer-events-auto"
                 title="Logout"

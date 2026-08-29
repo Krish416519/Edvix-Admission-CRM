@@ -93,10 +93,6 @@
     text-size-adjust: 100%;
     /* Enable momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
-    
-    /* Prevent text selection globally */
-    -webkit-user-select: none;
-    user-select: none;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -111,8 +107,6 @@
   /* Remove iOS callout (long press menu) on UI elements */
   button, a, [role="button"] {
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
   }
 
   /* Keep selection available for text inputs */
@@ -135,6 +129,13 @@
   .scroll-ios {
     -webkit-overflow-scrolling: touch;
     overflow-y: auto;
+  }
+
+  /* Fix scrolling lock on nested scroll containers (e.g., /smart-view) */
+  .smart-view-results {
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Minimum 44×44pt touch target (Apple HIG recommendation) */

@@ -1,14 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { 
-  Search, Filter, Upload, Plus, ChevronDown, 
+import {
+  Search, Filter, Upload, Plus, ChevronDown,
   ArrowUpDown, Users, Trash2, Edit2, UserPlus, FileSpreadsheet, Clock,
   X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Merge, Check, Columns, GripVertical
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
-import { cn } from '../../lib/utils';
+import { cn, formatDate } from '../../lib/utils';
+import { computeIntent } from '../../lib/leadIntent';
+import { DEFAULT_PIPELINE_STAGES } from '../../constants/pipelineStages';
 
 import { EmptyState } from '../ui/EmptyState';
 import { LeadFormModal } from './LeadFormModal';
@@ -92,17 +94,19 @@ function autoMap(headers: string[]): Record<string, string> {
 interface LeadsListProps {
   onLeadSelect?: (lead: Lead) => void;
   showSmartStages?: boolean;
+  externalLeads?: Lead[];
+  externalTotalCount?: number;
+  externalLoading?: boolean;
 }
 
-export function LeadsList({ showSmartStages }: LeadsListProps) {
-  const navigate = useNavigate();
+export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, externalLoading }: LeadsListProps) {
   const { confirm } = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = searchParams.get('filter');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>(
-    initialFilter === 'docs_pending' ? 'Documents Pending' : 'All'
+    initialFilter === 'docs_pending' ? 'Docs Pending' : initialFilter === 'hot' ? 'Hot' : 'All'
   );
   const [minScoreFilter, setMinScoreFilter] = useState<number | undefined>(
     initialFilter === 'hot' ? 80 : initialFilter === 'high_conversion' ? 85 : undefined
@@ -120,10 +124,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const [stagesOrder, setStagesOrder] = useState<string[]>([
-    'New', 'Attempted', 'Connected', 'Interested', 'Qualified',
-    'Application Started', 'Documents Pending', 'Admission Done', 'Lost'
-  ]);
+  const [stagesOrder, setStagesOrder] = useState<string[]>(DEFAULT_PIPELINE_STAGES);
 
   useEffect(() => {
     supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle().then(({ data }) => {
@@ -191,17 +192,19 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
   const [isSortSheetOpen, setIsSortSheetOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState({
     leadDetails: true,
+    callAttempts: true,
+    interactions: true,
     courseUni: true,
     score: true,
     status: true,
     priority: true,
     counselor: true,
     createdOn: true,
-    modifiedOn: false,
+    modifiedOn: true,
     assignmentDate: false,
-    lastCallDate: false,
+    lastCallDate: true,
     firstCallDate: false,
-    finalFollowUpDate: false,
+    finalFollowUpDate: true,
     contactedTimestamp: false,
     transitionToFallOut: false,
     transitionToCounselled: false,
@@ -211,7 +214,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
     conversionDate: false,
     managerPrioritized: false,
     firstAssignmentDate: false,
-    transitionToAdmissionDone: false,
+    transitionToAdmitted: false,
     transitionToOBInitiated: false,
     transitionToOffer: false,
     transitionToVerificationPending: false,
@@ -221,6 +224,8 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
 
   const COLUMN_LABELS: Record<string, string> = {
     leadDetails: 'Lead Details',
+    callAttempts: 'Call Attempts',
+    interactions: 'Interactions',
     courseUni: 'Course & Uni',
     score: 'Score',
     status: 'Status',
@@ -241,7 +246,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
     conversionDate: 'Conversion Date',
     managerPrioritized: 'Manager Prioritized',
     firstAssignmentDate: 'First Assignment Date',
-    transitionToAdmissionDone: 'Transition to Admission Done',
+    transitionToAdmitted: 'Transition to Admitted',
     transitionToOBInitiated: 'Transition to OB Initiated',
     transitionToOffer: 'Transition to Offer',
     transitionToVerificationPending: 'Transition to Verification Pending',
@@ -286,14 +291,12 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
     reader.readAsBinaryString(file);
   };
 
-  const { leads, totalCount, isLoading, addLead, updateLead, deleteLead, bulkDeleteLeads,
-    restoreLead,
-    duplicateLead, mergeLeads, bulkUpdateLeads, refresh, statusCounts, totalUnfilteredCount } = useLeads({
+  const internalLeads = useLeads({
     page: currentPage,
     pageSize: pageSize,
     search: searchTerm,
-    filters: { 
-      status: statusFilter,
+    filters: {
+      status: externalLeads ? 'All' : statusFilter,
       source: sourceFilter,
       counselorId: counselorFilter,
       dispositionCategory: dispositionFilter,
@@ -302,6 +305,29 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
     },
     sort: { field: sortField as string, direction: sortDirection }
   });
+
+  // When external leads are provided (Smart View mode), use them instead of internal fetching
+  const leads = externalLeads !== undefined ? externalLeads : internalLeads.leads;
+  const totalCount = externalLeads !== undefined ? externalTotalCount || 0 : internalLeads.totalCount;
+  const isLoading = externalLeads !== undefined ? externalLoading || false : internalLeads.isLoading;
+
+  // When in Smart View mode, compute status counts from the filtered external leads
+  const statusCounts = useMemo(() => {
+    if (externalLeads !== undefined) {
+      const counts: Record<string, number> = {};
+      leads.forEach(lead => {
+        const s = lead.leadStatus || lead.status || 'New';
+        counts[s] = (counts[s] || 0) + 1;
+      });
+      return counts;
+    }
+    return internalLeads.statusCounts;
+  }, [externalLeads, leads, internalLeads.statusCounts]);
+
+  const totalUnfilteredCount = externalLeads !== undefined
+    ? leads.length
+    : internalLeads.totalUnfilteredCount;
+  const { addLead, updateLead, deleteLead, bulkDeleteLeads, restoreLead, duplicateLead, mergeLeads, bulkUpdateLeads, refresh } = internalLeads;
 
   const { allUsers, assignLead, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
   const { user, hasPermission } = useAuth();
@@ -411,7 +437,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
         }
       }
       // Defaults
-      if (!p.lead_status) p.lead_status = 'New';
+      if (!p.lead_status) p.lead_status = 'Inquiry';
       if (!p.priority)    p.priority    = 'Medium';
       if (!p.lead_source) p.lead_source = 'CSV Import';
       if (!p.first_name)  p.first_name  = `Row ${idx + 2}`; // fallback
@@ -487,13 +513,20 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const statusColors: Record<LeadStatus, string> = {
-    'New': 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
-    'Attempted': 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400',
-    'Connected': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
-    'Interested': 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400',
+    'Inquiry': 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+    'Not Connected': 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400',
+    'Cold': 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400',
+    'Warm': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400',
+    'Hot': 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400',
     'Qualified': 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400',
-    'Application Started': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400',
+    'Application': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400',
+    'Docs Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+    'Admitted': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
+    'Rejected': 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
+    'New': 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+    'Connected': 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
     'Documents Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+    'Application Started': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400',
     'Admission Done': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
     'Lost': 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400',
   };
@@ -504,15 +537,8 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
     'Low': 'text-green-600 dark:text-green-500'
   };
 
-  const getTemperature = (score: number) => {
-    if (score >= 91) return { label: 'Ready to Convert', color: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' };
-    if (score >= 61) return { label: 'Hot', color: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20' };
-    if (score >= 31) return { label: 'Warm', color: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' };
-    return { label: 'Cold', color: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20' };
-  };
-
   const getSLAStatus = (lead: Lead) => {
-    if (lead.status === 'Lost' || lead.status === 'Admission Done') return null;
+    if (lead.status === 'Rejected' || lead.status === 'Admitted') return null;
     
     // @ts-ignore
     const lastTouch = new Date(lead.lastContactedAt || lead.createdAt || Date.now());
@@ -573,7 +599,9 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
       Priority: l.priority,
       Score: l.score,
       Source: l.source,
-      Counselor: l.counselor
+      Counselor: l.counselor,
+      CallAttempts: l.callAttempts ?? (l as any).call_attempts ?? 0,
+      Interactions: l.interactionsCount ?? (l as any).interactions_count ?? 0,
     }));
     
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -599,11 +627,11 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
 
   const totalLeads = totalCount;
   // Use leadStatus which is the canonical field
-  const newLeadsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'New').length;
-  const admissionsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Admission Done').length;
+  const newLeadsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Inquiry').length;
+  const admissionsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Admitted').length;
   const qualifiedCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Qualified').length;
-  const lostCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Lost').length;
-  const hotLeadsCount = paginatedLeads.filter(l => (l.leadScore ?? l.score ?? 0) >= 61).length;
+  const lostCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Rejected').length;
+  const hotLeadsCount = paginatedLeads.filter(l => computeIntent(l) === 'HOT').length;
   const conversionRate = paginatedLeads.length ? Math.round((admissionsCount / paginatedLeads.length) * 100) : 0;
 
   return (
@@ -669,10 +697,10 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                                 snapshot.isDragging && "shadow-xl ring-2 ring-primary/20"
                               )}
                             >
-                              {/* Drag Handle (Visible on Desktop hover or always) */}
+                              {/* Drag Handle */}
                               <div
                                 {...provided.dragHandleProps}
-                                className="hidden md:flex items-center justify-center p-1 -ml-2 text-muted-foreground/50 hover:text-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="hidden md:flex items-center justify-center p-1 -ml-2 text-muted-foreground/70 hover:text-foreground cursor-grab active:cursor-grabbing transition-opacity"
                               >
                                 <GripVertical className="w-4 h-4" />
                               </div>
@@ -872,10 +900,10 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
         <div className="md:hidden flex gap-3 px-1 mb-3 overflow-x-auto hide-scrollbar pb-1">
           {[
             { label: 'Total', value: totalLeads, color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10' },
-            { label: 'New', value: newLeadsCount, color: 'text-violet-600 bg-violet-50 dark:bg-violet-500/10' },
-            { label: 'Qualified', value: qualifiedCount, color: 'text-teal-600 bg-teal-50 dark:bg-teal-500/10' },
-            { label: '🔥 Hot', value: hotLeadsCount, color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' },
-            { label: 'Lost', value: lostCount, color: 'text-red-600 bg-red-50 dark:bg-red-500/10' },
+             { label: 'Inquiry', value: newLeadsCount, color: 'text-violet-600 bg-violet-50 dark:bg-violet-500/10' },
+             { label: 'Qualified', value: qualifiedCount, color: 'text-teal-600 bg-teal-50 dark:bg-teal-500/10' },
+             { label: '🔥 Hot', value: hotLeadsCount, color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10' },
+             { label: 'Rejected', value: lostCount, color: 'text-red-600 bg-red-50 dark:bg-red-500/10' },
           ].map(kpi => (
             <div key={kpi.label} className={cn('shrink-0 px-3.5 py-2 rounded-xl flex flex-col items-center', kpi.color)}>
               <span className="text-[11px] font-semibold whitespace-nowrap">{kpi.label}</span>
@@ -1034,15 +1062,16 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                   className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
                 >
                   <option value="All">All Statuses</option>
-                  <option value="New">New</option>
-                  <option value="Attempted">Attempted</option>
-                  <option value="Connected">Connected</option>
-                  <option value="Interested">Interested</option>
+                  <option value="Inquiry">Inquiry</option>
+                  <option value="Not Connected">Not Connected</option>
+                  <option value="Cold">Cold</option>
+                  <option value="Warm">Warm</option>
+                  <option value="Hot">Hot</option>
                   <option value="Qualified">Qualified</option>
-                  <option value="Application Started">Application Started</option>
-                  <option value="Documents Pending">Documents Pending</option>
-                  <option value="Admission Done">Admission Done</option>
-                  <option value="Lost">Lost</option>
+                  <option value="Application">Application</option>
+                  <option value="Docs Pending">Docs Pending</option>
+                  <option value="Admitted">Admitted</option>
+                  <option value="Rejected">Rejected</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               </div>
@@ -1158,9 +1187,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
 
           <>
             <div 
-              className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8 select-none"
-              onContextMenu={(e) => e.preventDefault()}
-              onCopy={(e) => e.preventDefault()}
+              className="md:hidden flex-1 px-4 py-2 space-y-3 pb-8"
             >
               {isLoading ? (
                 // Skeleton cards for mobile
@@ -1228,7 +1255,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
             </div>
 
             {/* Desktop Table (hidden on mobile) */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto -mx-4 md:mx-0">
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50 sticky top-0 z-10 border-b border-border">
                   <tr>
@@ -1245,6 +1272,16 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                     {visibleColumns.leadDetails && (
                     <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
                       <div className="flex items-center gap-1">Lead Details <ArrowUpDown className="w-3 h-3" /></div>
+                    </th>
+                    )}
+                    {visibleColumns.callAttempts && (
+                    <th scope="col" className="px-4 py-3 font-semibold" onClick={() => handleSort('callAttempts' as keyof Lead)}>
+                      Call Attempts
+                    </th>
+                    )}
+                    {visibleColumns.interactions && (
+                    <th scope="col" className="px-4 py-3 font-semibold" onClick={() => handleSort('interactionsCount' as keyof Lead)}>
+                      Interactions
                     </th>
                     )}
                     {visibleColumns.courseUni && (
@@ -1345,9 +1382,9 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                       <div className="flex items-center gap-1">First Assignment Date <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
                     )}
-                    {visibleColumns.transitionToAdmissionDone && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToAdmissionDone' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Admission Done <ArrowUpDown className="w-3 h-3" /></div>
+                    {visibleColumns.transitionToAdmitted && (
+                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToAdmitted' as keyof Lead)}>
+                      <div className="flex items-center gap-1">Transition to Admitted <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
                     )}
                     {visibleColumns.transitionToOBInitiated && (
@@ -1392,7 +1429,7 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                         // Prevent navigation if clicking on checkbox or action buttons
                         const target = e.target as HTMLElement;
                         if (!target.closest('button') && !target.closest('input[type="checkbox"]')) {
-                          navigate(`/all-leads/${lead.id}`);
+                          window.open(`/all-leads/${lead.id}`, '_blank');
                         }
                       }}
                       className={cn("hover:bg-muted/30 transition-colors cursor-pointer group", selectedIds.has(lead.id) && "bg-primary/5")}
@@ -1424,6 +1461,12 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                         </div>
                       </td>
                       )}
+                      {visibleColumns.callAttempts && (
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{lead.callAttempts ?? (lead as any).call_attempts ?? 0}</td>
+                      )}
+                      {visibleColumns.interactions && (
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{lead.interactionsCount ?? (lead as any).interactions_count ?? 0}</td>
+                      )}
                       {visibleColumns.courseUni && (
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
@@ -1449,8 +1492,12 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                             </div>
                             <span className="text-xs font-semibold">{lead.leadScore ?? lead.score ?? 0}</span>
                           </div>
-                          <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit', getTemperature(lead.leadScore ?? lead.score ?? 0).color)}>
-                            {getTemperature(lead.leadScore ?? lead.score ?? 0).label}
+                          <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-semibold border w-fit', 
+                            computeIntent(lead) === 'HOT' ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400' :
+                            computeIntent(lead) === 'WARM' ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400' :
+                            'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400'
+                          )}>
+                            {computeIntent(lead)}
                           </span>
                         </div>
                       </td>
@@ -1501,26 +1548,26 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                         </div>
                       </td>
                       )}
-                      {visibleColumns.modifiedOn && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).modifiedOn || 'N/A'}</td>}
-                      {visibleColumns.assignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).assignmentDate || 'N/A'}</td>}
-                      {visibleColumns.lastCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).lastCallDate || 'N/A'}</td>}
-                      {visibleColumns.firstCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).firstCallDate || 'N/A'}</td>}
-                      {visibleColumns.finalFollowUpDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).finalFollowUpDate || 'N/A'}</td>}
-                      {visibleColumns.contactedTimestamp && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).contactedTimestamp || 'N/A'}</td>}
-                      {visibleColumns.transitionToFallOut && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToFallOut || 'N/A'}</td>}
-                      {visibleColumns.transitionToCounselled && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToCounselled || 'N/A'}</td>}
-                      {visibleColumns.moreThan5MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan5MContactedTime || 'N/A'}</td>}
-                      {visibleColumns.moreThan10MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan10MContactedTime || 'N/A'}</td>}
-                      {visibleColumns.moreThan15MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan15MContactedTime || 'N/A'}</td>}
-                      {visibleColumns.conversionDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).conversionDate || 'N/A'}</td>}
-                      {visibleColumns.managerPrioritized && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).managerPrioritized || 'N/A'}</td>}
-                      {visibleColumns.firstAssignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).firstAssignmentDate || 'N/A'}</td>}
-                      {visibleColumns.transitionToAdmissionDone && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToAdmissionDone || 'N/A'}</td>}
-                      {visibleColumns.transitionToOBInitiated && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToOBInitiated || 'N/A'}</td>}
-                      {visibleColumns.transitionToOffer && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToOffer || 'N/A'}</td>}
-                      {visibleColumns.transitionToVerificationPending && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToVerificationPending || 'N/A'}</td>}
-                      {visibleColumns.transitionToConverted && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToConverted || 'N/A'}</td>}
-                      {visibleColumns.transitionToScreening && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).transitionToScreening || 'N/A'}</td>}
+                      {visibleColumns.modifiedOn && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).updatedAt || (lead as any).updated_at)}</td>}
+                      {visibleColumns.assignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).assignmentDate)}</td>}
+                      {visibleColumns.lastCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate(lead.lastCallDate || (lead as any).last_call_date)}</td>}
+                      {visibleColumns.firstCallDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).firstCallDate)}</td>}
+                      {visibleColumns.finalFollowUpDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate(lead.finalFollowUpDate || (lead as any).final_follow_up_date)}</td>}
+                      {visibleColumns.contactedTimestamp && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).contactedTimestamp)}</td>}
+                      {visibleColumns.transitionToFallOut && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transition_to_fallout_at || (lead as any).transitionToFallOut)}</td>}
+                      {visibleColumns.transitionToCounselled && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transition_to_counselled_at || (lead as any).transitionToCounselled)}</td>}
+                      {visibleColumns.moreThan5MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan5MContactedTime ? 'Yes' : 'No'}</td>}
+                      {visibleColumns.moreThan10MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan10MContactedTime ? 'Yes' : 'No'}</td>}
+                      {visibleColumns.moreThan15MContactedTime && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).moreThan15MContactedTime ? 'Yes' : 'No'}</td>}
+                      {visibleColumns.conversionDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).conversionDate)}</td>}
+                      {visibleColumns.managerPrioritized && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{(lead as any).managerPrioritized ? 'Yes' : 'No'}</td>}
+                      {visibleColumns.firstAssignmentDate && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).firstAssignmentDate)}</td>}
+                      {visibleColumns.transitionToAdmitted && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transitionToAdmitted)}</td>}
+                      {visibleColumns.transitionToOBInitiated && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transition_to_ob_initiated_at || (lead as any).transitionToOBInitiated)}</td>}
+                      {visibleColumns.transitionToOffer && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transition_to_offer_at || (lead as any).transitionToOffer)}</td>}
+                      {visibleColumns.transitionToVerificationPending && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transitionToVerificationPending)}</td>}
+                      {visibleColumns.transitionToConverted && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transition_to_converted_at || (lead as any).transitionToConverted)}</td>}
+                      {visibleColumns.transitionToScreening && <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatDate((lead as any).transitionToScreening)}</td>}
                       {!isCounselor && (
                         <td className="px-4 py-4 text-right">
                           <div className="flex items-center justify-end gap-1">
@@ -2013,15 +2060,16 @@ export function LeadsList({ showSmartStages }: LeadsListProps) {
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="">Select status...</option>
-                    <option value="New">New</option>
-                    <option value="Attempted">Attempted</option>
-                    <option value="Connected">Connected</option>
-                    <option value="Interested">Interested</option>
+                    <option value="Inquiry">Inquiry</option>
+                    <option value="Not Connected">Not Connected</option>
+                    <option value="Cold">Cold</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Hot">Hot</option>
                     <option value="Qualified">Qualified</option>
-                    <option value="Application Started">Application Started</option>
-                    <option value="Documents Pending">Documents Pending</option>
-                    <option value="Admission Done">Admission Done</option>
-                    <option value="Lost">Lost</option>
+                    <option value="Application">Application</option>
+                    <option value="Docs Pending">Docs Pending</option>
+                    <option value="Admitted">Admitted</option>
+                    <option value="Rejected">Rejected</option>
                   </select>
                 </div>
               )}

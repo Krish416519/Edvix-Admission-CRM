@@ -121,11 +121,19 @@ export interface Lead extends BaseEntity {
   notesCount: number;
   tasksCount: number;
   admissionStatus?: string;
+
+  // Activity Summary Fields
+  callAttempts?: number;
+  interactionsCount?: number;
+  lastCallDate?: string;
+  finalFollowUpDate?: string;
   
   // Command Center Fields
   tags?: string[];
   latestDispositionId?: string;
   latestSubDispositionId?: string;
+  latestDispositionName?: string;
+  latestDispositionTargetStatus?: string;
   nextActionDate?: string;
   
   // Legacy UI Fields (mapped in useLeads)
@@ -149,6 +157,23 @@ export interface Lead extends BaseEntity {
   lastFollowUp?: string;
   nextFollowUp?: string;
   notes?: string;
+
+  // Assignment Tracking Fields (derived from lead_assignments)
+  assignmentDate?: string;
+  firstAssignmentDate?: string;
+
+  // Call Tracking Fields (derived from calls table)
+  firstCallDate?: string;
+
+  // Contact & Timing Fields
+  contactedTimestamp?: string;
+  moreThan5MContactedTime?: boolean;
+  moreThan10MContactedTime?: boolean;
+  moreThan15MContactedTime?: boolean;
+
+  // Conversion & Lifecycle
+  conversionDate?: string;
+  managerPrioritized?: boolean;
 
   // Future AI Features Preparedness
   aiScore?: number;
@@ -221,6 +246,26 @@ export interface Lead extends BaseEntity {
   // Disposition extensions
   lostReason?: string;
   competitor?: string;
+
+  // Transition Timestamps (when lead entered a key pipeline stage)
+  transitionToFallOut?: string;
+  transitionToCounselled?: string;
+  transitionToOBInitiated?: string;
+  transitionToAdmitted?: string;
+  transitionToOffer?: string;
+  transitionToVerificationPending?: string;
+  transitionToConverted?: string;
+  transitionToScreening?: string;
+
+  // Transition Timestamps (snake_case from database or derived)
+  transition_to_fallout_at?: string;
+  transition_to_counselled_at?: string;
+  transition_to_ob_initiated_at?: string;
+  transition_to_admitted_at?: string;
+  transition_to_offer_at?: string;
+  transition_to_verification_pending_at?: string;
+  transition_to_converted_at?: string;
+  transition_to_screening_at?: string;
 
   deletedAt?: string;
 }
@@ -664,6 +709,7 @@ export interface AppNotification extends BaseEntity {
   status: NotificationStatus;
   readAt?: string;
   expiresAt?: string;
+  dedupeKey?: string;
   metadata?: Record<string, any>;
 }
 

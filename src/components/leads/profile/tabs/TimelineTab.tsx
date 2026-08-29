@@ -45,8 +45,8 @@ export function TimelineTab({ lead, refreshKey = 0 }: { lead: Lead; refreshKey?:
       const formattedLogs: AuditLog[] = (data || []).map((activity: any) => {
         let actionStr = activity.type;
         if (actionStr === 'status_change') actionStr = 'Status Changed';
-        else if (actionStr === 'note_added') actionStr = 'Note';
-        else if (actionStr === 'call_logged') actionStr = 'Call Logged';
+        else if (actionStr === 'note') actionStr = 'Note';
+        else if (actionStr === 'call') actionStr = 'Call Logged';
         
         let title = activity.subject || actionStr;
         if (actionStr === 'Status Changed') {
@@ -76,7 +76,7 @@ export function TimelineTab({ lead, refreshKey = 0 }: { lead: Lead; refreshKey?:
         }
 
         // Aggressive fallback for older historical logs: Use assigned counselor for manual actions
-        if ((!userName || userName === 'System') && ['status_change', 'note_added', 'call_logged'].includes(activity.type)) {
+        if ((!userName || userName === 'System') && ['status_change', 'note', 'call'].includes(activity.type)) {
           const counselorId = lead.assignedCounselor || (lead as any).assigned_counselor || (lead as any).counselorId;
           const counselorName = (lead as any).counselor; // Comes from useLead.ts
           

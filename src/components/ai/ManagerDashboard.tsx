@@ -18,31 +18,43 @@ export function ManagerDashboard() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch counselor performances
-      const { data: perfData, error: perfError } = await supabase
-        .from('counselor_performance')
-        .select(`
-          *,
-          users ( name, email, avatar_url )
-        `)
-        .eq('date', new Date().toISOString().split('T')[0])
-        .order('score', { ascending: false });
+      // Fetch counselor performances (gracefully handle missing table)
+      let perfData: any = null;
+      try {
+        const { data: pd, error: perfError } = await supabase
+          .from('counselor_performance')
+          .select(`*`)
+          .eq('date', new Date().toISOString().split('T')[0])
+          .order('score', { ascending: false });
+        if (perfError) throw perfError;
+        perfData = pd;
+      } catch (perfErr) {
+        // counselor_performance table may not exist yet
+        console.debug('counselor_performance not available:', perfErr);
+      }
 
-      if (perfError) throw perfError;
-      
-      // If we got a mock join result we type cast safely
-      setPerformances(perfData as unknown as (CounselorPerformance & { users: any })[]);
+      if (perfData) {
+        setPerformances(perfData as unknown as (CounselorPerformance & { users: any })[]);
+      }
 
-      // Fetch Manager alerts
-      const { data: alertData, error: alertError } = await supabase
-        .from('ai_manager_alerts')
-        .select('*')
-        .eq('is_resolved', false)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Fetch Manager alerts (gracefully handle missing table)
+      let alertData: any = null;
+      try {
+        const { data: ad, error: alertError } = await supabase
+          .from('ai_manager_alerts')
+          .select('*')
+          .eq('is_resolved', false)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (alertError) throw alertError;
+        alertData = ad;
+      } catch (alertErr) {
+        console.debug('ai_manager_alerts not available:', alertErr);
+      }
 
-      if (alertError) throw alertError;
-      setAlerts(alertData as AiManagerAlert[]);
+      if (alertData) {
+        setAlerts(alertData as AiManagerAlert[]);
+      }
 
     } catch (e) {
       console.error(e);

@@ -27,7 +27,7 @@ export interface PaymentRow {
   admissions?: {
     id: string;
     enrollment_number: string | null;
-    leads?: { full_name: string; email: string } | null;
+    leads?: { first_name: string; last_name?: string | null; email: string } | null;
     universities?: { name: string } | null;
     courses?: { name: string } | null;
   } | null;
@@ -108,7 +108,7 @@ export function useFinance() {
             *,
             admissions (
               id, enrollment_number,
-              leads (full_name, email),
+              leads (first_name, last_name, email),
               universities (name),
               courses (name)
             ),

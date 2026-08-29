@@ -27,7 +27,7 @@ export function UniversityDashboard() {
   // RLS filters the data naturally so we don't need mock JS filters
   const isLoading = leadsLoading || admissionsLoading;
 
-  const activeLeads = leads.filter(l => l.status !== 'Lost' && l.status !== 'Admission Done').length;
+  const activeLeads = leads.filter(l => l.status !== 'Rejected' && l.status !== 'Admitted').length;
   const enrolledStudents = admissions.filter(a => a.stage === 'Admission Completed').length;
   const pendingVerifications = admissions.filter(a => a.stage === 'Document Verification').length;
   

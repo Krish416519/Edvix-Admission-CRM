@@ -19,10 +19,11 @@ export interface WAConversation {
     name: string | null;
     lead_id: string | null;
   } | null;
-  leads?: {
-    full_name: string;
-    phone: string;
-  } | null;
+   leads?: {
+     first_name: string;
+     last_name?: string | null;
+     phone: string;
+   } | null;
 }
 
 export interface WAMessage {
@@ -63,7 +64,7 @@ export function useWhatsApp(activeConversationId?: string) {
       .select(`
         *,
         whatsapp_contacts(phone_number, name, lead_id),
-        leads(full_name, phone)
+         leads(first_name, last_name, phone)
       `)
       .order('is_pinned', { ascending: false })
       .order('last_message_at', { ascending: false });

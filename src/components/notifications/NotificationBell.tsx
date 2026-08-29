@@ -27,12 +27,12 @@ export function NotificationBell() {
   }, [isOpen]);
 
   const getIcon = (module: string) => {
-    switch (module) {
-      case 'Leads': return <UserPlus className="w-4 h-4 text-primary" />;
-      case 'Finance': return <IndianRupee className="w-4 h-4 text-green-500" />;
-      case 'System': return <Clock className="w-4 h-4 text-amber-500" />;
-      case 'Admissions': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
-      case 'Tasks': return <FileText className="w-4 h-4 text-blue-500" />;
+    switch (module?.toLowerCase()) {
+      case 'leads': return <UserPlus className="w-4 h-4 text-primary" />;
+      case 'finance': return <IndianRupee className="w-4 h-4 text-green-500" />;
+      case 'system': return <Clock className="w-4 h-4 text-amber-500" />;
+      case 'admissions': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+      case 'tasks': return <FileText className="w-4 h-4 text-blue-500" />;
       default: return <Bell className="w-4 h-4 text-muted-foreground" />;
     }
   };
@@ -46,7 +46,7 @@ export function NotificationBell() {
     }
 
     // Direct routing for Leads
-    if (notification.module === 'Leads' && notification.moduleRecordId) {
+    if (notification.module?.toLowerCase() === 'leads' && notification.moduleRecordId) {
       navigate(`/all-leads/${notification.moduleRecordId}`);
       setIsOpen(false);
       return;

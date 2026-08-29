@@ -23,13 +23,15 @@ export function WhatsAppCenter() {
   const activeConv = conversations.find(c => c.id === activeConvId);
 
   const filteredConversations = conversations.filter(c => {
-    const name = c.leads?.full_name || c.whatsapp_contacts?.name || '';
+    const name = (c.leads?.first_name ? `${c.leads.first_name} ${c.leads.last_name || ''}`.trim() : '') || c.whatsapp_contacts?.name || '';
     const phone = c.whatsapp_contacts?.phone_number || '';
     return name.toLowerCase().includes(searchQuery.toLowerCase()) || phone.includes(searchQuery);
   });
 
-  const getDisplayName = (conv: WAConversation) => 
-    conv.leads?.full_name || conv.whatsapp_contacts?.name || conv.whatsapp_contacts?.phone_number || 'Unknown';
+   const getDisplayName = (conv: WAConversation) => {
+    const leadName = conv.leads?.first_name ? `${conv.leads.first_name} ${conv.leads.last_name || ''}`.trim() : '';
+    return leadName || conv.whatsapp_contacts?.name || conv.whatsapp_contacts?.phone_number || 'Unknown';
+  };
 
   const getPhone = (conv: WAConversation) =>
     conv.whatsapp_contacts?.phone_number || '';

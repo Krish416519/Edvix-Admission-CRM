@@ -38,7 +38,7 @@ export function PartnerDashboard() {
   const isLoading = leadsLoading || admissionsLoading || financeLoading;
 
   const totalLeads = myLeads.length;
-  const activeLeads = myLeads.filter(l => l.status !== 'Lost' && l.status !== 'Admission Done').length;
+  const activeLeads = myLeads.filter(l => l.status !== 'Rejected' && l.status !== 'Admitted').length;
   const admissionsCompleted = myAdmissions.filter(a => a.stage === 'Admission Completed').length;
   const pendingAdmissions = myAdmissions.length - admissionsCompleted;
   const conversionRate = totalLeads ? Math.round((admissionsCompleted / totalLeads) * 100) : 0;

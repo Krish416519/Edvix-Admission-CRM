@@ -1,29 +1,16 @@
-import { useState, useEffect } from 'react';
-import { X, Phone, MessageCircle, FileText, Calendar, Edit2, Loader2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { X, Phone, MessageCircle, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { PipelineCard } from '../../lib/ai/AdmissionOS';
-import { QuickLogCallModal } from '../leads/profile/QuickLogCallModal';
 
 interface LeadQuickViewProps {
   lead: PipelineCard | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: () => void;
 }
 
-export function LeadQuickView({ lead, isOpen, onClose, onUpdate }: LeadQuickViewProps) {
+export function LeadQuickView({ lead, isOpen, onClose }: LeadQuickViewProps) {
   const navigate = useNavigate();
-  const [showLogCall, setShowLogCall] = useState(false);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !showLogCall) onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose, showLogCall]);
 
   if (!isOpen || !lead) return null;
 
@@ -37,7 +24,7 @@ export function LeadQuickView({ lead, isOpen, onClose, onUpdate }: LeadQuickView
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-        onClick={() => !showLogCall && onClose()}
+        onClick={onClose}
       />
       
       <div className="relative w-full max-w-lg bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 border border-border">
@@ -97,48 +84,41 @@ export function LeadQuickView({ lead, isOpen, onClose, onUpdate }: LeadQuickView
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-6 pt-4 border-t border-border bg-muted/30">
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <button
-              onClick={() => setShowLogCall(true)}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm"
-            >
-              <Phone className="w-4 h-4" />
-              Log Call
-            </button>
-            <button
-              onClick={handleWhatsApp}
-              className="flex items-center justify-center gap-2 py-2.5 px-4 bg-[#25D366] text-white rounded-xl hover:bg-[#25D366]/90 transition-colors font-medium text-sm shadow-sm"
-            >
-              <MessageCircle className="w-4 h-4" />
-              WhatsApp
-            </button>
-          </div>
-          <button
-            onClick={() => {
-              onClose();
-              navigate(`/all-leads/${lead.leadId}`);
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-background border border-border text-foreground rounded-xl hover:bg-muted transition-colors font-medium text-sm"
-          >
-            Open Full Profile
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {showLogCall && (
-        <QuickLogCallModal
-          isOpen={showLogCall}
-          onClose={() => setShowLogCall(false)}
-          leadId={lead.leadId}
-          onLogCall={() => {
-            setShowLogCall(false);
-            onUpdate();
-          }}
-        />
-      )}
-    </div>
+         {/* Footer Actions */}
+         <div className="p-6 pt-4 border-t border-border bg-muted/30">
+           <div className="mb-3">
+             <button
+               onClick={handleWhatsApp}
+               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#25D366] text-white rounded-xl hover:bg-[#25D366]/90 transition-colors font-medium text-sm shadow-sm"
+             >
+               <MessageCircle className="w-4 h-4" />
+               WhatsApp
+             </button>
+           </div>
+           <div className="grid grid-cols-2 gap-3 mb-3">
+             <button
+               onClick={() => {
+                 onClose();
+                 navigate(`/all-leads/${lead.leadId}`);
+               }}
+               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-background border border-border text-foreground rounded-xl hover:bg-muted transition-colors font-medium text-sm"
+             >
+               Open Full Profile
+               <ArrowRight className="w-4 h-4" />
+             </button>
+             <button
+               onClick={() => {
+                 onClose();
+                 window.dispatchEvent(new CustomEvent('open-disposition', { detail: { leadId: lead.leadId } }));
+               }}
+               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm"
+             >
+               <Phone className="w-4 h-4" />
+               Add Activity
+             </button>
+           </div>
+         </div>
+       </div>
+     </div>
   );
 }

@@ -12,6 +12,7 @@ const ADMIN_TABS = [
   { id: 'roles', label: 'Roles & Permissions', icon: Shield, path: 'roles' },
   { id: 'settings', label: 'System Settings', icon: Settings, path: 'settings' },
   { id: 'dispositions', label: 'Lead Dispositions', icon: Settings, path: 'dispositions' },
+  { id: 'smartviews', label: 'Smart View Config', icon: Settings, path: 'smartviews' },
   { id: 'universities', label: 'Universities', icon: GraduationCap, path: 'universities' },
   { id: 'courses', label: 'Courses', icon: BookOpen, path: 'courses' },
   { id: 'ai', label: 'AI Configuration', icon: Cpu, path: 'ai' },

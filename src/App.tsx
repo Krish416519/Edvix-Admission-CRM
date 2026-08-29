@@ -35,16 +35,11 @@ const ApiPortal = React.lazy(() => import('./components/api-docs/ApiPortal').the
 const Dashboard = React.lazy(() => import('./components/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
 const LeadsList = React.lazy(() => import('./components/leads/LeadsList').then(m => ({ default: m.LeadsList })));
 const LeadDetails = React.lazy(() => import('./components/leads/LeadDetails').then(m => ({ default: m.LeadDetails })));
-const ApplicationPage = React.lazy(() => import('./pages/ApplicationPage').then(m => ({ default: m.ApplicationPage })));
-const AdmissionsList = React.lazy(() => import('./components/admissions/AdmissionsList').then(m => ({ default: m.AdmissionsList })));
-const AdmissionDetails = React.lazy(() => import('./components/admissions/AdmissionDetails').then(m => ({ default: m.AdmissionDetails })));
 const TasksList = React.lazy(() => import('./components/tasks/TasksList').then(m => ({ default: m.TasksList })));
-const FinanceDashboard = React.lazy(() => import('./components/finance/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const NotificationsList = React.lazy(() => import('./components/notifications/NotificationsList').then(m => ({ default: m.NotificationsList })));
 const AnalyticsDashboard = React.lazy(() => import('./components/analytics/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboard })));
 const AutomationDashboard = React.lazy(() => import('./components/automation/AutomationDashboard').then(m => ({ default: m.AutomationDashboard })));
 const WhatsAppCenter = React.lazy(() => import('./components/whatsapp/WhatsAppCenter').then(m => ({ default: m.WhatsAppCenter })));
-const EmailCenter = React.lazy(() => import('./components/email/EmailCenter').then(m => ({ default: m.EmailCenter })));
 const IntegrationCenter = React.lazy(() => import('./components/integration/IntegrationCenter').then(m => ({ default: m.IntegrationCenter })));
 const UserProfile = React.lazy(() => import('./components/profile/UserProfile').then(m => ({ default: m.UserProfile })));
 
@@ -63,6 +58,7 @@ const SystemLogsTab = React.lazy(() => import('./components/admin/SystemLogsTab'
 const TenantBillingDashboard = React.lazy(() => import('./components/billing/TenantBillingDashboard').then(m => ({ default: m.TenantBillingDashboard })));
 const DeveloperSettings = React.lazy(() => import('./components/admin/DeveloperSettings').then(m => ({ default: m.DeveloperSettings })));
 const DispositionManagement = React.lazy(() => import('./components/admin/dispositions/DispositionManagement').then(m => ({ default: m.DispositionManagement })));
+const SmartViewsAdmin = React.lazy(() => import('./components/admin/SmartViewsAdmin').then(m => ({ default: m.SmartViewsAdmin })));
 
 // BI Command Center
 const BILayout = React.lazy(() => import('./components/bi/BILayout').then(m => ({ default: m.BILayout })));
@@ -159,21 +155,11 @@ export default function App() {
       }
       e.preventDefault();
     };
-    
-    const handleCopy = (e: ClipboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      e.preventDefault();
-    };
 
     document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('copy', handleCopy);
 
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('copy', handleCopy);
     };
   }, []);
 
@@ -202,9 +188,6 @@ export default function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="all-leads" element={<LeadsList />} />
                     <Route path="all-leads/:id" element={<LeadDetails />} />
-                    <Route path="applications" element={<PlaceholderPage title="Applications List" />} />
-                    <Route path="applications/:id" element={<ApplicationPage />} />
-                    <Route path="/admissions" element={<AdmissionsList />} />
                     <Route path="/ai-dashboard" element={<CounselorDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
                     <Route path="/ai-intelligence" element={<AIIntelligenceDashboard />} />
@@ -214,7 +197,6 @@ export default function App() {
                     
                     <Route path="tasks" element={<TasksList />} />
                     <Route path="whatsapp" element={<WhatsAppCenter />} />
-                    <Route path="email" element={<EmailCenter />} />
                     <Route path="integration" element={<IntegrationCenter />} />
                     <Route path="automation" element={<AutomationDashboard />} />
                     <Route path="analytics" element={<AnalyticsDashboard />} />
@@ -224,7 +206,6 @@ export default function App() {
                     
                     {/* Admin and Super Admin only route */}
                     <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin']} />}>
-                      <Route path="finance" element={<FinanceDashboard />} />
                     
                       {/* Admin Console Routes */}
                       <Route path="admin" element={<AdminLayout />}>
@@ -234,6 +215,7 @@ export default function App() {
                         <Route path="roles" element={<RoleManagement />} />
                         <Route path="settings" element={<SystemSettings />} />
                         <Route path="dispositions" element={<DispositionManagement />} />
+                        <Route path="smartviews" element={<SmartViewsAdmin />} />
                         <Route path="universities" element={<MasterDataManagement />} />
                         <Route path="courses" element={<MasterDataManagement />} />
                         <Route path="ai" element={<AiSettings />} />

@@ -142,7 +142,7 @@ export function TelephonyProvider({ children }: { children: ReactNode }) {
       
       // Update Lead Next Follow-up if set
       if (nextFollowUp) {
-         await supabase.from('leads').update({ next_follow_up: nextFollowUp }).eq('id', activeCall.leadId);
+         await supabase.from('leads').update({ next_action_date: nextFollowUp }).eq('id', activeCall.leadId);
       }
 
       // Trigger Automations via execution logs insertion (monitored by DB triggers)

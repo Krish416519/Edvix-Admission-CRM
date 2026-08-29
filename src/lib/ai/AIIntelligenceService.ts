@@ -125,7 +125,7 @@ export const AIIntelligenceService = {
   async getLeadScore(leadId: string): Promise<AILeadScore | null> {
     const { data: lead, error } = await supabase
       .from('leads')
-      .select('id, first_name, last_name, lead_score, conversion_probability, temperature, drop_off_risk, ai_priority_score')
+      .select('id, first_name, last_name, lead_score, conversion_probability, temperature, drop_off_risk')
       .eq('id', leadId)
       .single();
 
@@ -142,7 +142,7 @@ export const AIIntelligenceService = {
     return {
       leadId: lead.id,
       leadName: `${lead.first_name} ${lead.last_name || ''}`.trim(),
-      score: lead.ai_priority_score || lead.lead_score || 0,
+      score: lead.lead_score || 0,
       topFactors: factors,
       confidence: lead.conversion_probability && lead.conversion_probability > 0.6 ? 'high' : lead.conversion_probability && lead.conversion_probability > 0.3 ? 'medium' : 'low',
       temperature: lead.temperature as 'Hot' | 'Warm' | 'Cold' | undefined,
@@ -155,9 +155,9 @@ export const AIIntelligenceService = {
   async getNextBestActions(limit = 10): Promise<AINextBestAction[]> {
     const { data: leads, error } = await supabase
       .from('leads')
-      .select('id, first_name, last_name, ai_suggested_next_action, ai_priority_score, ai_drop_off_risk, lead_status')
+      .select('id, first_name, last_name, ai_suggested_next_action, lead_score, drop_off_risk, lead_status')
       .in('lead_status', ['Qualified', 'Interested', 'Connected'])
-      .order('ai_priority_score', { ascending: false, nullsFirst: false })
+      .order('lead_score', { ascending: false, nullsFirst: false })
       .limit(limit);
 
     if (error) {
@@ -173,8 +173,8 @@ export const AIIntelligenceService = {
         action: action.type,
         actionLabel: action.label,
         reason: lead.ai_suggested_next_action || 'High priority lead requiring attention',
-        priority: lead.ai_drop_off_risk === 'High' ? 'high' : lead.ai_priority_score && lead.ai_priority_score > 70 ? 'high' : 'medium',
-        confidence: lead.ai_priority_score && lead.ai_priority_score > 60 ? 'high' : 'medium',
+        priority: lead.drop_off_risk === 'High' ? 'high' : lead.lead_score && lead.lead_score > 70 ? 'high' : 'medium',
+        confidence: lead.lead_score && lead.lead_score > 60 ? 'high' : 'medium',
       };
     });
   },
@@ -185,8 +185,8 @@ export const AIIntelligenceService = {
 
     const { data: leads, error } = await supabase
       .from('leads')
-      .select('id, first_name, last_name, next_action_date, lead_status, ai_drop_off_risk')
-      .in('lead_status', ['Qualified', 'Interested', 'Connected', 'Attempted'])
+      .select('id, first_name, last_name, next_action_date, lead_status, drop_off_risk')
+       .in('lead_status', ['Qualified', 'Hot', 'Warm'])
       .order('next_action_date', { ascending: true, nullsFirst: false })
       .limit(limit);
 
@@ -206,7 +206,7 @@ export const AIIntelligenceService = {
         lastContactDate: lead.next_action_date,
         daysSinceContact: daysSince,
         isOverdue,
-        riskLevel: lead.ai_drop_off_risk === 'High' || daysSince > 7 ? 'High' : daysSince > 3 ? 'Medium' : 'Low',
+        riskLevel: lead.drop_off_risk === 'High' || daysSince > 7 ? 'High' : daysSince > 3 ? 'Medium' : 'Low',
         suggestedAction: isOverdue ? 'Send follow-up message' : 'Schedule check-in call',
         reason: isOverdue ? `No contact for ${daysSince} days` : 'Regular follow-up due',
       };
@@ -303,8 +303,7 @@ export const AIIntelligenceService = {
       .from('leads')
       .select(`
         id, first_name, last_name, lead_status, ai_summary,
-        interested_programs, interested_universities,
-        ai_objection_detected, ai_suggested_next_action
+        ai_suggested_next_action
       `)
       .eq('id', leadId)
       .single();
@@ -325,18 +324,18 @@ export const AIIntelligenceService = {
       leadId: lead.id,
       leadName: `${lead.first_name} ${lead.last_name || ''}`.trim(),
       summary: lead.ai_summary || `Lead is in ${lead.lead_status} stage`,
-      intent: lead.interested_programs,
+      intent: lead.ai_suggested_next_action,
       previousCommunication: (communications || []).map((c) => c.content),
-      interestedPrograms: lead.interested_programs ? [lead.interested_programs] : [],
-      interestedUniversities: lead.interested_universities ? [lead.interested_universities] : [],
-      objections: lead.ai_objection_detected ? [lead.ai_objection_detected] : [],
+      interestedPrograms: lead.ai_suggested_next_action ? [lead.ai_suggested_next_action] : [],
+      interestedUniversities: [],
+      objections: [],
       pendingActions: lead.ai_suggested_next_action ? [lead.ai_suggested_next_action] : [],
       suggestedTalkingPoints: [
         'Ask about their preferred learning mode',
         'Discuss career goals and program fit',
         'Address any concerns about fees or duration',
       ],
-      missingInfo: !lead.interested_programs ? ['Program preference'] : [],
+      missingInfo: !lead.ai_suggested_next_action ? ['Next action'] : [],
     };
   },
 

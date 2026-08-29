@@ -19,25 +19,25 @@ export class LeadAnalyzer {
     
     // Temperature
     let temperature = 'Cold';
-    if (engagementScore > 60 || lead.status === 'Application Started') temperature = 'Hot';
-    else if (engagementScore > 25 || lead.status === 'Interested') temperature = 'Warm';
+    if (engagementScore > 60 || lead.lead_status === 'Application') temperature = 'Hot';
+    else if (engagementScore > 25 || lead.lead_status === 'Hot') temperature = 'Warm';
 
     // Conversion Probability
     let conversionProb = 5.0; // base
     if (lead.priority === 'High') conversionProb += 15;
     if (temperature === 'Hot') conversionProb += 30;
     if (temperature === 'Warm') conversionProb += 15;
-    if (lead.status === 'Interested') conversionProb += 20;
-    if (lead.status === 'Qualified') conversionProb += 35;
-    if (lead.status === 'Application Started') conversionProb += 60;
-    if (lead.status === 'Admission Done') conversionProb = 100;
-    if (lead.status === 'Lost') conversionProb = 0;
+    if (lead.lead_status === 'Hot') conversionProb += 20;
+    if (lead.lead_status === 'Qualified') conversionProb += 35;
+    if (lead.lead_status === 'Application') conversionProb += 60;
+    if (lead.lead_status === 'Admitted') conversionProb = 100;
+    if (lead.lead_status === 'Rejected') conversionProb = 0;
 
     // Drop Off Risk
     let dropOffRisk = 'Low';
     if (conversionProb < 20) dropOffRisk = 'High';
     else if (conversionProb < 50) dropOffRisk = 'Medium';
-    if (lead.status === 'Lost') dropOffRisk = 'High';
+    if (lead.lead_status === 'Rejected') dropOffRisk = 'High';
 
     // Payment Probability
     let paymentProb = conversionProb * 0.8; // Rough heuristic for now
@@ -48,7 +48,7 @@ export class LeadAnalyzer {
       temperature,
       drop_off_risk: dropOffRisk,
       payment_probability: Math.min(Math.max(paymentProb, 0), 100),
-      score: Math.min(engagementScore, 100) // update legacy score too
+      lead_score: Math.min(engagementScore, 100) // update lead_score
     }).eq('id', leadId);
   }
 }

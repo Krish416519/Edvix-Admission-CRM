@@ -66,7 +66,8 @@ export function useLeads(options?: UseLeadsOptions) {
               *,
               counselor:users!leads_counselor_id_fkey(name),
               university:universities(name),
-              course:courses(name)
+              course:courses(name),
+              disposition:dispositions!leads_latest_disposition_id_fkey(name, target_status)
             `) => {
           let query = supabase
             .from('leads')
@@ -140,6 +141,21 @@ export function useLeads(options?: UseLeadsOptions) {
           if (dbField === 'source') dbField = 'lead_source';
           if (dbField === 'score') dbField = 'lead_score';
           if (dbField === 'createdAt') dbField = 'created_at';
+          if (dbField === 'updatedAt') dbField = 'updated_at';
+          if (dbField === 'callAttempts') dbField = 'call_attempts';
+          if (dbField === 'interactionsCount') dbField = 'interactions_count';
+          if (dbField === 'lastCallDate') dbField = 'last_call_date';
+          if (dbField === 'finalFollowUpDate') dbField = 'final_follow_up_date';
+           if (dbField === 'transitionToFallOut') dbField = 'transition_to_fallout_at';
+           if (dbField === 'transitionToCounselled') dbField = 'transition_to_counselled_at';
+           if (dbField === 'transitionToOBInitiated') dbField = 'transition_to_ob_initiated_at';
+           if (dbField === 'transitionToOffer') dbField = 'transition_to_offer_at';
+           if (dbField === 'transitionToConverted') dbField = 'transition_to_converted_at';
+           if (dbField === 'transitionToScreening') dbField = 'transition_to_screening_at';
+           // Derived/removed fields - sort in frontend after mapping
+           if (['assignmentDate', 'firstAssignmentDate', 'firstCallDate', 'contactedTimestamp', 'conversionDate', 'managerPrioritized', 'moreThan5MContactedTime', 'moreThan10MContactedTime', 'moreThan15MContactedTime', 'transitionToAdmitted', 'transitionToVerificationPending'].includes(dbField)) {
+            dbField = 'created_at';
+          }
           
           query = query.order(dbField, { ascending: options.sort.direction === 'asc' });
         } else {
@@ -159,6 +175,12 @@ export function useLeads(options?: UseLeadsOptions) {
       let statusCounts: Record<string, number> = {};
       let totalUnfilteredCount = 0;
 
+      // Declare maps for derived data
+      let assignmentsMap = new Map<string, any[]>();
+      let callsMap = new Map<string, any[]>();
+      let dispositionHistoryMap = new Map<string, any[]>();
+      let documentsMap = new Map<string, any[]>();
+
       const { data, count, error } = await buildQuery().range(start, end);
       
       if (error) throw error;
@@ -171,57 +193,226 @@ export function useLeads(options?: UseLeadsOptions) {
       if (!statusError && statusData) {
         totalUnfilteredCount = statusData.length;
         statusData.forEach(row => {
-          const status = row.lead_status || 'New';
+          const status = (row as any).lead_status || 'New';
           statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
       }
 
+      // Fetch derived data for assignment dates, call dates, and contact timestamps
+      // Only fetch for the current page of leads (not all leads at once)
+      if (allData.length > 0) {
+        const leadIds = allData.map(d => d.id);
+
+        // Fetch lead assignments for assignment dates
+        const { data: assignmentData } = await supabase
+          .from('lead_assignments')
+          .select('lead_id, assignee_id, assigned_at, assigned_by, is_active')
+          .in('lead_id', leadIds)
+          .order('assigned_at', { ascending: true });
+
+        if (assignmentData) {
+          assignmentData.forEach((a: any) => {
+            const arr = assignmentsMap.get(a.lead_id) || [];
+            arr.push(a);
+            assignmentsMap.set(a.lead_id, arr);
+          });
+        }
+
+        // Fetch call data for first call dates and duration thresholds
+        const { data: callData } = await supabase
+          .from('calls')
+          .select('lead_id, duration_seconds, created_at, status')
+          .in('lead_id', leadIds)
+          .order('created_at', { ascending: true });
+
+        if (callData) {
+          callData.forEach((c: any) => {
+            const arr = callsMap.get(c.lead_id) || [];
+            arr.push(c);
+            callsMap.set(c.lead_id, arr);
+          });
+        }
+
+        // Fetch disposition history for contacted timestamps and transition events
+        const { data: dispositionHistoryData } = await supabase
+          .from('lead_disposition_history')
+          .select('lead_id, new_status, previous_status, created_at')
+          .in('lead_id', leadIds)
+          .order('created_at', { ascending: true });
+
+        if (dispositionHistoryData) {
+          dispositionHistoryData.forEach((d: any) => {
+            const arr = dispositionHistoryMap.get(d.lead_id) || [];
+            arr.push(d);
+            dispositionHistoryMap.set(d.lead_id, arr);
+          });
+        }
+
+        // Fetch document verification data
+        const { data: documentsData } = await supabase
+          .from('documents')
+          .select('lead_id, verification_status, verification_date, created_at')
+          .in('lead_id', leadIds)
+          .order('created_at', { ascending: true });
+
+        if (documentsData) {
+          documentsData.forEach((doc: any) => {
+            const arr = documentsMap.get(doc.lead_id) || [];
+            arr.push(doc);
+            documentsMap.set(doc.lead_id, arr);
+          });
+        }
+      }
+
       // Map the database snake_case fields to our frontend camelCase types
-      const mappedLeads: Lead[] = allData.map((d: any) => ({
-        id: d.id,
-        leadNumber: d.lead_number,
-        firstName: d.first_name,
-        lastName: d.last_name,
-        name: `${d.first_name || ''} ${d.last_name || ''}`.trim(),
-        email: d.email,
-        phone: d.phone,
-        alternatePhone: d.alternate_phone,
-        state: d.state,
-        city: d.city,
-        country: d.country,
-        budget: d.budget,
-        leadSource: d.lead_source,
-        source: d.lead_source, // legacy map
-        leadStatus: d.lead_status,
-        status: d.lead_status, // legacy map
-        priority: d.priority,
-        leadScore: d.lead_score,
-        score: d.lead_score, // legacy map
+      const mappedLeads: Lead[] = allData.map((d: any) => {
+        const assignments = assignmentsMap.get(d.id) || [];
+        const calls = callsMap.get(d.id) || [];
+        const dispositionHistory = dispositionHistoryMap.get(d.id) || [];
+
+        // Derive Assignment Date (latest active assignment)
+        const latestAssignment = assignments.filter((a: any) => a.is_active).sort((x: any, y: any) => new Date(y.assigned_at).getTime() - new Date(x.assigned_at).getTime())[0];
+        const assignmentDate = latestAssignment?.assigned_at || null;
+
+        // Derive First Assignment Date (earliest assignment ever)
+        const firstAssignment = assignments.sort((x: any, y: any) => new Date(x.assigned_at).getTime() - new Date(y.assigned_at).getTime())[0];
+        const firstAssignmentDate = firstAssignment?.assigned_at || null;
+
+        // Derive First Call Date (earliest call per lead)
+        const firstCall = calls.sort((x: any, y: any) => new Date(x.created_at).getTime() - new Date(y.created_at).getTime())[0];
+        const firstCallDate = firstCall?.created_at || null;
+
+        // Derive Contacted Timestamp (first disposition history entry where contact was made)
+        // Use the first disposition in history that indicates contact was attempted
+        const contactedHistory = dispositionHistory.find((h: any) => h.new_status !== 'New' && h.new_status !== 'Inquiry');
+        const contactedTimestamp = contactedHistory?.created_at || null;
+
+        // Derive time-based contact flags from cumulative call durations
+        // Sum all successful call durations per lead
+        const totalCallDuration = calls.reduce((sum: number, c: any) => {
+          if (c.status !== 'failed' && c.status !== 'missed') {
+            return sum + (c.duration_seconds || 0);
+          }
+          return sum;
+        }, 0);
+        const moreThan5M = totalCallDuration >= 300;
+        const moreThan10M = totalCallDuration >= 600;
+        const moreThan15M = totalCallDuration >= 900;
+
+        // Derive Conversion Date from transition_to_converted_at
+        const conversionDate = d.transition_to_converted_at || null;
+
+        // Derive Manager Prioritized from priority = 'High'
+        const managerPrioritized = d.priority === 'High';
+
+        // Derive Transition to Admitted from disposition history
+        // Look for when status transitioned to 'Admitted'
+        const admittedTransition = dispositionHistory.find((h: any) => h.new_status === 'Admitted');
+        const transitionToAdmitted = admittedTransition?.created_at || d.transition_to_admitted_at || null;
+
+        // Derive Transition to Verification Pending from disposition history
+        // Look for status transitions containing 'Verification' or 'Docs'
+        const verificationTransition = dispositionHistory.find((h: any) => 
+          h.new_status?.toLowerCase().includes('verification') || 
+          h.new_status?.toLowerCase().includes('docs')
+        );
         
-        preferredLanguage: d.preferred_language,
-        counselingMode: d.counseling_mode,
-        notesCount: d.notes_count,
-        tasksCount: d.tasks_count,
-        admissionStatus: d.admission_status,
+        // Also check documents table for verification pending status
+        const documents = documentsMap.get(d.id) || [];
+        const docVerificationPending = documents.find((doc: any) => 
+          doc.verification_status?.toLowerCase().includes('pending') || 
+          doc.verification_status?.toLowerCase().includes('under review')
+        );
         
-        assignedCounselor: d.assigned_counselor,
-        counselorId: d.assigned_counselor, // legacy map
-        universityId: d.university_id,
-        courseId: d.course_id,
-        
-        // Command Center Fields
-        temperature: d.temperature,
-        tags: d.tags || [],
-        latestDispositionId: d.latest_disposition_id,
-        latestSubDispositionId: d.latest_sub_disposition_id,
-        nextActionDate: d.next_action_date,
-        
-        createdAt: d.created_at,
-        deletedAt: d.deleted_at,
-        counselorName: d.counselor?.name,
-        universityName: d.university?.name,
-        courseName: d.course?.name
-      }));
+        const transitionToVerificationPending = 
+          verificationTransition?.created_at || 
+          docVerificationPending?.verification_date ||
+          d.transition_to_verification_pending_at || 
+          null;
+
+        return {
+          id: d.id,
+          leadNumber: d.lead_number,
+          firstName: d.first_name,
+          lastName: d.last_name,
+          name: `${d.first_name || ''} ${d.last_name || ''}`.trim(),
+          email: d.email,
+          phone: d.phone,
+          alternatePhone: d.alternate_phone,
+          state: d.state,
+          city: d.city,
+          country: d.country,
+          budget: d.budget,
+          leadSource: d.lead_source,
+          source: d.lead_source, // legacy map
+          leadStatus: d.lead_status,
+          status: d.lead_status, // legacy map
+          priority: d.priority,
+          leadScore: d.lead_score,
+          score: d.lead_score, // legacy map
+          
+          preferredLanguage: d.preferred_language,
+          counselingMode: d.counseling_mode,
+          notesCount: d.notes_count,
+          tasksCount: d.tasks_count,
+          admissionStatus: d.admission_status,
+          
+          assignedCounselor: d.assigned_counselor,
+          counselorId: d.assigned_counselor, // legacy map
+          universityId: d.university_id,
+          courseId: d.course_id,
+          
+           // Command Center Fields
+          temperature: d.temperature,
+          tags: d.tags || [],
+          
+          // Transition Timestamps (from backend triggers)
+          transitionToFallOut: d.transition_to_fallout_at,
+          transitionToCounselled: d.transition_to_counselled_at,
+          transitionToOBInitiated: d.transition_to_ob_initiated_at,
+          transitionToAdmitted: transitionToAdmitted,
+          transitionToOffer: d.transition_to_offer_at,
+          transitionToVerificationPending: transitionToVerificationPending,
+          transitionToConverted: d.transition_to_converted_at,
+          transitionToScreening: d.transition_to_screening_at,
+
+          // Activity Summary Fields (computed via triggers/migration 126)
+          callAttempts: d.call_attempts || 0,
+          interactionsCount: d.interactions_count || 0,
+          lastCallDate: d.last_call_date,
+          finalFollowUpDate: d.final_follow_up_date,
+          updatedAt: d.updated_at,
+
+          // Assignment & Call Tracking (derived from related tables)
+          assignmentDate: assignmentDate,
+          firstAssignmentDate: firstAssignmentDate,
+          firstCallDate: firstCallDate,
+          contactedTimestamp: contactedTimestamp,
+          moreThan5MContactedTime: moreThan5M,
+          moreThan10MContactedTime: moreThan10M,
+          moreThan15MContactedTime: moreThan15M,
+
+          // Conversion & Manager Priority
+          conversionDate: conversionDate,
+          managerPrioritized: managerPrioritized,
+
+          // Snake case versions for direct DB access
+          transition_to_admitted_at: transitionToAdmitted,
+          transition_to_verification_pending_at: transitionToVerificationPending,
+          
+          latestDispositionId: d.latest_disposition_id,
+          latestSubDispositionId: d.latest_sub_disposition_id,
+          latestDispositionName: d.disposition?.name,        // For Connected/Not Connected views
+          latestDispositionTargetStatus: d.disposition?.target_status, // Maps to lead_status
+          nextActionDate: d.next_action_date,
+          
+          createdAt: d.created_at,
+          deletedAt: d.deleted_at,
+          counselorName: d.counselor?.name,
+          universityName: d.university?.name,
+          courseName: d.course?.name
+        };
+      });
 
       setLeads(mappedLeads);
       setTotalCount(finalCount);
@@ -244,6 +435,14 @@ export function useLeads(options?: UseLeadsOptions) {
       .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
         console.log('Real-time change received:', payload);
+        fetchLeads();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, (payload) => {
+        console.log('Calls table change received:', payload);
+        fetchLeads();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_activities' }, (payload) => {
+        console.log('Lead activities change received:', payload);
         fetchLeads();
       })
       .subscribe();

@@ -4,6 +4,7 @@ import { Task } from '../../../types/task';
 import { LeadStatus } from '../../../types/schema';
 import { X, Calendar, Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { DEFAULT_PIPELINE_STAGES } from '../../../constants/pipelineStages';
 
 interface TaskFollowUpDialogProps {
   task: Task;
@@ -24,7 +25,7 @@ export function TaskFollowUpDialog({ task, isOpen, onClose, onComplete }: TaskFo
   const [scheduleNext, setScheduleNext] = useState(false);
   const [nextDate, setNextDate] = useState('');
   const [nextTime, setNextTime] = useState('');
-  const [statuses, setStatuses] = useState<string[]>(['New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost']);
+  const [statuses, setStatuses] = useState<string[]>(DEFAULT_PIPELINE_STAGES);
 
   useEffect(() => {
     if (isOpen) {

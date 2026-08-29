@@ -121,9 +121,9 @@ export class AIToolHandlers {
       switch (name) {
         
         case 'search_records': {
-          let q = supabase.from('leads').select('id, full_name, email, phone, status, score').limit(20);
+          let q = supabase.from('leads').select('id, first_name, last_name, email, phone, lead_status, lead_score').limit(20);
           if (args.query) {
-            q = q.or(`full_name.ilike.%${args.query}%,email.ilike.%${args.query}%,phone.ilike.%${args.query}%`);
+            q = q.or(`first_name.ilike.%${args.query}%,last_name.ilike.%${args.query}%,email.ilike.%${args.query}%,phone.ilike.%${args.query}%`);
           }
           const { data: leads } = await q;
           return { leads: leads || [], message: "Found matching leads." };
@@ -153,7 +153,7 @@ export class AIToolHandlers {
         }
 
         case 'update_lead_status': {
-          const { error } = await supabase.from('leads').update({ status: args.status }).eq('id', args.lead_id);
+          const { error } = await supabase.from('leads').update({ lead_status: args.status }).eq('id', args.lead_id);
           if (error) throw error;
           return { success: true, message: `Lead status updated to ${args.status}.` };
         }
@@ -161,7 +161,7 @@ export class AIToolHandlers {
         case 'bulk_assign_leads': {
           let q = supabase.from('leads').update({ assigned_counselor: args.counselor_id });
           let criteriaCount = 0;
-          if (args.criteria_status) { q = q.eq('status', args.criteria_status); criteriaCount++; }
+          if (args.criteria_status) { q = q.eq('lead_status', args.criteria_status); criteriaCount++; }
           if (args.criteria_city) { q = q.eq('city', args.criteria_city); criteriaCount++; }
           
           if (criteriaCount === 0) return { error: "You must provide at least one criteria to prevent accidental full-database assignment." };

@@ -1,14 +1,15 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Target, Users, PhoneCall, CheckCircle } from 'lucide-react';
+import { Target, Users, PhoneCall, CheckCircle, UserIcon } from 'lucide-react';
 
 const funnelData = [
-  { name: 'New Leads', value: 1000 },
-  { name: 'Attempted', value: 850 },
-  { name: 'Connected', value: 600 },
-  { name: 'Interested', value: 300 },
+  { name: 'Inquiry', value: 1000 },
+  { name: 'Not Connected', value: 850 },
+  { name: 'Cold', value: 600 },
+  { name: 'Warm', value: 450 },
+  { name: 'Hot', value: 300 },
   { name: 'Qualified', value: 150 },
-  { name: 'Converted', value: 50 },
+  { name: 'Admitted', value: 50 },
 ];
 
 const dispositionOutcomes = [
@@ -32,21 +33,25 @@ export function DispositionAnalytics() {
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-muted-foreground">
             <PhoneCall className="w-5 h-5 text-amber-500" />
-            <span className="font-medium">Attempted</span>
+            <span className="font-medium">Cold</span>
+          </div>
+          <div className="flex items-center gap-3 mb-2 text-muted-foreground">
+            <Users className="w-5 h-5 text-blue-500" />
+            <span className="font-medium">Not Connected</span>
           </div>
           <div className="text-2xl font-bold">850 <span className="text-sm font-normal text-muted-foreground">(85%)</span></div>
         </div>
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-muted-foreground">
-            <Users className="w-5 h-5 text-purple-500" />
-            <span className="font-medium">Connected</span>
+            <UserIcon className="w-5 h-5 text-slate-500" />
+            <span className="font-medium">Cold</span>
           </div>
           <div className="text-2xl font-bold">600 <span className="text-sm font-normal text-muted-foreground">(70%)</span></div>
         </div>
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
           <div className="flex items-center gap-3 mb-2 text-muted-foreground">
             <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="font-medium">Converted</span>
+            <span className="font-medium">Admitted</span>
           </div>
           <div className="text-2xl font-bold">50 <span className="text-sm font-normal text-muted-foreground">(5%)</span></div>
         </div>

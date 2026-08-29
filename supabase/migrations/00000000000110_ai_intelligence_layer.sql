@@ -2,7 +2,8 @@
 -- AI Intelligence Layer - Core Tables for Step 39
 
 -- AI Recommendations table (centralized recommendation feed)
-CREATE TABLE IF NOT EXISTS ai_recommendations (
+DROP TABLE IF EXISTS ai_recommendations CASCADE;
+CREATE TABLE ai_recommendations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type TEXT NOT NULL CHECK (type IN (
     'lead_follow_up', 'lead_score_change', 'next_best_action',

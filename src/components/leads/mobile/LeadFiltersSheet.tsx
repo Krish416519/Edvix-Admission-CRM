@@ -3,6 +3,7 @@ import { X, Check } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { LeadStatus } from '../../../types/schema';
 import { cn } from '../../../lib/utils';
+import { DEFAULT_PIPELINE_STAGES } from '../../../constants/pipelineStages';
 
 interface LeadFiltersSheetProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export function LeadFiltersSheet({
   isOpen, onClose, statusFilter, setStatusFilter, showDeleted, setShowDeleted
 }: LeadFiltersSheetProps) {
   
-  const [statuses, setStatuses] = useState<string[]>(['All', 'New', 'Attempted', 'Connected', 'Interested', 'Qualified', 'Application Started', 'Documents Pending', 'Admission Done', 'Lost']);
+  const [statuses, setStatuses] = useState<string[]>(['All', ...DEFAULT_PIPELINE_STAGES]);
 
   useEffect(() => {
     if (isOpen) {

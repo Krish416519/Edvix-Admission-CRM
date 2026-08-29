@@ -1,11 +1,12 @@
 
 import { Lead, LeadStatus } from '../../../types/schema';
-import { Phone, MessageCircle, GraduationCap, Building2, ChevronRight, Clock, Flame, Wind, Thermometer } from 'lucide-react';
+import { Phone, MessageCircle, GraduationCap, Building2, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTelephony } from '../../../contexts/TelephonyContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { computeIntent } from '../../../lib/leadIntent';
 
 interface MobileLeadCardProps {
   lead: Lead;
@@ -14,19 +15,17 @@ interface MobileLeadCardProps {
   key?: React.Key;
 }
 
-function getTemperature(score: number) {
-  if (score >= 81) return { label: '🔥 Hot', emoji: '🔥', color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10 dark:text-orange-400', ring: 'ring-orange-200 dark:ring-orange-500/20' };
-  if (score >= 61) return { label: '🟠 Warm', emoji: '🟠', color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-500/20' };
-  if (score >= 31) return { label: '🔵 Cool', emoji: '🔵', color: 'text-sky-600 bg-sky-50 dark:bg-sky-500/10 dark:text-sky-400', ring: 'ring-sky-200 dark:ring-sky-500/20' };
-  return { label: '❄️ Cold', emoji: '❄️', color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-500/20' };
-}
-
 export function MobileLeadCard({ lead, statusColors, onClick }: MobileLeadCardProps) {
   const navigate = useNavigate();
   const { makeCall } = useTelephony();
   const { user } = useAuth();
   const score = lead.leadScore ?? lead.score ?? 0;
-  const temp = getTemperature(score);
+  const intent = computeIntent(lead);
+  const intentConfig = {
+    HOT: { emoji: '🔥', color: 'text-orange-600 bg-orange-50 dark:bg-orange-500/10 dark:text-orange-400', ring: 'ring-orange-200 dark:ring-orange-500/20' },
+    WARM: { emoji: '🟠', color: 'text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-500/20' },
+    COLD: { emoji: '❄️', color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-500/20' },
+  }[intent];
 
   const handleCardClick = () => {
     if (onClick) onClick();
@@ -78,7 +77,7 @@ export function MobileLeadCard({ lead, statusColors, onClick }: MobileLeadCardPr
               {/* Avatar initial */}
               <div className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ring-2',
-                temp.color, temp.ring
+                intentConfig.color, intentConfig.ring
               )}>
                 {displayName.charAt(0).toUpperCase()}
               </div>
@@ -129,8 +128,8 @@ export function MobileLeadCard({ lead, statusColors, onClick }: MobileLeadCardPr
         {/* Bottom row: Score + actions */}
         <div className="flex items-center justify-between pt-2.5 border-t border-border/60">
           <div className="flex items-center gap-2">
-            <span className={cn('px-2 py-0.5 rounded-lg text-[11px] font-bold', temp.color)}>
-              {temp.emoji} {score}
+            <span className={cn('px-2 py-0.5 rounded-lg text-[11px] font-bold', intentConfig.color)}>
+              {intentConfig.emoji} {score}
             </span>
             {lead.createdAt && (
               <span className="text-[11px] text-muted-foreground">

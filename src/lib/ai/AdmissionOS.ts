@@ -4,14 +4,20 @@ import { supabase } from '../supabase';
  * The 14-stage unified pipeline that combines LeadStatus + AdmissionStage
  */
 export const PIPELINE_STAGES = [
-  'New Lead',
-  'Contacted',
+  'Inquiry',
+  'Not Connected',
+  'Cold',
+  'Warm',
+  'Hot',
   'Qualified',
+  'Application',
+  'Docs Pending',
+  'Admitted',
+  'Rejected',
   'Counselling',
   'University Suggested',
-  'Documents Pending',
   'Documents Verified',
-  'Application Submitted',
+  'ApplicationSubmitted',
   'University Review',
   'Offer Letter',
   'Fee Payment',
@@ -87,11 +93,11 @@ export class AdmissionOS {
         'Inquiry': 'Counselling',
         'Interested': 'Counselling',
         'Counseling': 'Counselling',
-        'Documents Pending': 'Documents Pending',
+        'Documents Pending': 'Documents Verified',
         'Documents Verified': 'Documents Verified',
         'Documents Uploaded': 'Documents Verified',
-        'Application Submitted': 'Application Submitted',
-        'Application Started': 'Application Submitted',
+        'ApplicationSubmitted': 'ApplicationSubmitted',
+        'Application Started': 'ApplicationSubmitted',
         'University Verification': 'University Review',
         'University Review': 'University Review',
         'Offer Letter': 'Offer Letter',
@@ -106,25 +112,34 @@ export class AdmissionOS {
         'LMS Credentials Received': 'LMS Activated',
         'Completed': 'Completed',
         'Admission Completed': 'Completed',
-        'ABC ID Created': 'Application Submitted',
-        'DEB ID Created': 'Application Submitted',
+        'ABC ID Created': 'ApplicationSubmitted',
+        'DEB ID Created': 'ApplicationSubmitted',
       };
       if (stageMap[admissionStage]) return stageMap[admissionStage];
     }
 
     // Fall back to lead status
     const leadMap: Record<string, PipelineStage> = {
-      'New': 'New Lead',
-      'Attempted': 'Contacted',
-      'Connected': 'Contacted',
-      'Interested': 'Qualified',
+      'Inquiry': 'Inquiry',
+      'New': 'Inquiry',
+      'Not Connected': 'Cold',
+      'Cold': 'Cold',
+      'Attempted': 'Not Connected',
+      'Connected': 'Cold',
+      'Warm': 'Cold',
+      'Hot': 'Hot',
+      'Interested': 'Hot',
       'Qualified': 'Qualified',
-      'Application Started': 'Application Submitted',
-      'Documents Pending': 'Documents Pending',
+      'Application': 'ApplicationSubmitted',
+      'Application Started': 'ApplicationSubmitted',
+      'Docs Pending': 'Documents Verified',
+      'Documents Pending': 'Documents Verified',
+      'Admitted': 'Completed',
       'Admission Done': 'Completed',
-      'Lost': 'New Lead', // Lost leads go back to pool
+      'Rejected': 'Rejected',
+      'Lost': 'Rejected',
     };
-    return leadMap[leadStatus] || 'New Lead';
+    return leadMap[leadStatus] ?? 'Inquiry';
   }
 
   /**
@@ -144,14 +159,20 @@ export class AdmissionOS {
    */
   static suggestNextAction(stage: PipelineStage, waitingHours: number): string {
     const actions: Record<PipelineStage, string> = {
-      'New Lead': 'Make initial contact call',
-      'Contacted': 'Schedule counselling session',
+      'Inquiry': 'Make initial contact call',
+      'Not Connected': 'Retry contact / send WhatsApp',
+      'Cold': 'Warm up lead with engagement',
+      'Warm': 'Send follow-up message',
+      'Hot': 'Schedule counselling session',
       'Qualified': 'Begin university matching',
+      'Application': 'Generate AI university recommendations',
+      'Docs Pending': waitingHours > 48 ? 'Send document reminder via WhatsApp' : 'Follow up on pending documents',
+      'Admitted': 'Initiate LMS activation',
+      'Rejected': 'Schedule re-engagement call',
       'Counselling': 'Generate AI university recommendations',
       'University Suggested': 'Collect required documents',
-      'Documents Pending': waitingHours > 48 ? 'Send document reminder via WhatsApp' : 'Follow up on pending documents',
       'Documents Verified': 'Submit application to university',
-      'Application Submitted': 'Track university review status',
+      'ApplicationSubmitted': 'Track university review status',
       'University Review': 'Follow up with university admission office',
       'Offer Letter': 'Share offer letter and initiate fee payment',
       'Fee Payment': waitingHours > 24 ? 'Send payment reminder' : 'Confirm payment receipt',
@@ -171,10 +192,10 @@ export class AdmissionOS {
       .from('leads')
       .select(`
         id, first_name, last_name, email, phone,
-        lead_status, priority, score,
+         lead_status, priority, lead_score,
         assigned_counselor, budget,
         conversion_probability, temperature, drop_off_risk, payment_probability,
-        created_at, updated_at, last_contacted_at, next_action_date
+         created_at, updated_at, last_call_date, next_action_date
       `)
       .is('deleted_at', null)
       .neq('lead_status', 'Lost')
@@ -228,7 +249,7 @@ export class AdmissionOS {
       const ownerName = ownerId ? (counselorMap.get(ownerId) || 'Unassigned') : 'Unassigned';
       
       const lastUpdate = admission?.updated_at || lead.updated_at;
-      const lastContact = lead.last_contacted_at || lead.created_at;
+      const lastContact = lead.last_call_date || lead.created_at;
       
       const waitingHours = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / (1000 * 3600));
       const hoursSinceContact = Math.floor((Date.now() - new Date(lastContact).getTime()) / (1000 * 3600));
@@ -396,9 +417,9 @@ export class AdmissionOS {
       .from('lead_activities')
       .select('id', { count: 'exact', head: true })
       .gte('created_at', startOfDay)
-      .eq('activity_type', 'Call');
+      .eq('type', 'call');
       
-    if (userId) activitiesQuery = activitiesQuery.eq('created_by', userId);
+    if (userId) activitiesQuery = activitiesQuery.eq('author', userId);
     
     const { count: callsToday } = await activitiesQuery;
 

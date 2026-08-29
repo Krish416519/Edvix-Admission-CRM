@@ -20,11 +20,11 @@ export const aiService = {
     await delay(600); // Simulate AI thinking time
 
     // Calculate dynamic conversion score
-    let score = 30; // base score
-    if (lead.status === 'Interested' || lead.status === 'Qualified') score += 20;
-    if (lead.status === 'Application Started') score += 35;
-    if (lead.status === 'Documents Pending') score += 45;
-    if (lead.status === 'Admission Done') score = 100;
+     let score = 30; // base score
+    if (lead.status === 'Hot' || lead.status === 'Qualified') score += 20;
+    if (lead.status === 'Application') score += 35;
+    if (lead.status === 'Docs Pending') score += 45;
+    if (lead.status === 'Admitted') score = 100;
     
     // Boost based on activities
     const recentActivityCount = activities.filter(a => a.createdAt && new Date(a.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
@@ -44,33 +44,33 @@ export const aiService = {
 
     // Generate Summary
     const summary = `Student is interested in ${lead.course || 'a program'}. Preferred university: ${lead.university || 'Not specified'}. ${
-      lead.status === 'Documents Pending' ? 'Currently waiting for documents.' : ''
+      lead.status === 'Docs Pending' ? 'Currently waiting for documents.' : ''
     } Last contacted: ${activities.length > 0 && activities[0].createdAt ? new Date(activities[0].createdAt).toLocaleDateString() : 'Never'}.`;
 
     // Next best action
     let nextBestAction = 'Send introduction email and brochure.';
-    if (lead.status === 'New') nextBestAction = 'Call today to qualify the lead.';
-    else if (lead.status === 'Interested') nextBestAction = 'Share scholarship details and discuss EMI options.';
-    else if (lead.status === 'Application Started') nextBestAction = 'Assist with application form completion.';
-    else if (lead.status === 'Documents Pending') nextBestAction = 'Request pending documents (Marksheet/ID).';
-    else if (lead.status === 'Admission Done') nextBestAction = 'Send welcome kit and onboarding details.';
+    if (lead.status === 'Cold' || lead.status === 'Inquiry') nextBestAction = 'Call today to qualify the lead.';
+    else if (lead.status === 'Hot' || lead.status === 'Interested') nextBestAction = 'Share scholarship details and discuss EMI options.';
+    else if (lead.status === 'Application') nextBestAction = 'Assist with application form completion.';
+    else if (lead.status === 'Docs Pending') nextBestAction = 'Request pending documents (Marksheet/ID).';
+    else if (lead.status === 'Admitted') nextBestAction = 'Send welcome kit and onboarding details.';
 
     // Risk Alerts
     const riskAlerts: string[] = [];
     if (lead.nextFollowUp && new Date(lead.nextFollowUp) < new Date()) {
       riskAlerts.push('No follow-up for 3 days');
     }
-    if (lead.status === 'Documents Pending' && score < 70) {
+    if (lead.status === 'Docs Pending' && score < 70) {
       riskAlerts.push('Documents pending too long');
     }
-    if (score >= 80 && lead.status !== 'Admission Done' && recentActivityCount === 0) {
+    if (score >= 80 && lead.status !== 'Admitted' && recentActivityCount === 0) {
       riskAlerts.push('High-value lead ignored');
     }
 
     // Recommended Follow-up Time
     let recommendedFollowUpTime = 'Today at 4:00 PM';
     if (lead.status === 'Qualified') recommendedFollowUpTime = 'Tomorrow morning';
-    if (lead.status === 'Documents Pending') recommendedFollowUpTime = 'In 2 days';
+    if (lead.status === 'Docs Pending') recommendedFollowUpTime = 'In 2 days';
 
     return {
       summary,

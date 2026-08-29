@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Sparkles, Flame, AlertTriangle, PhoneCall, CheckCircle2,
-  TrendingUp, Users, Clock, AlertCircle, Loader2
+   TrendingUp, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { addAuditLog } from '../../data/mockAuditLogs';
@@ -34,7 +34,7 @@ export function CounselorDashboard() {
         entityType: 'Workflow',
         entityId: 'WFL-AI-123',
         title: 'AI Workflow Executed',
-        description: 'Bulk WhatsApp reminder sent to 3 leads in Application Started status without documents.',
+        description: 'Bulk WhatsApp reminder sent to 3 leads in Application status without documents.',
         userName: user?.name || 'Counselor'
       });
       
@@ -50,13 +50,13 @@ export function CounselorDashboard() {
     const fetchAIPriorities = async () => {
       if (!user) return;
       try {
-        // Fetch AI Priority Queue Leads (sorted by ai_priority_score)
+        // Fetch AI Priority Queue Leads (sorted by lead_score)
         const { data: priorityLeads } = await supabase
           .from('leads')
           .select('*')
           .eq('assigned_counselor', user.id)
-          .not('status', 'in', '("Admission Done", "Lost")')
-          .order('ai_priority_score', { ascending: false })
+          .not('lead_status', 'in', '("Admitted", "Rejected")')
+          .order('lead_score', { ascending: false })
           .limit(5);
         
         // High drop-off risk
@@ -64,17 +64,24 @@ export function CounselorDashboard() {
           .from('leads')
           .select('*')
           .eq('assigned_counselor', user.id)
-          .eq('ai_drop_off_risk', 'High')
-          .not('status', 'in', '("Admission Done", "Lost")')
+          .eq('drop_off_risk', 'High')
+          .not('lead_status', 'in', '("Admitted", "Rejected")')
           .limit(5);
 
-        // Fetch Counselor Performance
-        const { data: perf } = await supabase
-          .from('counselor_performance')
-          .select('*')
-          .eq('counselor_id', user.id)
-          .eq('date', new Date().toISOString().split('T')[0])
-          .single();
+        // Fetch Counselor Performance (table may not exist yet)
+        let perf: any = null;
+        try {
+          const { data: perfData } = await supabase
+            .from('counselor_performance')
+            .select('*')
+            .eq('counselor_id', user.id)
+            .eq('date', new Date().toISOString().split('T')[0])
+            .single();
+          perf = perfData;
+        } catch (perfErr) {
+          // counselor_performance table may not exist yet; use defaults below
+          console.debug('counselor_performance not available:', perfErr);
+        }
 
         if (priorityLeads) setHighPriority(priorityLeads);
         if (riskLeads) setAtRisk(riskLeads);
@@ -146,7 +153,7 @@ export function CounselorDashboard() {
             <Sparkles className="w-5 h-5" /> Suggested Action
           </h3>
           <p className="text-sm text-foreground mb-4">
-            "You have 3 leads in 'Application Started' status who haven't uploaded documents in 48 hours. Want me to send a bulk WhatsApp reminder?"
+            "You have 3 leads in 'Application' status who haven't uploaded documents in 48 hours. Want me to send a bulk WhatsApp reminder?"
           </p>
           <button 
             onClick={handleExecuteWorkflow}
@@ -179,12 +186,12 @@ export function CounselorDashboard() {
                       </span>
                       <p className="font-medium group-hover:text-primary transition-colors text-sm">{lead.name}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-1">{lead.status} • Score: {lead.aiPriorityScore || lead.ai_priority_score || 0}</p>
-                    <p className="text-[11px] text-primary/80 line-clamp-1 italic">{lead.aiPriorityReason || lead.ai_priority_reason || 'Needs follow-up'}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{lead.leadStatus || lead.status} • Score: {lead.leadScore || 0}</p>
+                    <p className="text-[11px] text-primary/80 line-clamp-1 italic">{lead.aiSuggestedNextAction || 'Needs follow-up'}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-1 text-orange-500 text-xs font-semibold whitespace-nowrap">
-                      <TrendingUp className="w-3 h-3" /> {(lead.conversionProbability || lead.conversion_probability || 0)}%
+                      <TrendingUp className="w-3 h-3" /> {(lead.conversionProbability || 0)}%
                     </div>
                   </div>
                 </div>

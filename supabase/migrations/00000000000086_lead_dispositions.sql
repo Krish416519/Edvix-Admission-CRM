@@ -178,31 +178,31 @@ BEGIN
 
     -- Not Connected Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (gen_random_uuid(), cat_not_connected, 'Switched Off', true, false, 'Attempted', 10),
-    (gen_random_uuid(), cat_not_connected, 'Not Reachable', true, false, 'Attempted', 20),
-    (gen_random_uuid(), cat_not_connected, 'Number Busy', true, false, 'Attempted', 30),
-    (gen_random_uuid(), cat_not_connected, 'Ringing No Answer', true, false, 'Attempted', 40),
-    (gen_random_uuid(), cat_not_connected, 'Invalid Number', false, true, 'Lost', 50);
+    (gen_random_uuid(), cat_not_connected, 'Switched Off', true, false, 'Not Connected', 10),
+    (gen_random_uuid(), cat_not_connected, 'Not Reachable', true, false, 'Not Connected', 20),
+    (gen_random_uuid(), cat_not_connected, 'Number Busy', true, false, 'Not Connected', 30),
+    (gen_random_uuid(), cat_not_connected, 'Ringing No Answer', true, false, 'Not Connected', 40),
+    (gen_random_uuid(), cat_not_connected, 'Invalid Number', false, true, 'Rejected', 50);
 
     -- Contacted Dispositions (Connected)
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_connected, cat_contacted, 'Not Interested', false, true, 'Lost', 10),
-    (disp_cb_req, cat_contacted, 'Call Back Requested', true, false, 'Attempted', 20),
-    (disp_no_resp, cat_contacted, 'Counselled', true, true, 'Interested', 30),
-    (gen_random_uuid(), cat_contacted, 'Follow Up', true, false, 'Attempted', 40),
+    (disp_connected, cat_contacted, 'Not Interested', false, true, 'Rejected', 10),
+    (disp_cb_req, cat_contacted, 'Call Back Requested', true, false, 'Cold', 20),
+    (disp_no_resp, cat_contacted, 'Counselled', true, true, 'Hot', 30),
+    (gen_random_uuid(), cat_contacted, 'Follow Up', true, false, 'Warm', 40),
     (gen_random_uuid(), cat_contacted, 'Meeting Done', true, true, 'Qualified', 50),
-    (gen_random_uuid(), cat_contacted, 'Registration Done', false, false, 'Application Started', 60),
-    (gen_random_uuid(), cat_contacted, 'Document Collected', false, false, 'Documents Pending', 70),
-    (gen_random_uuid(), cat_contacted, 'Follow-up Offer', true, false, 'Interested', 80),
-    (gen_random_uuid(), cat_contacted, 'Follow-up Referral', true, false, 'Interested', 90),
-    (gen_random_uuid(), cat_contacted, 'Semester Fee Paid', false, false, 'Admission Done', 100),
-    (gen_random_uuid(), cat_contacted, 'Loan Rejected', false, true, 'Lost', 110);
+    (gen_random_uuid(), cat_contacted, 'Registration Done', false, false, 'Application', 60),
+    (gen_random_uuid(), cat_contacted, 'Document Collected', false, false, 'Docs Pending', 70),
+    (gen_random_uuid(), cat_contacted, 'Follow-up Offer', true, false, 'Hot', 80),
+    (gen_random_uuid(), cat_contacted, 'Follow-up Referral', true, false, 'Hot', 90),
+    (gen_random_uuid(), cat_contacted, 'Semester Fee Paid', false, false, 'Admitted', 100),
+    (gen_random_uuid(), cat_contacted, 'Loan Rejected', false, true, 'Rejected', 110);
 
     -- Interest Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_high_int, cat_interest, 'Highly Interested', true, false, 'Interested', 10),
-    (disp_int, cat_interest, 'Interested', true, false, 'Interested', 20),
-    (disp_wants_info, cat_interest, 'Wants More Information', true, false, 'Interested', 30);
+    (disp_high_int, cat_interest, 'Highly Interested', true, false, 'Hot', 10),
+    (disp_int, cat_interest, 'Interested', true, false, 'Hot', 20),
+    (disp_wants_info, cat_interest, 'Wants More Information', true, false, 'Warm', 30);
 
     -- Qualification Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
@@ -211,26 +211,26 @@ BEGIN
 
     -- Objection Dispositions
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_payout_conc, cat_objection, 'Payout Concern', true, true, NULL, 10),
-    (disp_trust_conc, cat_objection, 'Trust Concern', true, true, NULL, 20);
+    (disp_payout_conc, cat_objection, 'Payout Concern', true, true, 'Warm', 10),
+    (disp_trust_conc, cat_objection, 'Trust Concern', true, true, 'Warm', 20);
 
     -- Not Interested
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_not_int, cat_not_int, 'Not Interested', false, true, 'Lost', 10);
+    (disp_not_int, cat_not_int, 'Not Interested', false, true, 'Rejected', 10);
 
     -- Onboarding
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_onboard_start, cat_onboard, 'Onboarding Started', true, false, 'Application Started', 10),
-    (disp_doc_pend, cat_onboard, 'Documents Pending', true, false, 'Documents Pending', 20);
+    (disp_onboard_start, cat_onboard, 'Onboarding Started', true, false, 'Application', 10),
+    (disp_doc_pend, cat_onboard, 'Documents Pending', true, false, 'Docs Pending', 20);
 
     -- Converted
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_part_act, cat_conv, 'Partner Activated', false, false, 'Admission Done', 10);
+    (disp_part_act, cat_conv, 'Partner Activated', false, false, 'Admitted', 10);
 
     -- Lost
     INSERT INTO public.dispositions (id, category_id, name, requires_follow_up, requires_note, target_status, order_index) VALUES 
-    (disp_lost, cat_lost, 'Lost', false, true, 'Lost', 10),
-    (disp_wrong_num, cat_lost, 'Wrong Number', false, false, 'Lost', 20);
+    (disp_lost, cat_lost, 'Lost', false, true, 'Rejected', 10),
+    (disp_wrong_num, cat_lost, 'Wrong Number', false, false, 'Rejected', 20);
 
     -- Sub-dispositions
     INSERT INTO public.sub_dispositions (disposition_id, name, order_index) VALUES

@@ -134,7 +134,7 @@ export function useStudentSuccess() {
             admission_status, current_stage, university_id, course_id,
             university:universities(id, name),
             course:courses(id, name),
-            lead:leads(id, full_name, partner_id)
+            lead:leads(id, first_name, last_name, partner_id)
           ),
           successExecutive:users!student_enrollments_success_executive_id_fkey(id, full_name)
         `)

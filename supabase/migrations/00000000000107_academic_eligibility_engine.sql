@@ -2,7 +2,7 @@
 
 -- 1. Program Eligibility Rules
 CREATE TABLE IF NOT EXISTS program_eligibility_rules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
     university_id UUID REFERENCES universities(id) ON DELETE CASCADE,
     rule_group_name TEXT NOT NULL,
@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_program_eligibility_rules_university_id ON progra
 
 -- 2. Program Fees
 CREATE TABLE IF NOT EXISTS program_fees (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
     university_id UUID REFERENCES universities(id) ON DELETE CASCADE,
     fee_category TEXT NOT NULL, -- 'Tuition', 'Application', 'Examination', 'Registration', etc.
@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_program_fees_course_id ON program_fees(course_id)
 
 -- 3. Scholarships
 CREATE TABLE IF NOT EXISTS program_scholarships (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     university_id UUID REFERENCES universities(id) ON DELETE CASCADE,
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -87,7 +87,7 @@ CREATE POLICY "Allow all operations for admins on rules"
 ON program_eligibility_rules FOR ALL TO authenticated 
 USING (
   EXISTS (
-    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role IN ('Super Admin', 'Admin')
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND public.user_role() IN ('Super Admin', 'Admin')
   )
 );
 
@@ -95,7 +95,7 @@ CREATE POLICY "Allow all operations for admins on fees"
 ON program_fees FOR ALL TO authenticated 
 USING (
   EXISTS (
-    SELECT 1 FROM users WHERE users.id = auth.uid() AND users.role IN ('Super Admin', 'Admin')
+    SELECT 1 FROM users WHERE users.id = auth.uid() AND public.user_role() IN ('Super Admin', 'Admin')
   )
 );
 

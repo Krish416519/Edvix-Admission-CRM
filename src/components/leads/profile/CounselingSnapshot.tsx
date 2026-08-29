@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Lead } from '../../../types/schema';
+import { computeIntent } from '../../../lib/leadIntent';
 import { 
   Zap, Flame, Thermometer, Snowflake, 
   AlertCircle, CheckCircle, HelpCircle, Clock, 
@@ -25,14 +26,6 @@ const ELIGIBILITY_CONFIG = {
   'MANUAL REVIEW': { icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Review' },
 } as const;
 
-function computeIntent(lead: Lead): 'HOT' | 'WARM' | 'COLD' {
-  const urgency = lead.urgency?.toLowerCase();
-  const status = (lead.leadStatus || lead.status || '').toLowerCase();
-  if (urgency === 'immediate' || status.includes('application') || status === 'qualified') return 'HOT';
-  if (urgency === 'high' || status === 'interested' || status === 'connected') return 'WARM';
-  return 'COLD';
-}
-
 function computeEligibility(lead: Lead): 'VERIFIED' | 'POSSIBLE' | 'NOT ELIGIBLE' | 'MANUAL REVIEW' {
   const gradPct = lead.graduationPercentage;
   const backlogs = lead.graduationBacklogs || 0;
@@ -43,19 +36,21 @@ function computeEligibility(lead: Lead): 'VERIFIED' | 'POSSIBLE' | 'NOT ELIGIBLE
 }
 
 function computeNextAction(lead: Lead): string {
-  const status = (lead.leadStatus || lead.status || 'New');
-  if (status === 'New') return 'Call student — first contact';
-  if (status === 'Attempted') return 'Retry call / send WhatsApp';
-  if (status === 'Connected' || status === 'Interested') {
+  const status = (lead.leadStatus || lead.status || 'Inquiry');
+  if (status === 'Inquiry') return 'Call student — first contact';
+  if (status === 'Not Connected') return 'Retry call / send WhatsApp';
+  if (status === 'Cold') return 'Warm up the lead with engagement';
+  if (status === 'Warm') return 'Send follow-up message';
+  if (status === 'Hot' || status === 'Interested') {
     if (!lead.graduationPercentage) return 'Capture academic details';
     if (!lead.course) return 'Recommend programs';
     return 'Schedule follow-up call';
   }
   if (status === 'Qualified') return 'Send university comparison';
-  if (status === 'Application Started') return 'Check pending documents';
-  if (status === 'Documents Pending') return 'Follow up on missing documents';
-  if (status === 'Admission Done') return 'Confirm payment receipt';
-  if (status === 'Lost') return 'Schedule re-engagement after 30 days';
+  if (status === 'Application') return 'Check pending documents';
+  if (status === 'Docs Pending') return 'Follow up on missing documents';
+  if (status === 'Admitted') return 'Confirm payment receipt';
+  if (status === 'Rejected' || status === 'Lost') return 'Schedule re-engagement after 30 days';
   return 'Review and update profile';
 }
 
@@ -86,7 +81,7 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
     ? `${lead.graduationDegree} — ${lead.graduationPercentage}%`
     : lead.education || '—';
 
-  const expSummary = lead.yearsOfExperience ? `${lead.yearsOfExperience} yrs` : (lead.employmentStatus || 'Fresher');
+  const expSummary = lead.yearsOfExperience ? `${lead.yearsOfExperience} yrs` : (lead.employmentStatus || 'Not Provided');
 
   const courseName = typeof lead.course === 'object' ? lead.course?.name : lead.course;
   const universityName = typeof lead.university === 'object' ? lead.university?.name : lead.university;
@@ -132,7 +127,7 @@ export function CounselingSnapshot({ lead }: CounselingSnapshotProps) {
             <Snip label="Budget" value={lead.budget || '—'} icon={DollarSign} dimmed={!lead.budget} />
             <Snip label="Program" value={courseName || '—'} icon={GraduationCap} dimmed={!courseName} />
             <Snip label="Preferred Univs" value={universityName || '—'} icon={Building} dimmed={!universityName} />
-            <Snip label="Main Objection" value={lead.aiObjectionDetected || 'None'} icon={AlertCircle} dimmed={!lead.aiObjectionDetected} />
+            <Snip label="Main Objection" value={lead.aiObjectionDetected || 'No objection recorded'} icon={AlertCircle} dimmed={!lead.aiObjectionDetected} />
             <Snip label="Urgency" value={lead.urgency || 'Unknown'} dimmed={!lead.urgency} />
           </div>
 

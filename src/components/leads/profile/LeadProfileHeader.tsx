@@ -7,14 +7,16 @@ import { format } from 'date-fns';
 export function LeadProfileHeader({ lead, actionButtons, onBack }: { lead: Lead, actionButtons?: React.ReactNode, onBack?: () => void }) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'New': return 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-500';
-      case 'Contacted': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-500';
-      case 'Interested': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-500';
+    case 'Inquiry': return 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-500';
+    case 'Not Connected': return 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-500';
+    case 'Cold': return 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-500';
+      case 'Warm': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-500';
+      case 'Hot': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/10 dark:text-orange-500';
       case 'Qualified': return 'bg-teal-100 text-teal-700 dark:bg-teal-500/10 dark:text-teal-500';
-      case 'Application Started': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-500';
-      case 'Documents Pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500';
-      case 'Admission Done': return 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500';
-      case 'Lost': return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500';
+      case 'Application': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-500';
+      case 'Docs Pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500';
+      case 'Admitted': return 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-500';
+      case 'Rejected': return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-500';
       default: return 'bg-muted text-muted-foreground';
     }
   };

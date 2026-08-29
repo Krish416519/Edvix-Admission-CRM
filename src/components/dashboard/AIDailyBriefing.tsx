@@ -4,6 +4,7 @@ import { Sparkles, Target, AlertCircle, TrendingUp, Calendar, ArrowRight } from 
 import { useLeads } from '../../hooks/useLeads';
 import { Skeleton } from '../ui/Skeleton';
 import { supabase } from '../../lib/supabase';
+import { computeIntent } from '../../lib/leadIntent';
 
 // Simulation of AI analyzing the dashboard
 export function AIDailyBriefing() {
@@ -56,8 +57,8 @@ export function AIDailyBriefing() {
     );
   }
 
-  const hotLeadsCount = leads.filter(l => l.score && l.score >= 80).length;
-  const pendingDocsCount = leads.filter(l => l.status === 'Documents Pending').length;
+  const hotLeadsCount = leads.filter(l => computeIntent(l) === 'HOT').length;
+  const pendingDocsCount = leads.filter(l => l.status === 'Docs Pending').length;
   const highConversionLeads = leads.filter(l => l.score && l.score >= 85).slice(0, 2);
   const highConversionNames = highConversionLeads.length > 0
     ? highConversionLeads.map(l => (l.name || 'Student').split(' ')[0]).join(' and ')

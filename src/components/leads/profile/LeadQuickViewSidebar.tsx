@@ -57,15 +57,16 @@ export function LeadQuickViewSidebar({
     const lastContactDate = lead.lastFollowUp ? new Date(lead.lastFollowUp) : null;
     const daysSinceContact = lastContactDate ? Math.floor((Date.now() - lastContactDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
-    if (status === 'New') return { label: 'Call Student Now', desc: 'First contact — no call recorded yet.', cta: 'Log Call' };
-    if (status === 'Attempted') return { label: 'Retry Call / WhatsApp', desc: 'Student not connected yet. Try again or send a WhatsApp.', cta: 'Try Again' };
-    if ((status === 'Connected' || status === 'Interested') && !hasAcademic) return { label: 'Verify Eligibility', desc: "Connected but academic history isn't captured. Fill the 360° profile.", cta: 'Update Profile' };
-    if ((status === 'Connected' || status === 'Interested') && !hasCourse) return { label: 'Recommend Programs', desc: 'Student eligible but no program shortlisted. Recommend courses.', cta: 'Match Courses' };
-    if (daysSinceContact > 14 && status !== 'Lost' && status !== 'Admission Done' && status !== 'Closed') return { label: 'Start Re-engagement', desc: 'No response for over 14 days. Reach out again.', cta: 'Re-engage' };
-    if (status === 'Interested' || status === 'Qualified') return { label: 'Schedule Follow-up', desc: 'Student is interested. Lock in a follow-up time now.', cta: 'Schedule' };
-    if (status === 'Application Started' || status === 'Documents Pending') return { label: 'Request Missing Documents', desc: 'Application in progress. Chase pending documents.', cta: 'Request Docs' };
-    if (status === 'Admission Done') return { label: 'Confirm Payment Received', desc: 'Admission confirmed. Verify payment and update records.', cta: 'Verify Payment' };
-    if (status === 'Lost') return { label: 'Schedule Re-engagement', desc: 'Lost lead. Re-engage after 30 days with updated offers.', cta: 'Set Reminder' };
+    if (status === 'Inquiry') return { label: 'Call Student Now', desc: 'First contact — no call recorded yet.', cta: 'Add Activity' };
+    if (status === 'Not Connected') return { label: 'Retry Call / WhatsApp', desc: 'Student not reached. Try again or send a WhatsApp.', cta: 'Try Again' };
+    if (status === 'Cold') return { label: 'Warm Up Lead', desc: 'Previously unconnected. Re-engage with WhatsApp or email.', cta: 'Warm Up' };
+    if ((status === 'Warm' || status === 'Hot') && !hasAcademic) return { label: 'Verify Eligibility', desc: "Connected but academic history isn't captured. Fill the 360° profile.", cta: 'Update Profile' };
+    if ((status === 'Warm' || status === 'Hot') && !hasCourse) return { label: 'Recommend Programs', desc: 'Student eligible but no program shortlisted. Recommend courses.', cta: 'Match Courses' };
+    if (daysSinceContact > 14 && status !== 'Rejected' && status !== 'Admitted' && status !== 'Closed') return { label: 'Start Re-engagement', desc: 'No response for over 14 days. Reach out again.', cta: 'Re-engage' };
+    if (status === 'Hot' || status === 'Qualified') return { label: 'Schedule Follow-up', desc: 'Student is interested. Lock in a follow-up time now.', cta: 'Schedule' };
+    if (status === 'Application' || status === 'Docs Pending') return { label: 'Request Missing Documents', desc: 'Application in progress. Chase pending documents.', cta: 'Request Docs' };
+    if (status === 'Admitted') return { label: 'Confirm Payment Received', desc: 'Admission confirmed. Verify payment and update records.', cta: 'Verify Payment' };
+    if (status === 'Rejected' || status === 'Lost') return { label: 'Schedule Re-engagement', desc: 'Lost lead. Re-engage after 30 days with updated offers.', cta: 'Set Reminder' };
     return { label: 'Review Lead Profile', desc: 'Review and update the student profile to proceed.', cta: 'Review' };
   };
 
