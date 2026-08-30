@@ -78,7 +78,7 @@ export function showTaskReminderToast(task: any) {
     ),
     {
       id: task.id,
-      duration: 30000, // 30 seconds
+      duration: 5000, // exactly 5 seconds per business requirement
       position: 'top-right',
     }
   );

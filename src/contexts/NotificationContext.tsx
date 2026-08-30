@@ -92,32 +92,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const shownPopupKeys = useRef<Set<string>>(new Set());
 
   // Cross-tab coordination: localStorage key for tracking popups shown across all tabs
+  // Keys are permanent for this browser session — once a notification ID has shown a popup,
+  // it must NEVER show again (canonical identity: notification.dedupe_key or notification.id)
   const POPUP_TRACKING_KEY = `kilo_notif_popups_${user?.id || 'none'}`;
 
-  // Check if a popup was recently shown for this key in ANY tab
+  // Check if a popup was already shown for this key in ANY tab (no expiry)
   const wasPopupShownInAnyTab = useCallback((key: string): boolean => {
+    if (shownPopupKeys.current.has(key)) return true;
     try {
       const stored = localStorage.getItem(POPUP_TRACKING_KEY);
       if (!stored) return false;
-      const map = JSON.parse(stored) as Record<string, number>;
-      const ts = map[key];
-      if (!ts) return false;
-      // Expire after 10 seconds — allows the same key to popup again if a genuinely new event
-      // occurs more than 10 seconds later (e.g., task rescheduled and triggered again)
-      return Date.now() - ts < 10000;
+      const popupKeys = JSON.parse(stored) as string[];
+      return popupKeys.includes(key);
     } catch {
       return false;
     }
   }, [POPUP_TRACKING_KEY]);
 
-  // Record that a popup was shown for this key in this tab
+  // Record that a popup was shown for this key — permanent for this browser session
   const recordPopupShown = useCallback((key: string) => {
     shownPopupKeys.current.add(key);
     try {
       const stored = localStorage.getItem(POPUP_TRACKING_KEY);
-      const map = stored ? JSON.parse(stored) as Record<string, number> : {};
-      map[key] = Date.now();
-      localStorage.setItem(POPUP_TRACKING_KEY, JSON.stringify(map));
+      const popupKeys = stored ? JSON.parse(stored) as string[] : [];
+      if (!popupKeys.includes(key)) {
+        popupKeys.push(key);
+        localStorage.setItem(POPUP_TRACKING_KEY, JSON.stringify(popupKeys));
+      }
     } catch {
       // ignore
     }
@@ -129,8 +130,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const handleStorage = (e: StorageEvent) => {
       if (e.key === POPUP_TRACKING_KEY && e.newValue) {
         try {
-          const map = JSON.parse(e.newValue) as Record<string, number>;
-          Object.keys(map).forEach(k => shownPopupKeys.current.add(k));
+          const popupKeys = JSON.parse(e.newValue) as string[];
+          popupKeys.forEach(k => shownPopupKeys.current.add(k));
         } catch {
           // ignore
         }
@@ -204,8 +205,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const now = Date.now();
     const lastPlayed = parseInt(localStorage.getItem('lastNotifSound') || '0', 10);
     if (now - lastPlayed > 3000) {
-      console.log('[NotificationSound] playSound called, context state:', audioContextRef.current?.state || 'not initialized');
-      try {
+       try {
         // Reuse a shared AudioContext (created on first user interaction)
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         if (!AudioContext) return;
@@ -294,21 +294,29 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
            // Only high/urgent events generate sounds or browser pushes
            const isHighPriority = ['High', 'Critical', 'Urgent'].includes(newRow.priority);
            
-            if (isHighPriority) {
-              console.log('[NotificationSound] Triggering sound for high-priority notification:', newRow.title);
-              playSound();
+             if (isHighPriority) {
+               playSound();
               
                 // Trigger UI Toast for Task Reminders
-                if (newRow.module === 'Tasks' && newRow.module_record_id) {
-                  // We only show toast for due_soon or due_now to avoid continuous overdue screaming
-                  if (newRow.category === 'task_due_soon' || newRow.category === 'task_due_now') {
-                    showTaskReminderToast({
-                      id: newRow.module_record_id,
-                      title: newRow.title,
-                      due_date: newRow.message,
-                      metadata: newRow.metadata || {}
-                    });
-                  }
+                 if (newRow.module === 'Tasks' && newRow.module_record_id) {
+                   // We only show toast for due_soon or due_now to avoid continuous overdue screaming
+                   if (newRow.category === 'task_due_soon' || newRow.category === 'task_due_now') {
+                     showTaskReminderToast({
+                       id: newRow.module_record_id,
+                       title: newRow.title,
+                       due_date: newRow.message,
+                       metadata: newRow.metadata || {}
+                     });
+                   }
+                 }
+                 else if (newRow.module?.toLowerCase() === 'leads' && newRow.module_record_id &&
+                          newRow.category?.toLowerCase() === 'assignment') {
+                   // Lead assignment: show a 5-second in-app toast
+                   // Click routing is handled via browser notification onClick and NotificationBell/NotificationsList
+                   toast(newRow.title, {
+                     description: newRow.message,
+                     duration: 5000
+                   });
                  }
                 
                 if ('Notification' in window && Notification.permission === 'granted') {

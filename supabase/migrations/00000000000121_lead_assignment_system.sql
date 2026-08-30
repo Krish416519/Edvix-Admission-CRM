@@ -129,19 +129,19 @@ BEGIN
     COALESCE(v_assigner_name, 'System')
   );
 
-  -- Create in-app notification for the new assignee
-  INSERT INTO public.notifications (recipient_id, module, module_record_id, title, message, channel, priority, category, status)
-  VALUES (
-    p_assignee_id,
-    'leads',
-    p_lead_id,
-    'New Lead Assigned',
-    'You have been assigned lead: ' || TRIM(v_lead_name) || ' by ' || COALESCE(v_assigner_name, 'Admin'),
-    'In-App',
-    'High',
-    'Assignment',
-    'Unread'
-  );
+   -- Create in-app notification for the new assignee
+   INSERT INTO public.notifications (recipient_id, module, module_record_id, title, message, channel, priority, category, status)
+   VALUES (
+     p_assignee_id,
+     'leads',
+     p_lead_id,
+     'New Lead Assigned',
+     'You have been assigned lead: ' || TRIM(v_lead_name) || ' by ' || COALESCE(v_assigner_name, 'Admin'),
+     'In-App',
+     'High',
+     'Assignment',
+     'Unread'
+   );
 
   RETURN jsonb_build_object(
     'success', true,
