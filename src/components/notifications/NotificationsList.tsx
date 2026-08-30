@@ -32,6 +32,12 @@ export function NotificationsList() {
       navigate(`/all-leads/${notification.moduleRecordId}`);
       return;
     }
+
+    // Direct routing for Tasks
+    if (notification.module?.toLowerCase() === 'tasks' && notification.moduleRecordId) {
+      navigate(`/tasks?taskId=${notification.moduleRecordId}`);
+      return;
+    }
   };
 
   const timeFormat = (dateString: string) => {

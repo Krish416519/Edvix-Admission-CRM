@@ -91,12 +91,61 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Used as a frontend safety net against duplicate popups from realtime events
   const shownPopupKeys = useRef<Set<string>>(new Set());
 
+  // Cross-tab coordination: localStorage key for tracking popups shown across all tabs
+  const POPUP_TRACKING_KEY = `kilo_notif_popups_${user?.id || 'none'}`;
+
+  // Check if a popup was recently shown for this key in ANY tab
+  const wasPopupShownInAnyTab = useCallback((key: string): boolean => {
+    try {
+      const stored = localStorage.getItem(POPUP_TRACKING_KEY);
+      if (!stored) return false;
+      const map = JSON.parse(stored) as Record<string, number>;
+      const ts = map[key];
+      if (!ts) return false;
+      // Expire after 10 seconds — allows the same key to popup again if a genuinely new event
+      // occurs more than 10 seconds later (e.g., task rescheduled and triggered again)
+      return Date.now() - ts < 10000;
+    } catch {
+      return false;
+    }
+  }, [POPUP_TRACKING_KEY]);
+
+  // Record that a popup was shown for this key in this tab
+  const recordPopupShown = useCallback((key: string) => {
+    shownPopupKeys.current.add(key);
+    try {
+      const stored = localStorage.getItem(POPUP_TRACKING_KEY);
+      const map = stored ? JSON.parse(stored) as Record<string, number> : {};
+      map[key] = Date.now();
+      localStorage.setItem(POPUP_TRACKING_KEY, JSON.stringify(map));
+    } catch {
+      // ignore
+    }
+  }, [POPUP_TRACKING_KEY]);
+
+  // Listen for popup events from other tabs
+  useEffect(() => {
+    if (!user) return;
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === POPUP_TRACKING_KEY && e.newValue) {
+        try {
+          const map = JSON.parse(e.newValue) as Record<string, number>;
+          Object.keys(map).forEach(k => shownPopupKeys.current.add(k));
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [POPUP_TRACKING_KEY, user]);
+
   // Generate a stable dedupe_key for task reminder notifications
   // Format: module:module_record_id:category
-  const generateDedupeKey = (newNotif: Partial<AppNotification>): string | null => {
+  const generateDedupeKey = useCallback((newNotif: Partial<AppNotification>): string | null => {
     if (!newNotif.moduleRecordId) return null;
     return `${newNotif.module || 'System'}:${newNotif.moduleRecordId}:${newNotif.category || 'general'}`;
-  };
+  }, []);
 
   // Provide a bridge method for UI to inject notifications (with deduplication support)
   const addNotification = useCallback(async (newNotif: Partial<AppNotification>) => {
@@ -123,7 +172,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         message: newNotif.message || '',
         priority: newNotif.priority || 'Low',
         category: newNotif.category || 'general',
-        dedupe_key: dedupeKey
+        dedupe_key: dedupeKey,
+        metadata: newNotif.metadata || {}
       };
 
       // Use INSERT with ON CONFLICT to be idempotent
@@ -232,63 +282,67 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                ? `popup:${newRow.module}:${newRow.module_record_id}:${newRow.category}`
                : null);
 
-           // Frontend deduplication: skip popup/sound if this event was already shown
-           if (popupKey && shownPopupKeys.current.has(popupKey)) {
-             return;
-           }
-           if (popupKey) {
-             shownPopupKeys.current.add(popupKey);
-           }
+            // Frontend deduplication: skip popup/sound if this event was already shown
+            // in this tab OR in any other tab (cross-tab coordination)
+            if (popupKey && (shownPopupKeys.current.has(popupKey) || wasPopupShownInAnyTab(popupKey))) {
+              return;
+            }
+            if (popupKey) {
+              recordPopupShown(popupKey);
+            }
 
            // Only high/urgent events generate sounds or browser pushes
            const isHighPriority = ['High', 'Critical', 'Urgent'].includes(newRow.priority);
            
-           if (isHighPriority) {
-             console.log('[NotificationSound] Triggering sound for high-priority notification:', newRow.title);
-             playSound();
-             
-              // Trigger UI Toast for Task Reminders
-              if (newRow.module === 'Tasks' && newRow.module_record_id) {
-                // We only show toast for due_soon or due_now to avoid continuous overdue screaming
-                if (newRow.category === 'task_due_soon' || newRow.category === 'task_due_now') {
-                  showTaskReminderToast({
-                    id: newRow.module_record_id,
-                    title: newRow.title,
-                    due_date: newRow.message, // using message as a fallback description
-                  });
-                }
-              }
+            if (isHighPriority) {
+              console.log('[NotificationSound] Triggering sound for high-priority notification:', newRow.title);
+              playSound();
               
-              if ('Notification' in window && Notification.permission === 'granted') {
-                try {
-                  const notification = new Notification(newRow.title, {
-                    body: newRow.message,
-                    icon: '/favicon.ico'
-                  });
-                  
-                  notification.onclick = () => {
-                    window.focus();
-                    if (newRow.module?.toLowerCase() === 'leads' && newRow.module_record_id) {
-                      window.location.href = `/all-leads/${newRow.module_record_id}`;
-                    } else if (newRow.module?.toLowerCase() === 'tasks') {
-                      window.location.href = '/tasks';
-                    } else {
-                      window.location.href = '/notifications';
-                    }
-                  };
-                } catch (e) {
-                  console.error('Failed to show browser notification', e);
+                // Trigger UI Toast for Task Reminders
+                if (newRow.module === 'Tasks' && newRow.module_record_id) {
+                  // We only show toast for due_soon or due_now to avoid continuous overdue screaming
+                  if (newRow.category === 'task_due_soon' || newRow.category === 'task_due_now') {
+                    showTaskReminderToast({
+                      id: newRow.module_record_id,
+                      title: newRow.title,
+                      due_date: newRow.message,
+                      metadata: newRow.metadata || {}
+                    });
+                  }
+                 }
+                
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  try {
+                    const notification = new Notification(newRow.title, {
+                      body: newRow.message,
+                      icon: '/favicon.ico'
+                    });
+                    
+                    notification.onclick = () => {
+                      window.focus();
+                      if (newRow.metadata?.link) {
+                        window.location.href = newRow.metadata.link;
+                      } else if (newRow.module?.toLowerCase() === 'leads' && newRow.module_record_id) {
+                        window.location.href = `/all-leads/${newRow.module_record_id}`;
+                      } else if (newRow.module?.toLowerCase() === 'tasks' && newRow.module_record_id) {
+                        window.location.href = `/tasks?taskId=${newRow.module_record_id}`;
+                      } else {
+                        window.location.href = '/notifications';
+                      }
+                    };
+                  } catch (e) {
+                    console.error('Failed to show browser notification', e);
+                  }
                 }
               }
-            }
          }
-       })
-       .subscribe();
+      })
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications, playSound]);
+    }, [user, fetchNotifications, playSound, POPUP_TRACKING_KEY, wasPopupShownInAnyTab, recordPopupShown, showTaskReminderToast]);
 
   // Distributed Background Scheduler for Task Due/Overdue Reminders
   useEffect(() => {
@@ -314,14 +368,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           return;
         }
 
-        // Fetch existing unread task notifications to avoid re-creating them
+        // Fetch existing task notifications (ALL non-Deleted, not just Unread) to prevent duplicates
         const taskIds = tasks.map(t => t.id);
         const { data: existingNotifs, error: notifError } = await supabase
           .from('notifications')
           .select('module_record_id, category')
           .eq('recipient_id', user.id)
           .eq('module', 'Tasks')
-          .eq('status', 'Unread')
+          .neq('status', 'Deleted')
           .in('module_record_id', taskIds);
 
         const existingKeys = new Set<string>();
@@ -364,29 +418,25 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
               category = 'task_due_now';
               title = 'Task Due Now';
               message = `Your task "${task.title}" is due right now.`;
-              priority = 'High';
-            }
-            // Overdue: more than 5 minutes late
-            else if (diffMinutes <= -5) {
-              category = 'task_overdue';
-              title = 'Task Overdue';
-              message = `Your task "${task.title}" is overdue.`;
               priority = 'Medium';
             }
+            // No task_overdue category — tasks that remain pending/overdue
+            // do NOT generate additional notification events beyond the 2 legitimate ones.
             
             if (category) {
               const dedupeKey = `Tasks:${task.id}:${category}`;
               // Skip if an unread notification already exists for this task+category
-              if (existingKeys.has(dedupeKey)) continue;
+               if (existingKeys.has(dedupeKey)) continue;
               
-              await addNotification({
-                module: 'Tasks',
-                moduleRecordId: task.id,
-                title,
-                message,
-                priority,
-                category
-              });
+               await addNotification({
+                 module: 'Tasks',
+                 moduleRecordId: task.id,
+                 title,
+                 message,
+                 priority,
+                 category,
+                 metadata: { link: `/tasks?taskId=${task.id}` }
+               });
             }
         }
       } catch (err: any) {

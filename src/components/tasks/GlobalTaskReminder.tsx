@@ -48,7 +48,10 @@ export function showTaskReminderToast(task: any) {
               <button
                 onClick={() => {
                   if (typeof t === 'number' || typeof t === 'string') toast.dismiss(t); else toast.dismiss();
-                  if (task.lead_id) {
+                  // Navigate to task via metadata.link if available, otherwise fallback
+                  if (task.metadata?.link) {
+                    window.location.href = task.metadata.link;
+                  } else if (task.lead_id) {
                     window.location.href = `/all-leads/${task.lead_id}`;
                   } else {
                     window.location.href = '/tasks';

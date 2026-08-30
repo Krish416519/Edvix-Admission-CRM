@@ -51,6 +51,13 @@ export function NotificationBell() {
       setIsOpen(false);
       return;
     }
+
+    // Direct routing for Tasks
+    if (notification.module?.toLowerCase() === 'tasks' && notification.moduleRecordId) {
+      navigate(`/tasks?taskId=${notification.moduleRecordId}`);
+      setIsOpen(false);
+      return;
+    }
   };
 
   const timeAgo = (dateString: string) => {

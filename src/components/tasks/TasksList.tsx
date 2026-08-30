@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Task, TaskStatus, TaskPriority, TaskType } from '../../types/task';
 import { LeadStatus } from '../../types/schema';
 import { cn } from '../../lib/utils';
@@ -21,6 +21,8 @@ import { useTasks } from '../../hooks/useTasks';
 
 export function TasksList() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const taskIdParam = searchParams.get('taskId');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'All'>('All');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -148,6 +150,20 @@ export function TasksList() {
       default: return <Clock className="w-4 h-4" />;
     }
   };
+
+  // Auto-scroll to task when arriving via notification click
+  useEffect(() => {
+    if (taskIdParam && tasks.length > 0 && !isLoading) {
+      setTimeout(() => {
+        const taskEl = document.getElementById(`task-${taskIdParam}`);
+        if (taskEl) {
+          taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          taskEl.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          setTimeout(() => taskEl.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 3000);
+        }
+      }, 300);
+    }
+  }, [taskIdParam, tasks, isLoading]);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 p-4 sm:p-8">
@@ -277,9 +293,10 @@ export function TasksList() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredTasks.map((task) => (
-                    <tr 
-                      key={task.id} 
-                      className={cn(
+                     <tr 
+                       key={task.id} 
+                       id={`task-${task.id}`}
+                       className={cn(
                         "hover:bg-muted/30 transition-colors group cursor-pointer",
                         task.status === 'Completed' && "opacity-60 bg-muted/10"
                       )}
