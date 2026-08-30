@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { SMART_VIEWS, SmartViewId, SmartViewConfig, getSmartView } from '../constants/smartViews';
 import { DEFAULT_PIPELINE_STAGES } from '../constants/pipelineStages';
 import { startOfDay, subDays, addDays } from 'date-fns';
+import { getCategoryByName, getDispositionIdsByCategory } from './useDispositions';
+import { DispositionCategory, Disposition } from '../types/disposition';
 
 export interface StageCount {
   stage: string;
@@ -40,37 +42,12 @@ export interface UseSmartViewOptions {
   sort?: { field: string; direction: 'asc' | 'desc' } | null;
 }
 
-const NOT_CONNECTED_DISPOSITIONS = new Set([
-  'Switched Off',
-  'Not Reachable',
-  'Number Busy',
-  'Ringing No Answer',
-  'Invalid Number',
-]);
-
-const CONNECTED_DISPOSITIONS = new Set([
-  'Not Interested',
-  'Counselled',
-  'Follow Up',
-  'Meeting Done',
-  'Registration Done',
-  'Document Collected',
-  'Follow-up Offer',
-  'Follow-up Referral',
-  'Semester Fee Paid',
-  'Loan Rejected',
-  'Call Back Requested',
-  'Highly Interested',
-  'Interested',
-  'Wants More Information',
-  'Qualified Partner',
-  'Potential Partner',
-  'Payout Concern',
-  'Trust Concern',
-  'Onboarding Started',
-  'Documents Pending',
-  'Partner Activated',
-]);
+export interface UseSmartViewOptions {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sort?: { field: string; direction: 'asc' | 'desc' } | null;
+}
 
 export function useSmartView(viewId: SmartViewId | string | undefined, options?: UseSmartViewOptions) {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -81,9 +58,52 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
   const { user } = useAuth();
 
   const [savedViews, setSavedViews] = useState<SmartViewConfigRecord[]>([]);
+  const [categories, setCategories] = useState<DispositionCategory[]>([]);
+  const [dispositions, setDispositions] = useState<Disposition[]>([]);
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  const loadDispositionConfig = useCallback(async () => {
+    try {
+      const [catsRes, dispRes] = await Promise.all([
+        supabase.from('disposition_categories').select('*').eq('is_active', true).order('order_index', { ascending: true }),
+        supabase.from('dispositions').select('*').eq('is_active', true).order('order_index', { ascending: true })
+      ]);
+      if (!catsRes.error) setCategories(catsRes.data || []);
+      if (!dispRes.error) setDispositions(dispRes.data || []);
+      setConfigLoaded(true);
+    } catch (err: any) {
+      console.error('Failed to load disposition config', err);
+      setConfigLoaded(true);
+    }
+  }, []);
+
+  const notConnectedCatId = useMemo(() => {
+    const cat = getCategoryByName(categories, 'NOT CONNECTED');
+    return cat?.id || null;
+  }, [categories]);
+
+  const interestedCatId = useMemo(() => {
+    const cat = getCategoryByName(categories, 'INTEREST / INTENT');
+    return cat?.id || null;
+  }, [categories]);
+
+  const notConnectedDispositionIds = useMemo(() => {
+    if (!notConnectedCatId) return [];
+    return getDispositionIdsByCategory(notConnectedCatId, dispositions);
+  }, [notConnectedCatId, dispositions]);
+
+  const interestedDispositionIds = useMemo(() => {
+    if (!interestedCatId) return [];
+    return getDispositionIdsByCategory(interestedCatId, dispositions);
+  }, [interestedCatId, dispositions]);
+
+  const connectedDispositionIds = useMemo(() => {
+    return dispositions.filter(d => d.category_id !== notConnectedCatId && d.category_id !== null).map(d => d.id);
+  }, [notConnectedCatId, dispositions]);
 
   useEffect(() => {
     const loadConfig = async () => {
+      await loadDispositionConfig();
       const { data, error: configError } = await supabase
         .from('system_settings')
         .select('value')
@@ -113,6 +133,9 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
    const fetchLeads = useCallback(async () => {
     if (!user) {
       setLoading(false);
+      return;
+    }
+    if (!configLoaded) {
       return;
     }
     if (!isViewEnabled) {
@@ -438,44 +461,56 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
           }
 
           case 'connected': {
-            // Latest disposition's name is in the connected set
-            const { data, error } = await applySort(
-              applySearch(
-                buildBaseQuery()
-                  .not('latest_disposition_id', 'is', null)
-              )
-            );
-            if (error) throw error;
-            // Client-side filter: latest disposition name must be in Connected set
-            allData = (data || []).filter((d: any) => d.disposition && CONNECTED_DISPOSITIONS.has(d.disposition.name));
-            count = allData.length;
-            break;
-          }
-
-          case 'not_connected': {
-            // Latest disposition's name is in the not-connected set
-            const { data, error } = await applySort(
-              applySearch(
-                buildBaseQuery()
-                  .not('latest_disposition_id', 'is', null)
-              )
-            );
-            if (error) throw error;
-            allData = (data || []).filter((d: any) => d.disposition && NOT_CONNECTED_DISPOSITIONS.has(d.disposition.name));
-            count = allData.length;
-            break;
-          }
-
-          case 'interested': {
-            // Leads whose latest disposition is in the Interest/Intent category.
-            // "Highly Interested" and "Interested" → target_status 'Hot'
-            // "Wants More Information" → target_status 'Warm'
-            // Filter by lead_status (canonical, set by disposition) instead of disposition names.
+            if (!configLoaded || connectedDispositionIds.length === 0) {
+              allData = [];
+              count = 0;
+              break;
+            }
             const { data, count: cnt, error } = await applyPagination(
               applySort(
                 applySearch(
                   buildBaseQuery()
-                    .in('lead_status', ['Hot', 'Warm'])
+                    .in('latest_disposition_id', connectedDispositionIds)
+                )
+              )
+            );
+            if (error) throw error;
+            allData = data || [];
+            count = cnt || 0;
+            break;
+          }
+
+          case 'not_connected': {
+            if (!configLoaded || notConnectedDispositionIds.length === 0) {
+              allData = [];
+              count = 0;
+              break;
+            }
+            const { data, count: cnt, error } = await applyPagination(
+              applySort(
+                applySearch(
+                  buildBaseQuery()
+                    .in('latest_disposition_id', notConnectedDispositionIds)
+                )
+              )
+            );
+            if (error) throw error;
+            allData = data || [];
+            count = cnt || 0;
+            break;
+          }
+
+          case 'interested': {
+            if (!configLoaded || interestedDispositionIds.length === 0) {
+              allData = [];
+              count = 0;
+              break;
+            }
+            const { data, count: cnt, error } = await applyPagination(
+              applySort(
+                applySearch(
+                  buildBaseQuery()
+                    .in('latest_disposition_id', interestedDispositionIds)
                 )
               )
             );
@@ -629,7 +664,7 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
     } finally {
       setLoading(false);
     }
-   }, [viewId, view, viewConfig, isViewEnabled, user, isSuperAdmin, options?.page, options?.pageSize, options?.search, JSON.stringify(options?.sort)]);
+   }, [viewId, view, viewConfig, isViewEnabled, user, isSuperAdmin, configLoaded, connectedDispositionIds, notConnectedDispositionIds, interestedDispositionIds, options?.page, options?.pageSize, options?.search, JSON.stringify(options?.sort)]);
 
   useEffect(() => {
     fetchLeads();

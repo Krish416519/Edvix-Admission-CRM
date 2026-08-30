@@ -7,6 +7,7 @@ import {
   X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Merge, Check, Columns, GripVertical
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
+import { useDispositions } from '../../hooks/useDispositions';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { cn, formatDate } from '../../lib/utils';
 import { computeIntent } from '../../lib/leadIntent';
@@ -186,6 +187,8 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const [bulkUpdateField, setBulkUpdateField] = useState<'status' | 'priority' | 'source' | ''>('');
   const [bulkUpdateValue, setBulkUpdateValue] = useState('');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  
+  const { categories: dispositionCategories } = useDispositions();
 
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
@@ -1134,21 +1137,11 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                   }}
                   className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
                 >
-                  <option value="All">All Dispositions</option>
-                  {[
-                    'CONTACTED',
-                    'INTEREST / INTENT',
-                    'QUALIFICATION',
-                    'OBJECTION / BARRIER',
-                    'NOT INTERESTED',
-                    'FOLLOW-UP REQUIRED',
-                    'PARTNER ONBOARDING',
-                    'CONVERTED',
-                    'LOST / CLOSED'
-                  ].map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                   <option value="All">All Dispositions</option>
+                   {dispositionCategories.map(cat => (
+                     <option key={cat.id} value={cat.name}>{cat.name}</option>
+                   ))}
+                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               </div>
             </div>

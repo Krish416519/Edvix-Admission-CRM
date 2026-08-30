@@ -51,7 +51,7 @@ export function useLeads(options?: UseLeadsOptions) {
             .maybeSingle();
             
           if (catData) {
-            const { data: dispData } = await supabase.from('dispositions').select('id').eq('category_id', catData.id);
+            const { data: dispData } = await supabase.from('dispositions').select('id').eq('category_id', catData.id).eq('is_active', true);
             if (dispData && dispData.length > 0) {
               matchingDispositionIds = dispData.map(d => d.id);
             } else {

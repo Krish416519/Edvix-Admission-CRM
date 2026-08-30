@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '../../../lib/supabase';
 import { Calendar, Clock, FileText, CheckCircle2, ChevronDown, X, UploadCloud } from 'lucide-react';
 import { uploadFileToStorage, generateStoragePath } from '../../../lib/documentStorage';
+import { getCategoryByName } from '../../../hooks/useDispositions';
 
 function CustomSelect({
   value,
@@ -197,7 +198,7 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
 
     if (!catId) return;
     try {
-      const notConnectedCat = categories.find(c => c.name.toUpperCase() === 'NOT CONNECTED');
+      const notConnectedCat = getCategoryByName(categories, 'NOT CONNECTED');
       if (notConnectedCat && catId === notConnectedCat.id) {
         const disps = await dispositionService.getDispositions(catId);
         setDispositions(disps);
@@ -246,7 +247,7 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
       return;
     }
 
-    if (activeDisposition?.target_status === 'Lost' && (!lostReason || lostReason.trim() === '')) {
+    if (activeDisposition?.target_status === 'Rejected' && (!lostReason || lostReason.trim() === '')) {
       toast.error('Lost Reason is required when marking a lead as Lost');
       return;
     }
@@ -433,12 +434,16 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
               value={selectedCategory}
               onChange={handleCategoryChange}
               placeholder="Select Status"
-              options={categories
-                .filter(c => c.name.toUpperCase() === 'CONTACTED' || c.name.toUpperCase() === 'NOT CONNECTED')
-                .map(c => ({
-                  value: c.id,
-                  label: c.name.toUpperCase() === 'CONTACTED' ? 'Connected' : 'Not Connected'
-                }))}
+              options={(() => {
+                const contactedCat = getCategoryByName(categories, 'CONTACTED');
+                const notConnectedCat = getCategoryByName(categories, 'NOT CONNECTED');
+                return categories
+                  .filter(c => c.id === contactedCat?.id || c.id === notConnectedCat?.id)
+                  .map(c => ({
+                    value: c.id,
+                    label: c.id === contactedCat?.id ? 'Connected' : 'Not Connected'
+                  }));
+              })()}
             />
           </div>
 
