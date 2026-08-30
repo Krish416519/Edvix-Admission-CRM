@@ -104,6 +104,10 @@ so renaming a disposition updates the display name everywhere without breaking r
 
 4. **Duplicate target_status='Rejected' dispositions**: Multiple dispositions across categories map to 'Rejected' (Not Interested, Wrong Number, Invalid Number, Lost), which is correct business behavior.
 
+5. **Only 2 categories are active**: Only `NOT CONNECTED` and `CONTACTED` categories have `is_active = true`. All other categories (INTEREST / INTENT, QUALIFICATION, etc.) are inactive. All 16 active dispositions correctly reside within the 2 active categories. A legacy test category `"Tst"` (id: `18f25bb3...`) exists as inactive.
+
+6. **INTEREST / INTENT category is inactive**: The `interested` Smart View now filters by `latest_disposition_id IN (disposition IDs in INTEREST / INTENT category)`. Since this category and its dispositions are currently inactive, the view will return 0 results until activated. This is **correct behavior** — the architecture follows the DB configuration. Previously, the view filtered by `lead_status IN ('Hot', 'Warm')` which returned results regardless of disposition configuration.
+
 ---
 
 ## 3. Hardcoded Disposition Audit
