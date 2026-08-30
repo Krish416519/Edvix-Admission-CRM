@@ -5,8 +5,19 @@
 -- Add metadata.link for task click routing
 -- =============================================================================
 
--- 1. Update unique index: remove 'task_overdue' (not a legitimate event per business rules)
---    Keep only 'task_due_soon' and 'task_due_now' — exactly TWO events per task
+-- 1. Clean up duplicate task notifications before recreating the unique index.
+--    Existing production data may contain duplicate (recipient_id, module_record_id, category)
+--    rows from before the dedupe fix was applied. Keep only the newest duplicate per group.
+DELETE FROM public.notifications a
+USING public.notifications b
+WHERE a.ctid > b.ctid
+  AND a.recipient_id = b.recipient_id
+  AND a.module_record_id = b.module_record_id
+  AND a.category = b.category
+  AND a.category IN ('task_due_soon', 'task_due_now');
+
+-- 1b. Update unique index: remove 'task_overdue' (not a legitimate event per business rules)
+--     Keep only 'task_due_soon' and 'task_due_now' — exactly TWO events per task
 DROP INDEX IF EXISTS public.idx_notifications_task_dedup;
 CREATE UNIQUE INDEX idx_notifications_task_dedup 
 ON public.notifications (recipient_id, module_record_id, category)

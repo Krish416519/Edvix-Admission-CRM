@@ -9,7 +9,8 @@
 --      Result: the new assignee misses the immediate "Task Assigned" notification.
 -- =============================================================================
 
--- Drop and recreate the lifecycle reset trigger to also notify the new assignee
+-- Drop the trigger first (function has a dependent trigger)
+DROP TRIGGER IF EXISTS trg_task_lifecycle_reset_on_update ON public.tasks;
 DROP FUNCTION IF EXISTS public.trg_reset_task_lifecycle();
 
 CREATE OR REPLACE FUNCTION public.trg_reset_task_lifecycle()

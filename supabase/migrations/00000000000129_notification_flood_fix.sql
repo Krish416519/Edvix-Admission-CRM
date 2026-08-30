@@ -12,6 +12,15 @@ CREATE INDEX IF NOT EXISTS idx_notifications_dedupe_key
 ON public.notifications(recipient_id, dedupe_key) 
 WHERE dedupe_key IS NOT NULL AND status = 'Unread';
 
+-- Clean up any existing duplicate task notifications before recreating the unique index
+DELETE FROM public.notifications a
+USING public.notifications b
+WHERE a.ctid > b.ctid
+  AND a.recipient_id = b.recipient_id
+  AND a.module_record_id = b.module_record_id
+  AND a.category = b.category
+  AND a.category IN ('task_due_soon', 'task_due_now', 'task_overdue');
+
 -- Drop the old partial unique index and recreate with expanded coverage
 -- OLD: only covered 'task_due_soon' and 'task_overdue'
 -- NEW: covers ALL task reminder categories including 'task_due_now'
