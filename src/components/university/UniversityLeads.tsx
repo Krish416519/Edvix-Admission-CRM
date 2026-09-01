@@ -11,9 +11,9 @@ export function UniversityLeads() {
   
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => 
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm)
+      (lead.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (lead.email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (lead.phone ?? '').includes(searchTerm)
     );
   }, [leads, searchTerm]);
 
@@ -99,9 +99,9 @@ export function UniversityLeads() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                          {lead.assignedTo?.charAt(0) || 'U'}
+                          {lead.assignedCounselor?.charAt(0) || 'U'}
                         </div>
-                        <span className="text-foreground">{lead.assignedTo || 'Unassigned'}</span>
+                        <span className="text-foreground">{lead.assignedCounselor || 'Unassigned'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground">

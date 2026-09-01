@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
+import { useLeadFields } from '../../hooks/useLeadFields';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface LeadFormModalProps {
 }
 
 export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFormModalProps) {
+  const { fields } = useLeadFields();
+
   const [formData, setFormData] = useState<Partial<Lead>>(
     initialData || {
       name: '',
@@ -19,13 +22,12 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
       email: '',
       state: '',
       city: '',
-      course: '',
-      university: '',
       budget: '',
       source: 'Organic',
       priority: 'Medium' as LeadPriority,
       status: 'New' as LeadStatus,
       score: 50,
+      customFields: initialData?.customFields || {}
     }
   );
   
@@ -37,7 +39,15 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name.startsWith('custom_')) {
+      const fieldName = name.replace('custom_', '');
+      setFormData(prev => ({
+        ...prev,
+        customFields: { ...prev.customFields, [fieldName]: value }
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const performSubmit = () => {
@@ -213,11 +223,23 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Target Program</label>
+              <label className="text-sm font-medium">Budget</label>
               <input
                 type="text"
-                name="course"
-                value={formData.course || ''}
+                name="budget"
+                value={formData.budget || ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                placeholder="e.g. 50,000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Course Name</label>
+              <input
+                type="text"
+                name="custom_course_name"
+                value={formData.customFields?.['course_name'] || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 placeholder="e.g. MBA"
@@ -225,16 +247,48 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Target University</label>
+              <label className="text-sm font-medium">University Name</label>
               <input
                 type="text"
-                name="university"
-                value={formData.university || ''}
+                name="custom_university_name"
+                value={formData.customFields?.['university_name'] || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                placeholder="University"
+                placeholder="e.g. Stanford"
               />
             </div>
+
+            {fields.filter(f => f.isActive).map(field => (
+              <div key={field.id} className="space-y-2">
+                <label className="text-sm font-medium">
+                  {field.fieldLabel} {field.isRequired && '*'}
+                </label>
+                {field.fieldType === 'select' ? (
+                  <select
+                    name={`custom_${field.fieldName}`}
+                    required={field.isRequired}
+                    value={formData.customFields?.[field.fieldName] || ''}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  >
+                    <option value="">Select {field.fieldLabel}</option>
+                    {field.options?.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.fieldType === 'number' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
+                    name={`custom_${field.fieldName}`}
+                    required={field.isRequired}
+                    value={formData.customFields?.[field.fieldName] || ''}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                    placeholder={field.fieldLabel}
+                  />
+                )}
+              </div>
+            ))}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Source</label>

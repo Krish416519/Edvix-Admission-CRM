@@ -1,6 +1,6 @@
 
 import { useSubmissionReadiness } from '../../hooks/useUniversityOps';
-import { CheckCircle, XCircle, AlertCircle, FileText, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Skeleton } from '../ui/Skeleton';
 

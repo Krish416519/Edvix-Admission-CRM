@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useUniversityResponses } from '../../hooks/useUniversityOps';
-import { Inbox, CheckCircle2, Clock, AlertTriangle, Search, Filter, MessageSquare, Mail, Terminal, Link, ChevronRight, Building2 } from 'lucide-react';
+import { Inbox, CheckCircle2, Clock, AlertTriangle, Search, MessageSquare, Mail, Terminal, Link, Building2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Skeleton } from '../ui/Skeleton';
-import { EmptyState } from '../ui/EmptyState';
+
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 

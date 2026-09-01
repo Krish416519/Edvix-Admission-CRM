@@ -17,7 +17,7 @@ import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function UniversityOpsLayout() {
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [

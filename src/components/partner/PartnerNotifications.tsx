@@ -39,22 +39,22 @@ export function PartnerNotifications() {
             {notifications.map((notification) => (
               <div 
                 key={notification.id} 
-                className={`p-4 flex gap-4 transition-colors ${!notification.is_read ? 'bg-primary/5' : 'bg-background hover:bg-muted/50'}`}
+                className={`p-4 flex gap-4 transition-colors ${notification.status !== 'Read' ? 'bg-primary/5' : 'bg-background hover:bg-muted/50'}`}
               >
-                <div className={`mt-1 flex-shrink-0 w-2 h-2 rounded-full ${!notification.is_read ? 'bg-primary' : 'bg-transparent'}`} />
+                <div className={`mt-1 flex-shrink-0 w-2 h-2 rounded-full ${notification.status !== 'Read' ? 'bg-primary' : 'bg-transparent'}`} />
                 <div className="flex-1 min-w-0">
-                  <h4 className={`text-sm font-medium ${!notification.is_read ? 'text-foreground' : 'text-foreground/80'}`}>
+                  <h4 className={`text-sm font-medium ${notification.status !== 'Read' ? 'text-foreground' : 'text-foreground/80'}`}>
                     {notification.title}
                   </h4>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {notification.message}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(notification.created_at).toLocaleString()}
+                    {new Date(notification.createdAt || '').toLocaleString()}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 sm:opacity-100">
-                  {!notification.is_read && (
+                  {notification.status !== 'Read' && (
                     <button 
                       onClick={() => markAsRead(notification.id)}
                       className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-muted transition-colors"

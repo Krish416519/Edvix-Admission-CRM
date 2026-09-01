@@ -36,12 +36,6 @@ BEGIN
     IF TG_TABLE_NAME = 'leads' THEN
         event_prefix := 'lead.';
         org_id := NEW.organization_id;
-    ELSIF TG_TABLE_NAME = 'students' THEN
-        event_prefix := 'student.';
-        org_id := NEW.organization_id;
-    ELSIF TG_TABLE_NAME = 'applications' THEN
-        event_prefix := 'application.';
-        org_id := NEW.organization_id;
     ELSIF TG_TABLE_NAME = 'admissions' THEN
         event_prefix := 'admission.';
         org_id := (SELECT organization_id FROM public.leads WHERE id = NEW.lead_id LIMIT 1);
@@ -62,8 +56,6 @@ BEGIN
         evt := event_prefix || 'created';
     ELSIF TG_OP = 'UPDATE' THEN
         IF TG_TABLE_NAME = 'leads' AND NEW.status != OLD.status THEN
-            evt := event_prefix || 'status_changed';
-        ELSIF TG_TABLE_NAME = 'applications' AND NEW.status != OLD.status THEN
             evt := event_prefix || 'status_changed';
         ELSIF TG_TABLE_NAME = 'admissions' AND NEW.status != OLD.status THEN
             evt := event_prefix || 'status_changed';
@@ -103,16 +95,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Add triggers for other tables (Lead already handled by notify_lead_events, but we can add this for the rest)
-
-DROP TRIGGER IF EXISTS automation_dispatch_students ON public.students;
-CREATE TRIGGER automation_dispatch_students
-    AFTER INSERT OR UPDATE ON public.students
-    FOR EACH ROW EXECUTE FUNCTION public.dispatch_automation_event();
-
-DROP TRIGGER IF EXISTS automation_dispatch_applications ON public.applications;
-CREATE TRIGGER automation_dispatch_applications
-    AFTER INSERT OR UPDATE ON public.applications
-    FOR EACH ROW EXECUTE FUNCTION public.dispatch_automation_event();
 
 DROP TRIGGER IF EXISTS automation_dispatch_admissions ON public.admissions;
 CREATE TRIGGER automation_dispatch_admissions

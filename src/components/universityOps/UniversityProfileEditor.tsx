@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { Building2, Save, X, Globe, Mail, MapPin, Link } from 'lucide-react';
+import { Building2, Save, X, Globe, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UniversityProfileEditorProps {
@@ -10,7 +10,8 @@ interface UniversityProfileEditorProps {
 }
 
 export function UniversityProfileEditor({ universityId, onClose }: UniversityProfileEditorProps) {
-  const { userRole } = useAuth();
+  const { user } = useAuth();
+  const userRole = user?.role;
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

@@ -27,8 +27,8 @@ export let mockAuditLogs: AuditLog[] = [
     description: 'Status updated from Inquiry to Cold.',
     previousValue: 'Inquiry',
     newValue: 'Cold',
-    userId: 'USR-1',
-    userName: 'Ankit Sharma',
+    userId: 'mock-counselor-id',
+    userName: 'System Counselor',
     userRole: 'Counselor',
     timestamp: twoDaysAgo.toISOString(),
     leadId: 'LD-1001'
@@ -40,8 +40,8 @@ export let mockAuditLogs: AuditLog[] = [
     entityId: 'USR-1',
     title: 'User Login',
     description: 'Successful login from desktop browser.',
-    userId: 'USR-1',
-    userName: 'Ankit Sharma',
+    userId: 'mock-counselor-id',
+    userName: 'System Counselor',
     userRole: 'Counselor',
     timestamp: yesterday.toISOString(),
     ipAddress: '192.168.1.10'
@@ -55,8 +55,8 @@ export let mockAuditLogs: AuditLog[] = [
     description: 'Updated preferred course for Priya Singh.',
     previousValue: 'BBA',
     newValue: 'MBA HR',
-    userId: 'USR-1',
-    userName: 'Ankit Sharma',
+    userId: 'mock-counselor-id',
+    userName: 'System Counselor',
     userRole: 'Counselor',
     timestamp: now.toISOString(),
     leadId: 'LD-1002'

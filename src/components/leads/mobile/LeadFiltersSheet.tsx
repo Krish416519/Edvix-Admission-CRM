@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { LeadStatus } from '../../../types/schema';
 import { cn } from '../../../lib/utils';
 import { DEFAULT_PIPELINE_STAGES } from '../../../constants/pipelineStages';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface LeadFiltersSheetProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ interface LeadFiltersSheetProps {
 export function LeadFiltersSheet({
   isOpen, onClose, statusFilter, setStatusFilter, showDeleted, setShowDeleted
 }: LeadFiltersSheetProps) {
+  const { hasPermission } = useAuth();
+  const canDelete = hasPermission('Delete Leads', 'Lead Management');
   
   const [statuses, setStatuses] = useState<string[]>(['All', ...DEFAULT_PIPELINE_STAGES]);
 
@@ -99,18 +102,20 @@ export function LeadFiltersSheet({
             </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Other</h3>
-            <label className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors active:scale-[0.99]">
-              <span className="font-bold text-foreground">Show Deleted Leads</span>
-              <input 
-                type="checkbox"
-                checked={showDeleted}
-                onChange={e => setShowDeleted(e.target.checked)}
-                className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
-              />
-            </label>
-          </div>
+          {canDelete && (
+            <div className="mb-6">
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Other</h3>
+              <label className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors active:scale-[0.99]">
+                <span className="font-bold text-foreground">Show Deleted Leads</span>
+                <input 
+                  type="checkbox"
+                  checked={showDeleted}
+                  onChange={e => setShowDeleted(e.target.checked)}
+                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                />
+              </label>
+            </div>
+          )}
           
         </div>
 

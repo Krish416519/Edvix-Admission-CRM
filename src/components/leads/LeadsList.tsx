@@ -8,10 +8,14 @@ import {
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
 import { useDispositions } from '../../hooks/useDispositions';
+import { AdvancedFilterSidebar } from './AdvancedFilterSidebar';
+import type { FilterState } from '../../types/filter';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { cn, formatDate } from '../../lib/utils';
 import { computeIntent } from '../../lib/leadIntent';
 import { DEFAULT_PIPELINE_STAGES } from '../../constants/pipelineStages';
+import { SavedViewsDropdown } from './SavedViewsDropdown';
+import { SavedView } from '../../hooks/useSavedViews';
 
 import { EmptyState } from '../ui/EmptyState';
 import { LeadFormModal } from './LeadFormModal';
@@ -102,6 +106,7 @@ interface LeadsListProps {
 
 export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, externalLoading }: LeadsListProps) {
   const { confirm } = useConfirm();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = searchParams.get('filter');
   
@@ -167,6 +172,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const [sourceFilter, setSourceFilter] = useState('All');
   const [dispositionFilter, setDispositionFilter] = useState('All');
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const [advancedFilterState, setAdvancedFilterState] = useState<FilterState | undefined>(undefined);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
   // Sorting
@@ -188,7 +194,10 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const [bulkUpdateValue, setBulkUpdateValue] = useState('');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   
-  const { categories: dispositionCategories } = useDispositions();
+  // Derive CRM context strictly from the user's active organization.
+  // If it cannot be confirmed, pass undefined — never assume Academic or B2B.
+  const crmContext = user?.organizations?.find(o => o.id === user.activeOrganizationId)?.crm_context ?? undefined;
+  const { categories: dispositionCategories } = useDispositions(crmContext);
 
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
@@ -306,8 +315,9 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       showDeleted: showDeleted,
       minScore: minScoreFilter
     },
-    sort: { field: sortField as string, direction: sortDirection }
-  });
+     sort: { field: sortField as string, direction: sortDirection },
+     advancedFilters: advancedFilterState,
+   });
 
   // When external leads are provided (Smart View mode), use them instead of internal fetching
   const leads = externalLeads !== undefined ? externalLeads : internalLeads.leads;
@@ -333,7 +343,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const { addLead, updateLead, deleteLead, bulkDeleteLeads, restoreLead, duplicateLead, mergeLeads, bulkUpdateLeads, refresh } = internalLeads;
 
   const { allUsers, assignLead, isAssigning, bulkAssignLeads, roundRobinAssignLeads } = useLeadAssignment();
-  const { user, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   
   const isCounselor = user?.role?.toLowerCase().includes('counsel');
   
@@ -619,11 +629,15 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       const res = await updateLead(selectedLead.id, data);
       if (res.success) {
         toast.success('Lead updated successfully');
+      } else {
+        toast.error(res.error || 'Failed to update lead');
       }
     } else {
       const res = await addLead(data);
       if (res.success) {
         toast.success('Lead created successfully');
+      } else {
+        toast.error(res.error || 'Failed to create lead');
       }
     }
   };
@@ -1034,6 +1048,20 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
               )}
             </div>
 
+            <SavedViewsDropdown 
+              currentFilterState={advancedFilterState}
+              onSelectView={(view: SavedView) => {
+                setAdvancedFilterState(view.filters);
+                setCurrentPage(1);
+                // Also visually open the filter sidebar so they see it applied
+                setIsAdvancedFiltersOpen(true);
+              }}
+              onClearView={() => {
+                setAdvancedFilterState(undefined);
+                setCurrentPage(1);
+              }}
+            />
+
             <button 
               onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
               className={cn(
@@ -1146,34 +1174,54 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-foreground font-semibold flex items-center gap-2 cursor-pointer select-none border border-border bg-card px-3 py-2 rounded-lg hover:bg-muted transition-colors h-[38px]">
-                <input 
-                  type="checkbox" 
-                  checked={showDeleted} 
-                  onChange={e => { setShowDeleted(e.target.checked); setCurrentPage(1); }} 
-                  className="rounded border-border text-primary focus:ring-primary h-4 w-4"
-                />
-                Show Deleted Leads
-              </label>
-            </div>
+            {canDelete && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-foreground font-semibold flex items-center gap-2 cursor-pointer select-none border border-border bg-card px-3 py-2 rounded-lg hover:bg-muted transition-colors h-[38px]">
+                  <input 
+                    type="checkbox" 
+                    checked={showDeleted} 
+                    onChange={e => { setShowDeleted(e.target.checked); setCurrentPage(1); }} 
+                    className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                  />
+                  Show Deleted Leads
+                </label>
+              </div>
+            )}
             
-            <div className="ml-auto">
-               <button 
-                 onClick={() => {
-                   setSearchTerm('');
-                   setStatusFilter('All');
-                   setMinScoreFilter(undefined);
-                   setSourceFilter('All');
-                   setCounselorFilter('All');
-                   setDispositionFilter('All');
-                   setShowDeleted(false);
-                 }}
-                 className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 h-[38px]"
-               >
-                 Clear All
-               </button>
-            </div>
+             <div className="ml-auto">
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('All');
+                    setMinScoreFilter(undefined);
+                    setSourceFilter('All');
+                    setCounselorFilter('All');
+                    setDispositionFilter('All');
+                    setShowDeleted(false);
+                    setAdvancedFilterState(undefined);
+                  }}
+                  className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 h-[38px]"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => {
+                    if (advancedFilterState && advancedFilterState.rootGroup.conditions?.length > 0) {
+                      setAdvancedFilterState(undefined);
+                    } else {
+                      setIsAdvancedFiltersOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "text-sm font-semibold px-3 py-2 h-[38px] rounded-lg border transition-colors",
+                    advancedFilterState
+                      ? "text-primary border-primary/30 bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  Filter Builder
+                </button>
+             </div>
           </div>
         )}
 
@@ -2137,7 +2185,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         setShowDeleted={setShowDeleted}
       />
 
-      <LeadSortSheet 
+       <LeadSortSheet 
         isOpen={isSortSheetOpen}
         onClose={() => setIsSortSheetOpen(false)}
         sortField={sortField}
@@ -2145,6 +2193,20 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         onSort={(f, d) => {
           setSortField(f);
           setSortDirection(d);
+        }}
+      />
+
+      <AdvancedFilterSidebar
+        isOpen={!!advancedFilterState}
+        onClose={() => setAdvancedFilterState(undefined)}
+        filterState={advancedFilterState || { rootGroup: { id: 'root', logic: 'AND', conditions: [], groups: [] } }}
+        onFilterChange={setAdvancedFilterState}
+        onApply={() => {
+          setCurrentPage(1);
+          setIsAdvancedFiltersOpen(false);
+        }}
+        onClear={() => {
+          setAdvancedFilterState(undefined);
         }}
       />
     </div>

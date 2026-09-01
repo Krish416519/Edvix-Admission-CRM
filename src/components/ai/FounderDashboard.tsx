@@ -4,17 +4,54 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { 
   Sparkles, TrendingUp, AlertOctagon, LineChart, 
-  Target, Users, ShieldAlert
+  Target, Users, ShieldAlert, Loader2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart as RechartsLineChart, Line
 } from 'recharts';
+import { format, subDays } from 'date-fns';
 
 export function FounderDashboard() {
   const { user } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [atRisk, setAtRisk] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const endDate = new Date();
+        const startDate = subDays(endDate, 30);
+        const prevEndDate = subDays(startDate, 1);
+        const prevStartDate = subDays(prevEndDate, 30);
+        
+        const [summaryRes, atRiskRes] = await Promise.all([
+          supabase.rpc('get_bi_executive_summary', {
+            p_start_date: format(startDate, 'yyyy-MM-dd'),
+            p_end_date: format(endDate, 'yyyy-MM-dd'),
+            p_prev_start_date: format(prevStartDate, 'yyyy-MM-dd'),
+            p_prev_end_date: format(prevEndDate, 'yyyy-MM-dd')
+          }),
+          supabase.rpc('get_bi_at_risk_revenue')
+        ]);
+        
+        if (summaryRes.data) setData(summaryRes.data);
+        if (atRiskRes.data) setAtRisk(atRiskRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
   
   if (user?.role !== 'Super Admin' && user?.role !== 'Admin') {
     return <Navigate to="/" replace />;
+  }
+
+  if (loading) {
+    return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>;
   }
 
   // Mock data for charts since we need timeseries aggregation
@@ -56,30 +93,32 @@ export function FounderDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" /> Revenue Forecast
+            <TrendingUp className="w-4 h-4 text-emerald-500" /> Paid Revenue
           </h3>
-          <p className="text-3xl font-bold">₹24.5M</p>
-          <p className="text-xs text-emerald-500 mt-2 font-medium">+15% expected this month</p>
+          <p className="text-3xl font-bold">₹{data?.current?.revenue?.toLocaleString() || 0}</p>
+          <p className={`text-xs mt-2 font-medium ${data?.growth?.revenue_pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            {data?.growth?.revenue_pct >= 0 ? '+' : ''}{data?.growth?.revenue_pct || 0}% this month
+          </p>
         </div>
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" /> Lead Quality Score
+            <Target className="w-4 h-4 text-primary" /> Conversion Rate
           </h3>
-          <p className="text-3xl font-bold">84/100</p>
-          <p className="text-xs text-primary mt-2 font-medium">Marketing ROI is optimizing</p>
+          <p className="text-3xl font-bold">{data?.current?.conversion_rate || 0}%</p>
+          <p className="text-xs text-primary mt-2 font-medium">Lead to Admission</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-500" /> Expected Admissions
+            <Users className="w-4 h-4 text-blue-500" /> Total Admissions
           </h3>
-          <p className="text-3xl font-bold">142</p>
-          <p className="text-xs text-muted-foreground mt-2">Pipeline probability &gt; 70%</p>
+          <p className="text-3xl font-bold">{data?.current?.total_admissions || 0}</p>
+          <p className="text-xs text-muted-foreground mt-2">from {data?.current?.total_leads || 0} leads</p>
         </div>
         <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 shadow-sm">
           <h3 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
             <AlertOctagon className="w-4 h-4" /> Critical Risk Alerts
           </h3>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400">3</p>
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{atRisk?.stalled_payment_count || 0}</p>
           <p className="text-xs text-red-500/80 mt-2">Admissions pending payment &gt; 14 days</p>
         </div>
       </div>

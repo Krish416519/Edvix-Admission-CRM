@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useCallReports(dateRange: { from: Date; to: Date }) {
-  const { hasRole } = useAuth();
+  useAuth();
   const [stats, setStats] = useState<CallCenterStats | null>(null);
   const [counselorStats, setCounselorStats] = useState<CounselorCallStats[]>([]);
   const [reportData, setReportData] = useState<CallReportData | null>(null);

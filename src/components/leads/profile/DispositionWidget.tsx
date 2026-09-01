@@ -81,11 +81,12 @@ function CustomSelect({
 interface DispositionWidgetProps {
   leadId: string;
   currentStatus: LeadStatus;
+  crmContext?: string;
   onSaved: (newStatus?: LeadStatus) => void;
   onCancel: () => void;
 }
 
-export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: DispositionWidgetProps) {
+export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, onCancel }: DispositionWidgetProps) {
   const { user } = useAuth();
   const [categories, setCategories] = useState<DispositionCategory[]>([]);
   const [dispositions, setDispositions] = useState<Disposition[]>([]);
@@ -94,6 +95,7 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [contextError, setContextError] = useState<string | null>(null);
 
   // Form State
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -173,14 +175,22 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [crmContext]);
 
   const loadCategories = async () => {
+    if (crmContext === undefined) {
+      setIsLoading(false);
+      setContextError('Organization context not available. Please ensure the lead has an organization with CRM context configured.');
+      return;
+    }
+    setContextError(null);
     try {
-      const cats = await dispositionService.getCategories();
+      setIsLoading(true);
+      const cats = await dispositionService.getCategories(crmContext);
       setCategories(cats);
     } catch (err) {
       toast.error('Failed to load disposition configurations');
+      setContextError('Failed to load disposition configurations');
     } finally {
       setIsLoading(false);
     }
@@ -196,15 +206,15 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
     setNextActions([]);
     setFollowUpDateTime('');
 
-    if (!catId) return;
+    if (!catId || crmContext === undefined) return;
     try {
       const notConnectedCat = getCategoryByName(categories, 'NOT CONNECTED');
       if (notConnectedCat && catId === notConnectedCat.id) {
-        const disps = await dispositionService.getDispositions(catId);
+        const disps = await dispositionService.getDispositions(catId, crmContext);
         setDispositions(disps);
       } else {
         // If 'Connected', fetch all dispositions EXCEPT the 'Not Connected' ones
-        const allDisps = await dispositionService.getDispositions();
+        const allDisps = await dispositionService.getDispositions(undefined, crmContext);
         const filtered = allDisps.filter(d => d.category_id !== notConnectedCat?.id);
         setDispositions(filtered);
       }
@@ -388,8 +398,8 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
         userId: user.id,
         userName: user.name,
         userRole: user.role,
-        lostReason: activeDisposition?.target_status === 'Lost' ? lostReason : undefined,
-        competitor: activeDisposition?.target_status === 'Lost' ? competitor : undefined
+        lostReason: activeDisposition?.target_status === 'Rejected' ? lostReason : undefined,
+        competitor: activeDisposition?.target_status === 'Rejected' ? competitor : undefined
       });
 
       toast.success('Disposition saved successfully');
@@ -403,6 +413,30 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
 
   if (isLoading) {
     return <div className="p-4 text-center text-sm text-muted-foreground animate-pulse">Loading...</div>;
+  }
+
+  if (contextError) {
+    return (
+      <div className="bg-card border border-border rounded-xl shadow-sm p-4 sm:p-5">
+        <div className="flex justify-between items-center mb-4 pb-3 border-b border-border">
+          <h3 className="font-bold text-lg flex items-center gap-2">Add Activity</h3>
+          <button 
+            type="button" 
+            onClick={onCancel}
+            className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <p className="text-sm text-destructive font-medium">{contextError}</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Please try again or contact an administrator if the problem persists.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1065,7 +1099,7 @@ export function DispositionWidget({ leadId, currentStatus, onSaved, onCancel }: 
               </div>
             )}
 
-            {activeDisposition.target_status === 'Lost' && (
+            {activeDisposition.target_status === 'Rejected' && (
               <div className="grid grid-cols-1 gap-4 mt-4 bg-destructive/5 p-3 rounded-lg border border-destructive/20">
                 <div className="space-y-1.5">
                   <label className="uppercase text-[10px] font-bold tracking-wider text-muted-foreground">

@@ -1,4 +1,4 @@
-export type Role = 'Super Admin' | 'Admin' | 'Counselor' | 'Accounts' | 'Partner' | 'University' | 'Marketing' | 'Viewer';
+export type Role = 'Super Admin' | 'Admin' | 'Manager' | 'Team Leader' | 'Counselor' | 'Accounts' | 'Partner' | 'University' | 'Marketing' | 'Viewer';
 
 export interface User {
   id: string;
@@ -20,6 +20,7 @@ export interface Organization {
   slug: string;
   logo?: string;
   plan: string;
+  crm_context?: string;
 }
 
 export interface AuthState {

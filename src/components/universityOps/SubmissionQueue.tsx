@@ -1,28 +1,26 @@
 import { useState } from 'react';
-import { useSubmissionQueue, UniversitySubmission } from '../../hooks/useUniversityOps';
+import { useSubmissionQueue } from '../../hooks/useUniversityOps';
 import { 
   Search, 
-  Filter, 
   ChevronRight, 
   FileText, 
   Clock, 
   AlertCircle,
   CheckCircle,
   Building2,
-  MoreVertical,
   ExternalLink,
   Inbox
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Skeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
-import { toast } from 'sonner';
+
 
 export function SubmissionQueue() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   
-  const { submissions, isLoading, refetch } = useSubmissionQueue({ 
+  const { submissions, isLoading } = useSubmissionQueue({ 
     status: statusFilter === 'All' ? undefined : statusFilter 
   });
 

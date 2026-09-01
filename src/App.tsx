@@ -115,6 +115,7 @@ const MarketingJourneys = React.lazy(() => import('./components/marketing/Market
 
 // Backend Status
 const BackendStatus = React.lazy(() => import('./components/admin/BackendStatus').then(m => ({ default: m.BackendStatus })));
+const LeadFieldsManager = React.lazy(() => import('./components/admin/LeadFieldsManager').then(m => ({ default: m.LeadFieldsManager })));
 
 // Admission OS
 const LivePipeline = React.lazy(() => import('./components/admissionOS/LivePipeline').then(m => ({ default: m.LivePipeline })));
@@ -214,6 +215,7 @@ export default function App() {
                         <Route path="users" element={<UserManagement />} />
                         <Route path="roles" element={<RoleManagement />} />
                         <Route path="settings" element={<SystemSettings />} />
+                        <Route path="lead-forms" element={<LeadFieldsManager />} />
                         <Route path="dispositions" element={<DispositionManagement />} />
                         <Route path="smartviews" element={<SmartViewsAdmin />} />
                         <Route path="universities" element={<MasterDataManagement />} />

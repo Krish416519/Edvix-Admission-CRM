@@ -62,11 +62,18 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
   const [dispositions, setDispositions] = useState<Disposition[]>([]);
   const [configLoaded, setConfigLoaded] = useState(false);
 
-  const loadDispositionConfig = useCallback(async () => {
+  const loadDispositionConfig = useCallback(async (crmContext?: string) => {
+    // If context is not resolved, do NOT fetch — never assume a context.
+    if (crmContext === undefined) {
+      setCategories([]);
+      setDispositions([]);
+      setConfigLoaded(true);
+      return;
+    }
     try {
       const [catsRes, dispRes] = await Promise.all([
-        supabase.from('disposition_categories').select('*').eq('is_active', true).order('order_index', { ascending: true }),
-        supabase.from('dispositions').select('*').eq('is_active', true).order('order_index', { ascending: true })
+        supabase.from('disposition_categories').select('*').eq('is_active', true).eq('crm_context', crmContext).order('order_index', { ascending: true }),
+        supabase.from('dispositions').select('*').eq('is_active', true).eq('crm_context', crmContext).order('order_index', { ascending: true })
       ]);
       if (!catsRes.error) setCategories(catsRes.data || []);
       if (!dispRes.error) setDispositions(dispRes.data || []);
@@ -103,7 +110,10 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
 
   useEffect(() => {
     const loadConfig = async () => {
-      await loadDispositionConfig();
+      // Derive CRM context from the user's active organization.
+      // If it cannot be confirmed, pass undefined — never assume Academic or B2B.
+      const crmContext = user?.organizations?.find(o => o.id === user.activeOrganizationId)?.crm_context ?? undefined;
+      await loadDispositionConfig(crmContext);
       const { data, error: configError } = await supabase
         .from('system_settings')
         .select('value')
@@ -117,7 +127,7 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
       }
     };
     loadConfig();
-  }, []);
+  }, [user?.organizations, user?.activeOrganizationId]);
 
   const viewConfig = useMemo(() => {
     return savedViews.find(v => v.id === viewId);
@@ -128,7 +138,7 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
 
   const view = useMemo(() => getSmartView(viewId), [viewId]);
 
-  const isSuperAdmin = user?.role === 'Super Admin' || user?.role === 'Admin';
+  const isSuperAdmin = user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Manager' || user?.role === 'Team Leader';
 
    const fetchLeads = useCallback(async () => {
     if (!user) {
@@ -607,10 +617,11 @@ export function useSmartView(viewId: SmartViewId | string | undefined, options?:
           }
 
           case 'lost': {
+            // 'Lost' target_status does NOT exist in DB — use 'Rejected' only
             const { data, count: cnt, error } = await applyPagination(
               applySort(
                 applySearch(
-                  buildBaseQuery().in('lead_status', ['Rejected', 'Lost'])
+                  buildBaseQuery().eq('lead_status', 'Rejected')
                 )
               )
             );

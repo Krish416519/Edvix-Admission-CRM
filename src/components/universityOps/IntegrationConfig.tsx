@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Settings, Link, Terminal, Mail, Key, ShieldCheck, Save, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function IntegrationConfig() {
-  const { userRole } = useAuth();
+  const { user } = useAuth();
+  const userRole = user?.role;
   const [selectedUniversity, setSelectedUniversity] = useState('');
   
   const canConfig = userRole === 'Admin' || userRole === 'Super Admin';

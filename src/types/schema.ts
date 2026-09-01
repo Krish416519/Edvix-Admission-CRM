@@ -142,11 +142,18 @@ export interface Lead extends BaseEntity {
   status?: string;
   score?: number;
   counselorId?: string;
+
+  // Custom Dynamic Fields
+  customFields?: Record<string, any>;
   
   // Relationships
   assignedCounselor?: string; // FK to User
   universityId?: string; // FK to University
   courseId?: string; // FK to Course
+  partnerId?: string; // FK to User (Partner)
+  
+  // Organization Context (Resolved via organization_id)
+  organizationContext?: string;
 
   // Hydrated Relations (For UI)
   counselor?: User | string; // allowing string for legacy mock data support
@@ -801,7 +808,17 @@ export interface BiScheduledReport extends BaseEntity {
 export interface BiDashboardLayout extends BaseEntity {
   userId: string;
   role?: string;
-  layoutConfig: any;
+  layoutConfig: any;}
+
+// ----------------- Dynamic Form Fields ----------------- //
+
+export interface LeadFormField extends BaseEntity {
+  organizationId?: string;
+  fieldName: string;
+  fieldLabel: string;
+  fieldType: 'text' | 'number' | 'select' | 'date' | 'boolean';
+  isRequired: boolean;
+  options?: any[]; // For select dropdowns
+  isActive: boolean;
+  displayOrder: number;
 }
-
-

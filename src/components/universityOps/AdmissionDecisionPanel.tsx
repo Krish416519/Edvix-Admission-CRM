@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUniversityOpsActions, UniversitySubmission } from '../../hooks/useUniversityOps';
-import { ShieldCheck, Calendar, FileText, CheckCircle2, XCircle, AlertCircle, Clock, Link, Save, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Calendar, CheckCircle2, XCircle, AlertCircle, Clock, Link, Save, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -20,7 +20,8 @@ const DECISION_TYPES = [
 ];
 
 export function AdmissionDecisionPanel({ submission, onComplete }: AdmissionDecisionPanelProps) {
-  const { user, userRole } = useAuth();
+  const { user } = useAuth();
+  const userRole = user?.role;
   const { recordDecision } = useUniversityOpsActions();
   
   const [decision, setDecision] = useState('');

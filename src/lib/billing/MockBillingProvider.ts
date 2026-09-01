@@ -19,6 +19,11 @@ export class MockBillingProvider implements IBillingProvider {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
+    if (import.meta.env.PROD) {
+      toast.error('Billing is currently disabled in production. Please configure a real payment provider.');
+      return cancelUrl;
+    }
+
     // We will bypass the external checkout and simulate a successful payment instantly.
     // In reality, this would return a Stripe Checkout URL.
     try {

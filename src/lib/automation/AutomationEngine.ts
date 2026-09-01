@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { toast } from 'sonner';
+import { emailCoreService } from '../email/emailCoreService';
 
 export class AutomationEngine {
   
@@ -228,7 +229,6 @@ export class AutomationEngine {
         
       case 'Send Email':
         if (action.metadata?.template_id && lead.email) {
-          const { emailCoreService } = await import('../email/EmailService');
           
           // Get template
           const { data: template } = await supabase

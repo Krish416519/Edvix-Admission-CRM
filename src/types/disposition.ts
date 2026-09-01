@@ -4,6 +4,7 @@ export interface DispositionCategory extends BaseEntity {
   name: string;
   order_index: number;
   is_active: boolean;
+  crm_context?: string;
 }
 
 export interface Disposition extends BaseEntity {
@@ -15,6 +16,7 @@ export interface Disposition extends BaseEntity {
   target_status?: string | null;
   is_active: boolean;
   order_index: number;
+  crm_context?: string;
 }
 
 export interface SubDisposition extends BaseEntity {
@@ -41,6 +43,9 @@ export interface LeadDispositionHistory extends BaseEntity {
   follow_up_at?: string;
   previous_status?: string;
   new_status?: string;
+  disposition_name?: string;
+  sub_disposition_name?: string;
+  next_action_name?: string;
   
   // Hydrated references
   dispositions?: Disposition;

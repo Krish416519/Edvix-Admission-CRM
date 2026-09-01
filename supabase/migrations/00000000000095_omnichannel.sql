@@ -135,9 +135,9 @@ CREATE TRIGGER on_sms_message_activity
 CREATE OR REPLACE VIEW public.unified_conversations AS
 SELECT 
     'whatsapp' as channel,
-    wc.id as conversation_id,
+    wc.id::varchar as conversation_id,
     wc.lead_id,
-    l.full_name as lead_name,
+    l.first_name as lead_name,
     wc.assigned_user_id as assigned_to,
     wc.status,
     wc.unread_count,
@@ -154,15 +154,15 @@ SELECT
     'email' as channel,
     em.lead_id::varchar as conversation_id, -- Virtual ID
     em.lead_id,
-    l.full_name as lead_name,
-    l.counselor_id as assigned_to,
+    l.first_name as lead_name,
+    l.assigned_counselor as assigned_to,
     'open' as status,
     0 as unread_count,
     MAX(em.created_at) as last_activity_at,
     (SELECT subject FROM public.email_messages WHERE lead_id = em.lead_id ORDER BY created_at DESC LIMIT 1) as last_message
 FROM public.email_messages em
 LEFT JOIN public.leads l ON em.lead_id = l.id
-GROUP BY em.lead_id, l.full_name, l.counselor_id
+GROUP BY em.lead_id, l.first_name, l.assigned_counselor
 
 UNION ALL
 
@@ -171,15 +171,15 @@ SELECT
     'sms' as channel,
     sm.lead_id::varchar as conversation_id, -- Virtual ID
     sm.lead_id,
-    l.full_name as lead_name,
-    l.counselor_id as assigned_to,
+    l.first_name as lead_name,
+    l.assigned_counselor as assigned_to,
     'open' as status,
     0 as unread_count,
     MAX(sm.created_at) as last_activity_at,
     (SELECT substring(content from 1 for 60) FROM public.sms_messages WHERE lead_id = sm.lead_id ORDER BY created_at DESC LIMIT 1) as last_message
 FROM public.sms_messages sm
 LEFT JOIN public.leads l ON sm.lead_id = l.id
-GROUP BY sm.lead_id, l.full_name, l.counselor_id;
+GROUP BY sm.lead_id, l.first_name, l.assigned_counselor;
 
 --------------------------------------------------
 -- 5. Row Level Security
@@ -188,13 +188,26 @@ ALTER TABLE public.communication_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.email_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sms_messages ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can view preferences" ON public.communication_preferences;
 CREATE POLICY "Authenticated users can view preferences" ON public.communication_preferences FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can update preferences" ON public.communication_preferences;
 CREATE POLICY "Authenticated users can update preferences" ON public.communication_preferences FOR ALL USING (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "Authenticated users can view emails" ON public.email_messages;
 CREATE POLICY "Authenticated users can view emails" ON public.email_messages FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can insert emails" ON public.email_messages;
 CREATE POLICY "Authenticated users can insert emails" ON public.email_messages FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can update emails" ON public.email_messages;
 CREATE POLICY "Authenticated users can update emails" ON public.email_messages FOR UPDATE USING (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "Authenticated users can view sms" ON public.sms_messages;
 CREATE POLICY "Authenticated users can view sms" ON public.sms_messages FOR SELECT USING (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can insert sms" ON public.sms_messages;
 CREATE POLICY "Authenticated users can insert sms" ON public.sms_messages FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can update sms" ON public.sms_messages;
 CREATE POLICY "Authenticated users can update sms" ON public.sms_messages FOR UPDATE USING (auth.uid() IS NOT NULL);

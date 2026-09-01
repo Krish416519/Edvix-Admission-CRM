@@ -6,12 +6,11 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Optional: check if keys are provided to avoid runtime crash on import if missing
 export const hasSupabaseKeys = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = hasSupabaseKeys 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
-  // Export a dummy client or null if you prefer, but we'll export the client and handle errors at point of use
-  // We use type assertion to allow compiling even if keys are missing initially.
-  // In production, missing keys would cause this to fail, which is expected.
-  : createClient('https://placeholder.supabase.co', 'placeholder-key') ; 
+if (!hasSupabaseKeys) {
+  throw new Error('Missing Supabase environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in .env');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Helper function to check real connectivity
 export const checkSupabaseConnection = async () => {

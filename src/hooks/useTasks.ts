@@ -20,7 +20,7 @@ export function useTasks(options: UseTasksOptions = {}) {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [_organizationId, setOrganizationId] = useState<string | null>(null);
   const { user } = useAuth();
 
   // Fetch the user's organization on mount

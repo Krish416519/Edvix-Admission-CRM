@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, MessageCircle, CheckCircle2, UserPlus } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle2, UserPlus } from 'lucide-react';
 import { mockActivities } from '../../data/mockActivities';
-import { Lead, LeadStatus, LeadActivity } from '../../types/schema';
-import { toast } from 'sonner';
+import { Lead, LeadActivity } from '../../types/schema';
 import { LeadProfileHeader } from './profile/LeadProfileHeader';
 import { addAuditLog } from '../../data/mockAuditLogs';
 import { LeadProfileTabs } from './profile/LeadProfileTabs';
 import { LeadQuickViewSidebar } from './profile/LeadQuickViewSidebar';
 import { MobileActionBar } from './mobile/MobileActionBar';
-import { automationService } from '../../lib/automationService';
 import { DispositionWidget } from './profile/DispositionWidget';
 import { CounselingSnapshot } from './profile/CounselingSnapshot';
 import { LeadAssignmentPanel } from './profile/LeadAssignmentPanel';
@@ -26,7 +24,14 @@ export function LeadDetails() {
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { lead, isLoading, updateLead, refreshLead } = useLead(id);
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
+
+  // Resolve CRM context from the lead's org, then the user's active org.
+  // INTENTIONALLY NO 'academic' FALLBACK: an unresolved context must never
+  // silently load Academic dispositions in a B2B context (or vice-versa).
+  const crmContext = lead?.organizationContext || user?.organizations?.find(
+    o => o.id === user.activeOrganizationId
+  )?.crm_context || undefined;
   
   // Checking 'Edit Leads' because there is no explicit 'Assign' permission in the DB
   const canAssign = hasPermission('Edit Leads', 'Lead Management');
@@ -111,33 +116,7 @@ export function LeadDetails() {
     }
   };
 
-  const handleStatusChange = async (newStatus: LeadStatus) => {
-    const currentStatus = lead.leadStatus || lead.status;
-    if (newStatus === currentStatus) return;
-        await updateLead({ leadStatus: newStatus, status: newStatus });
-      
-      addAuditLog({
-      action: 'Status Changed',
-      entityType: 'Lead',
-      entityId: lead.id,
-      title: 'Lead Status Changed',
-      description: `Status changed from ${currentStatus} to ${newStatus}.`,
-      previousValue: currentStatus,
-      newValue: newStatus,
-      userName: 'Current User',
-      leadId: lead.id
-    });
-    
-    automationService.triggerEvent('Lead Status Changed', { 
-      lead: { ...lead, leadStatus: newStatus, status: newStatus },
-      oldStatus: currentStatus,
-      newStatus
-    });
-    
-    toast.success(`Status updated to ${newStatus}`);
-  };
 
-  const displayStatus = (lead.leadStatus || lead.status || 'New') as LeadStatus;
 
   const handleCall = () => {
     if (lead.phone) {
@@ -205,8 +184,9 @@ export function LeadDetails() {
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] md:w-full max-w-3xl z-50 animate-in zoom-in-95 duration-200">
             <DispositionWidget 
               leadId={lead.id} 
-              currentStatus={lead.status} 
-              onSaved={(newStatus) => {
+              currentStatus={lead.status || ''} 
+              crmContext={crmContext}
+              onSaved={() => {
                 setShowDisposition(false);
                 refreshLead();
                 // Force timeline to re-fetch immediately regardless of lead state timing
@@ -261,6 +241,7 @@ export function LeadDetails() {
         leadId={lead.id}
         phone={lead.phone}
         leadStatus={lead.leadStatus || lead.status || 'New'}
+        crmContext={crmContext}
         onDispositionSaved={() => {
           // Refresh lead data after disposition is saved from mobile bar
           refreshLead();

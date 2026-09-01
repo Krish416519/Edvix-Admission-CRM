@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUniversityOpsActions, UniversitySubmission } from '../../hooks/useUniversityOps';
-import { CheckCircle, Globe, Mail, Link, AlertTriangle, Send, ShieldCheck, FileKey, Terminal } from 'lucide-react';
+import { Globe, Mail, Link, Send, ShieldCheck, FileKey, Terminal } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 

@@ -8,9 +8,10 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const seedPassword = process.env.SEED_USER_PASSWORD;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error("Missing Supabase credentials in .env");
+if (!supabaseUrl || !supabaseKey || !seedPassword) {
+  console.error("Missing Supabase credentials or SEED_USER_PASSWORD in .env");
   process.exit(1);
 }
 
@@ -126,7 +127,7 @@ async function createUsers() {
 
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         email,
-        password: 'Password123!',
+        password: seedPassword,
         email_confirm: true,
         user_metadata: { role: r.role }
       });

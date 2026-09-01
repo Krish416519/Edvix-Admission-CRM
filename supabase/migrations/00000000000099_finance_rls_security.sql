@@ -104,7 +104,6 @@ CREATE TRIGGER prevent_refund_delete BEFORE DELETE ON public.refunds FOR EACH RO
 -- 7. RE-VERIFY PARTNER COMMISSIONS ACCESS
 --------------------------------------------------
 -- Ensure partners can read but NOT write to their commissions
-DROP POLICY IF EXISTS "Partners can view their own commissions" ON public.partner_commissions; -- drop old if any
 DROP POLICY IF EXISTS "Partners view own commissions" ON public.commissions;
 
 CREATE POLICY "Partners view own commissions" ON public.commissions

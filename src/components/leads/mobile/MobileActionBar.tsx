@@ -11,10 +11,11 @@ interface MobileActionBarProps {
   leadId: string;
   phone?: string | null;
   leadStatus?: LeadStatus;
+  crmContext?: string;
   onDispositionSaved?: (newStatus?: LeadStatus) => void;
 }
 
-export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved }: MobileActionBarProps) {
+export function MobileActionBar({ leadId, phone, leadStatus, crmContext, onDispositionSaved }: MobileActionBarProps) {
   const { makeCall } = useTelephony();
   const { user } = useAuth();
   const [showDisposition, setShowDisposition] = useState(false);
@@ -156,6 +157,7 @@ export function MobileActionBar({ leadId, phone, leadStatus, onDispositionSaved 
               <DispositionWidget
                 leadId={leadId}
                 currentStatus={leadStatus || 'New'}
+                crmContext={crmContext}
                 onSaved={(newStatus) => {
                   setShowDisposition(false);
                   onDispositionSaved?.(newStatus);

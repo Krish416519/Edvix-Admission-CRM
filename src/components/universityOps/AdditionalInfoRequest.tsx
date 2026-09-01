@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUniversityOpsActions, UniversitySubmission } from '../../hooks/useUniversityOps';
-import { AlertCircle, FilePlus, Calendar, Save, X } from 'lucide-react';
+import { AlertCircle, Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdditionalInfoRequestProps {
@@ -37,7 +37,7 @@ export function AdditionalInfoRequest({ submission, onComplete, onCancel }: Addi
     setIsSubmitting(true);
     try {
       // 1. Create the AIR record
-      const { data: air, error: airError } = await supabase
+      const { data: _air, error: airError } = await supabase
         .from('university_info_requests')
         .insert({
           submission_id: submission.id,

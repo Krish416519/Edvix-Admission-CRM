@@ -33,19 +33,42 @@ export function useLead(id: string | undefined) {
 
     try {
       setIsLoading(true);
+
+      // Primary lead query — stable aliases, no collision
       const { data, error } = await supabase
         .from('leads')
         .select(`
           *,
           counselor:users!leads_counselor_id_fkey(name),
           university:universities(name),
-          course:courses(name),
-          course_text:course
+          course:courses(name)
         `)
         .eq('id', id)
         .single();
 
       if (error) throw error;
+
+      console.log('Lead data:', { id: data?.id, organization_id: data?.organization_id });
+
+      // Secondary query: resolve the lead's CRM context from its organization.
+      // Done as a separate query to avoid PostgREST alias collisions.
+      // The FK constraint is named 'fk_leads_org' (dynamically created in migration 57),
+      // which is not reliably resolvable via PostgREST hints — a direct lookup is safer.
+      let orgCrmContext: string | undefined = undefined;
+      if (data?.organization_id) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('crm_context')
+          .eq('id', data.organization_id)
+          .single();
+        if (orgError) {
+          console.error('Error fetching organization context:', orgError);
+        }
+        orgCrmContext = orgData?.crm_context ?? undefined;
+        console.log('Org fetch:', { orgId: data.organization_id, orgData, orgCrmContext });
+      } else {
+        console.log('No organization_id on lead:', data?.id);
+      }
 
       const latestObjection = data ? await fetchLatestObjection(data.id) : undefined;
 
@@ -84,7 +107,11 @@ export function useLead(id: string | undefined) {
 
           counselor: data.counselor?.name || 'Unassigned',
           university: data.university?.name || 'Not Selected',
-          course: data.course?.name || data.course_text || 'Not Selected',
+          // data.course is the FK join result; data.course (text column) is already
+          // returned via '*' as a plain string — accessible as data.course (the join
+          // overrides it, so fall back to data.course_name which doesn't exist;
+          // use the text column directly from the '*' spread via type cast):
+          course: (data.course as any)?.name || (data as any).course || 'Not Selected',
 
           aiScore: data.ai_score,
           aiInsights: data.ai_insights,
@@ -142,6 +169,10 @@ export function useLead(id: string | undefined) {
           interactionsCount: data.interactions_count || 0,
           lastCallDate: data.last_call_date,
           finalFollowUpDate: data.final_follow_up_date,
+
+          contactedTimestamp: data.contacted_timestamp,
+          // Resolved via secondary org query — never assumed or defaulted
+          organizationContext: orgCrmContext,
 
           createdAt: data.created_at,
           updatedAt: data.updated_at
@@ -258,8 +289,9 @@ export function useLead(id: string | undefined) {
               interactionsCount: newLead.interactions_count || 0,
               lastCallDate: newLead.last_call_date,
               finalFollowUpDate: newLead.final_follow_up_date,
+              organizationContext: prev.organizationContext,
               createdAt: newLead.created_at,
-              updatedAt: newLead.updated_at,
+              updatedAt: newLead.updatedAt,
             }) : null);
           }
         }
@@ -399,6 +431,17 @@ export function useLead(id: string | undefined) {
 
       const latestObjection = await fetchLatestObjection(data.id);
 
+      // Secondary query: resolve the lead's CRM context from its organization.
+      let orgCrmContext: string | undefined = undefined;
+      if (data?.organization_id) {
+        const { data: orgData } = await supabase
+          .from('organizations')
+          .select('crm_context')
+          .eq('id', data.organization_id)
+          .single();
+        orgCrmContext = orgData?.crm_context ?? undefined;
+      }
+
       // FIXED: refreshLead now maps ALL counseling fields, not just a subset
       const mappedLead: Lead = {
         id: data.id,
@@ -480,6 +523,7 @@ export function useLead(id: string | undefined) {
         interactionsCount: data.interactions_count || 0,
         lastCallDate: data.last_call_date,
         finalFollowUpDate: data.final_follow_up_date,
+        organizationContext: orgCrmContext,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };

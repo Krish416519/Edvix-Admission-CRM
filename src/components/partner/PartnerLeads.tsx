@@ -17,7 +17,7 @@ export function PartnerLeads() {
   const { leads, isLoading, addLead } = useLeads();
   
   // Real data filtered by RLS (and explicitly by user id for Super Admins testing the view)
-  const myLeads = leads.filter(l => l.partner_id === user?.id);
+  const myLeads = leads.filter(l => l.partnerId === user?.id);
 
   const filteredLeads = useMemo(() => {
     return myLeads.filter(lead => 

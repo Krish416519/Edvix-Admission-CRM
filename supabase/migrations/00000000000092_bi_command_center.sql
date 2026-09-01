@@ -59,16 +59,16 @@ CREATE POLICY "Users can manage own layouts" ON public.bi_dashboard_layouts FOR 
 DROP MATERIALIZED VIEW IF EXISTS public.mv_bi_funnel_analytics CASCADE;
 CREATE MATERIALIZED VIEW public.mv_bi_funnel_analytics AS
   SELECT
-    created_at::date AS snapshot_date,
+    l.created_at::date AS snapshot_date,
     COUNT(*) AS total_leads,
     COUNT(*) FILTER (WHERE lead_status != 'New') AS contacted,
     COUNT(*) FILTER (WHERE lead_status IN ('Qualified', 'Application Started', 'Admission Done', 'Interested', 'Follow Up')) AS qualified,
     COUNT(*) FILTER (WHERE lead_status IN ('Application Started', 'Admission Done')) AS applications,
-    COUNT(DISTINCT admission_id) AS admissions,
+    COUNT(DISTINCT a.id) AS admissions,
     COUNT(DISTINCT (SELECT id FROM public.payments WHERE admission_id = a.id AND status = 'Paid')) AS payments
   FROM public.leads l
   LEFT JOIN public.admissions a ON a.lead_id = l.id
-  GROUP BY created_at::date;
+  GROUP BY l.created_at::date;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_bi_funnel_date ON public.mv_bi_funnel_analytics(snapshot_date);
 

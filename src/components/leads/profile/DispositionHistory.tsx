@@ -48,22 +48,22 @@ export function DispositionHistory({ leadId, refreshKey = 0 }: { leadId: string;
           <div className="w-[calc(100%-3rem)] sm:w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-3 sm:p-4 rounded-lg sm:rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 sm:mb-2 gap-0.5">
               <div className="font-bold text-foreground text-sm sm:text-base">
-                {record.dispositions?.name || 'Unknown Disposition'}
+                {record.disposition_name || record.dispositions?.name || 'Unknown Disposition'}
               </div>
               <time className="text-[10px] sm:text-xs text-muted-foreground font-medium">
                 {formatDistanceToNow(new Date(record.created_at || ''), { addSuffix: true })}
               </time>
             </div>
             
-            {record.sub_dispositions && (
+            {(record.sub_disposition_name || record.sub_dispositions) && (
               <div className="text-xs sm:text-sm text-muted-foreground mb-1">
-                <span className="font-medium text-foreground">Reason:</span> {record.sub_dispositions.name}
+                <span className="font-medium text-foreground">Reason:</span> {record.sub_disposition_name || record.sub_dispositions?.name}
               </div>
             )}
             
-            {record.next_actions && (
+            {(record.next_action_name || record.next_actions) && (
               <div className="text-xs sm:text-sm text-muted-foreground mb-1">
-                <span className="font-medium text-foreground">Next Action:</span> {record.next_actions.name}
+                <span className="font-medium text-foreground">Next Action:</span> {record.next_action_name || record.next_actions?.name}
               </div>
             )}
             

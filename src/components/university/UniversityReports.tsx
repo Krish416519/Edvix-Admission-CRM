@@ -16,7 +16,8 @@ export function UniversityReports() {
   // Chart data: Applications by status
   const statusData = useMemo(() => {
     const counts = admissions.reduce((acc, adm) => {
-      acc[adm.stage] = (acc[adm.stage] || 0) + 1;
+      const stage = adm.stage ?? 'Unknown';
+      acc[stage] = (acc[stage] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -83,9 +84,9 @@ export function UniversityReports() {
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 >
-                  {statusData.map((entry, index) => (
+                  {statusData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

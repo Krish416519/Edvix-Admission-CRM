@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useUniversityContacts, UniversityContact } from '../../hooks/useUniversityContacts';
-import { Users, Plus, Search, Building2, Phone, Mail, MapPin, MoreVertical, Edit2, Trash2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { useUniversityContacts } from '../../hooks/useUniversityContacts';
+import { Users, Plus, Search, Building2, Phone, Mail, MapPin, Edit2, Trash2 } from 'lucide-react';
+
 import { Skeleton } from '../ui/Skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { toast } from 'sonner';
@@ -11,7 +11,7 @@ export function UniversityContactDirectory() {
   const { contacts, isLoading, deleteContact } = useUniversityContacts();
   const { confirm } = useConfirm();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [_isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const filteredContacts = contacts.filter(c => {
     if (!searchTerm) return true;
