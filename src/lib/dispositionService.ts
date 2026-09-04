@@ -464,11 +464,16 @@ export const dispositionService = {
 
     const { error: actError } = await supabase.from('lead_activities').insert({
       lead_id: leadId,
-      type: 'status_change',
+      type: 'disposition_change',
       content: activityContent,
       author: authorName,          // human-readable name
       date: new Date().toISOString(),
-      organization_id: lead.organization_id
+      organization_id: lead.organization_id,
+      previous_value: previousStatus,
+      new_value: disp.name,
+      previous_label: 'Status',
+      new_label: 'Disposition',
+      source: 'Manual'
     });
     
     if (actError) {

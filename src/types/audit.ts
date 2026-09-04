@@ -12,6 +12,11 @@ export interface AuditLog {
   
   previousValue?: string;
   newValue?: string;
+  previousLabel?: string;
+  newLabel?: string;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
+  source?: string;
   
   userId?: string;
   userName: string;
