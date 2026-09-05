@@ -548,8 +548,15 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
     case '<=':
       return `${col}.lte.${value}`;
     case 'contains':
+      if (type === 'array') {
+        // PostgREST .cs. (contains subset) for array containment
+        return `${col}.cs.{${value}}`;
+      }
       return `${col}.ilike.*${value}*`;
     case 'not_contains':
+      if (type === 'array') {
+        return `or(${col}.not.cs.{${value}},${col}.is.null)`;
+      }
       return `or(${col}.not.ilike.*${value}*,${col}.is.null)`;
     case 'starts_with':
       return `${col}.ilike.${value}*`;
@@ -615,7 +622,9 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
       return `and(${col}.gte.${start.toISOString()},${col}.lt.${end.toISOString()})`;
     }
     default:
-      return '';
+      // FAIL CLOSED: Do not silently ignore unknown operators
+      // Return a condition that is guaranteed to be false so the user knows something is wrong
+      return `id.eq.00000000-0000-0000-0000-000000000000`;
   }
 }
 
@@ -681,7 +690,10 @@ function buildIntentFilterString(targetValues: string[]): string {
 
 function buildConditionString(cond: FilterCondition): string {
   const field = FILTER_FIELD_MAP[cond.fieldId];
-  if (!field || !field.dbColumn) return '';
+  if (!field || !field.dbColumn) {
+    // FAIL CLOSED: Return impossible ID to prevent silent fallback
+    return 'id.eq.00000000-0000-0000-0000-000000000000';
+  }
   const col = field.dbColumn;
   const operator = cond.operator;
   const value = cond.value;
@@ -707,6 +719,23 @@ function buildConditionString(cond: FilterCondition): string {
       return `lead_historical_disposition_ids.ov.{${valsString}}`;
     } else {
       return `lead_historical_disposition_ids.not.ov.{${valsString}}`;
+    }
+  }
+
+  // Handle Full Name search for 'name' filter
+  if (field.id === 'name') {
+    const firstStr = buildPostgrestFilterString('first_name', field.type, operator, value, value2);
+    const lastStr = buildPostgrestFilterString('last_name', field.type, operator, value, value2);
+    
+    // Only apply OR logic for non-null/non-empty results to avoid breaking the query
+    if (firstStr && lastStr && firstStr !== 'id.eq.00000000-0000-0000-0000-000000000000') {
+      // If it's a negative operator (e.g. !=, not_contains), we usually want AND (not in first AND not in last)
+      if (['!=', 'not_contains', 'not_in'].includes(operator)) {
+        return `and(${firstStr},${lastStr})`;
+      } else {
+        // Positive operators (e.g. =, contains) use OR (in first OR in last)
+        return `or(${firstStr},${lastStr})`;
+      }
     }
   }
 

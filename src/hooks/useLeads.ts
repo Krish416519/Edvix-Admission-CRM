@@ -460,7 +460,7 @@ export function useLeads(options?: UseLeadsOptions) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, options?.page, options?.pageSize, options?.search, JSON.stringify(options?.filters), JSON.stringify(options?.sort)]);
+  }, [user, options?.page, options?.pageSize, options?.search, JSON.stringify(options?.filters), JSON.stringify(options?.sort), JSON.stringify(options?.advancedFilters)]);
 
   const addLead = async (leadData: Partial<Lead>) => {
     try {

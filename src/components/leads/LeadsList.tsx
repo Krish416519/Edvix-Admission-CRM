@@ -171,7 +171,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const [counselorFilter, setCounselorFilter] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
   const [dispositionFilter, setDispositionFilter] = useState('All');
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const [isAdvancedFilterSidebarOpen, setIsAdvancedFilterSidebarOpen] = useState(false);
   const [advancedFilterState, setAdvancedFilterState] = useState<FilterState | undefined>(undefined);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
@@ -1053,8 +1053,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
               onSelectView={(view: SavedView) => {
                 setAdvancedFilterState(view.filters);
                 setCurrentPage(1);
-                // Also visually open the filter sidebar so they see it applied
-                setIsAdvancedFiltersOpen(true);
+                setIsAdvancedFilterSidebarOpen(true);
               }}
               onClearView={() => {
                 setAdvancedFilterState(undefined);
@@ -1063,167 +1062,20 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
             />
 
             <button 
-              onClick={() => setIsAdvancedFiltersOpen(!isAdvancedFiltersOpen)}
+              onClick={() => setIsAdvancedFilterSidebarOpen(!isAdvancedFilterSidebarOpen)}
               className={cn(
                 "flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-semibold transition-colors",
-                isAdvancedFiltersOpen ? "bg-primary/10 text-primary border-primary/30" : "bg-card text-foreground border-border hover:bg-muted"
+                isAdvancedFilterSidebarOpen ? "bg-primary/10 text-primary border-primary/30" : "bg-card text-foreground border-border hover:bg-muted"
               )}
             >
               <Filter className="w-4 h-4" />
               Filters
-              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted) && (
+              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted || ((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0)) && (
                 <span className="w-2 h-2 rounded-full bg-primary" />
               )}
             </button>
           </div>
         </div>
-
-        {/* Advanced Filters Panel */}
-        {isAdvancedFiltersOpen && (
-          <div className="hidden md:flex p-4 border-b border-border bg-muted/5 gap-4 items-end animate-in slide-in-from-top-2 duration-200 flex-wrap">
-            <div className="flex flex-col gap-1.5 w-48">
-              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Status</label>
-              <div className="relative">
-                <select 
-                  value={statusFilter}
-                  onChange={e => {
-                    setStatusFilter(e.target.value as any);
-                    setCurrentPage(1);
-                  }}
-                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="Inquiry">Inquiry</option>
-                  <option value="Not Connected">Not Connected</option>
-                  <option value="Cold">Cold</option>
-                  <option value="Warm">Warm</option>
-                  <option value="Hot">Hot</option>
-                  <option value="Qualified">Qualified</option>
-                  <option value="Application">Application</option>
-                  <option value="Docs Pending">Docs Pending</option>
-                  <option value="Admitted">Admitted</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5 w-48">
-              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Source</label>
-              <div className="relative">
-                <select 
-                  value={sourceFilter}
-                  onChange={e => {
-                    setSourceFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-                >
-                  <option value="All">All Sources</option>
-                  <option value="Meta">Meta</option>
-                  <option value="Google">Google</option>
-                  <option value="Website">Website</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Walk-in">Walk-in</option>
-                  <option value="Other">Other</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            {!isCounselor && (
-              <div className="flex flex-col gap-1.5 w-48">
-                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Counselor</label>
-                <div className="relative">
-                  <select 
-                    value={counselorFilter}
-                    onChange={e => {
-                      setCounselorFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-                  >
-                    <option value="All">All Counselors</option>
-                    <option value="Unassigned">Unassigned</option>
-                    {allUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-1.5 w-48">
-              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Disposition</label>
-              <div className="relative">
-                <select 
-                  value={dispositionFilter}
-                  onChange={e => {
-                    setDispositionFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="appearance-none w-full bg-card border border-border rounded-lg pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer font-medium"
-                >
-                   <option value="All">All Dispositions</option>
-                   {dispositionCategories.map(cat => (
-                     <option key={cat.id} value={cat.name}>{cat.name}</option>
-                   ))}
-                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
-
-            {canDelete && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-foreground font-semibold flex items-center gap-2 cursor-pointer select-none border border-border bg-card px-3 py-2 rounded-lg hover:bg-muted transition-colors h-[38px]">
-                  <input 
-                    type="checkbox" 
-                    checked={showDeleted} 
-                    onChange={e => { setShowDeleted(e.target.checked); setCurrentPage(1); }} 
-                    className="rounded border-border text-primary focus:ring-primary h-4 w-4"
-                  />
-                  Show Deleted Leads
-                </label>
-              </div>
-            )}
-            
-             <div className="ml-auto">
-                <button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('All');
-                    setMinScoreFilter(undefined);
-                    setSourceFilter('All');
-                    setCounselorFilter('All');
-                    setDispositionFilter('All');
-                    setShowDeleted(false);
-                    setAdvancedFilterState(undefined);
-                  }}
-                  className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 h-[38px]"
-                >
-                  Clear All
-                </button>
-                <button
-                  onClick={() => {
-                    if (advancedFilterState && advancedFilterState.rootGroup.conditions?.length > 0) {
-                      setAdvancedFilterState(undefined);
-                    } else {
-                      setIsAdvancedFiltersOpen(false);
-                    }
-                  }}
-                  className={cn(
-                    "text-sm font-semibold px-3 py-2 h-[38px] rounded-lg border transition-colors",
-                    advancedFilterState
-                      ? "text-primary border-primary/30 bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground border-border hover:bg-muted"
-                  )}
-                >
-                  Filter Builder
-                </button>
-             </div>
-          </div>
-        )}
 
 
           <>
@@ -2197,13 +2049,13 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       />
 
       <AdvancedFilterSidebar
-        isOpen={!!advancedFilterState}
-        onClose={() => setAdvancedFilterState(undefined)}
-        filterState={advancedFilterState || { rootGroup: { id: 'root', logic: 'AND', conditions: [], groups: [] } }}
+        isOpen={isAdvancedFilterSidebarOpen}
+        onClose={() => setIsAdvancedFilterSidebarOpen(false)}
+        filterState={advancedFilterState || { rootGroup: { id: 'root', logic: 'AND', conditions: [] } }}
         onFilterChange={setAdvancedFilterState}
         onApply={() => {
           setCurrentPage(1);
-          setIsAdvancedFiltersOpen(false);
+          setIsAdvancedFilterSidebarOpen(false);
         }}
         onClear={() => {
           setAdvancedFilterState(undefined);
