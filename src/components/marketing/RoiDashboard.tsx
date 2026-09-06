@@ -48,7 +48,7 @@ export function RoiDashboard() {
                 <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.5rem', color: 'var(--foreground)' }}
-                  formatter={(value: number) => `₹${value.toLocaleString('en-IN')}`}
+                  formatter={(value: any) => [`₹${value.toLocaleString('en-IN')}`, 'Amount']}
                 />
                 <Legend />
                 <Bar dataKey="spend" name="Ad Spend" fill="#f59e0b" radius={[4, 4, 0, 0]} />
@@ -81,7 +81,7 @@ export function RoiDashboard() {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.5rem', color: 'var(--foreground)' }}
-                  formatter={(value: number) => [`${value} Admissions`, 'Attributed']}
+                  formatter={((value: any) => [`${value} Admissions`, 'Attributed']) as any}
                 />
                 <Legend verticalAlign="bottom" height={36} />
               </PieChart>

@@ -84,7 +84,7 @@ export function PartnerReports() {
                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" opacity={0.2} />
                 <Tooltip 
-                  formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
+                  formatter={(value: any) => [`₹${value.toLocaleString('en-IN')}`, 'Commission']}
                   contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '0.5rem', color: 'var(--foreground)' }}
                   itemStyle={{ color: 'var(--foreground)' }}
                 />

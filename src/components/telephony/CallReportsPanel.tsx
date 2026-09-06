@@ -46,7 +46,7 @@ export function CallReportsPanel({ data, isLoading }: CallReportsPanelProps) {
                 <YAxis tick={{fontSize: 12, fill: '#71717a'}} axisLine={false} tickLine={false} />
                 <Tooltip 
                   contentStyle={{backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e4e4e7', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  labelFormatter={(val) => new Date(val).toLocaleDateString()}
+                  labelFormatter={(val) => new Date(val as string).toLocaleDateString()}
                 />
                 <Line type="monotone" dataKey="count" stroke="#E53935" strokeWidth={3} dot={{r: 4, fill: '#E53935'}} activeDot={{r: 6}} />
               </LineChart>
@@ -81,7 +81,7 @@ export function CallReportsPanel({ data, isLoading }: CallReportsPanelProps) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex justify-center gap-4 mt-2">
-                {sentimentData.map((entry, i) => (
+                {sentimentData.map((entry) => (
                   <div key={entry.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-full" style={{backgroundColor: entry.name.toLowerCase() === 'positive' ? '#10b981' : entry.name.toLowerCase() === 'negative' ? '#f43f5e' : '#3b82f6'}}></div>
                     {entry.name} ({entry.value})
@@ -108,7 +108,7 @@ export function CallReportsPanel({ data, isLoading }: CallReportsPanelProps) {
                   <YAxis type="category" dataKey="name" tick={{fontSize: 11, fill: '#3f3f46'}} width={100} axisLine={false} tickLine={false} />
                   <Tooltip cursor={{fill: '#f4f4f5'}} contentStyle={{borderRadius: '8px'}} />
                   <Bar dataKey="value" fill="#E53935" radius={[0, 4, 4, 0]}>
-                    {outcomeData.map((entry, index) => (
+                    {outcomeData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Bar>

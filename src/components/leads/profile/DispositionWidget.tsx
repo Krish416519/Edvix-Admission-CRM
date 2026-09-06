@@ -173,6 +173,27 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
   const activeDisposition = dispositions.find(d => d.id === selectedDisposition);
   const activeSubDisposition = subDispositions.find(sd => sd.id === selectedSubDisposition);
 
+  /**
+   * Checks if a disposition matches a special form type.
+   * Uses special_form_type when available (rename-safe).
+   * Falls back to name matching so forms still appear even if:
+   *  - The DB schema cache hasn't refreshed yet after migration
+   *  - The disposition hasn't been seeded with special_form_type yet
+   */
+  const FORM_TYPE_NAME_FALLBACK: Record<string, string> = {
+    'counselled': 'Counselled',
+    'semester_fee_paid': 'Semester Fee Paid',
+    'loan_rejected': 'Loan Rejected',
+    'meeting_done': 'Meeting Done',
+    'document_collected': 'Document Collected',
+  };
+  const isFormType = (disp: typeof activeDisposition, type: string): boolean => {
+    if (!disp) return false;
+    if (disp.special_form_type) return disp.special_form_type === type;
+    // Fallback: match by canonical name (works before special_form_type is seeded)
+    return disp.name === FORM_TYPE_NAME_FALLBACK[type];
+  };
+
   useEffect(() => {
     loadCategories();
   }, [crmContext]);
@@ -264,7 +285,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
 
     let finalNotes = notes || '';
 
-    if (activeDisposition?.name === 'Counselled' && activeSubDisposition?.name !== 'Semester Fee Paid') {
+    if (isFormType(activeDisposition, 'counselled') && activeSubDisposition?.name !== 'Semester Fee Paid') {
       if (!counselGender || !counselBudget || !counselQual || !counselUniv || !counselCourse || !counselOtherUniv || !counselScholarship || !counselOffline || !counselWorking) {
         toast.error('Please fill out all Counseling Details fields');
         return;
@@ -276,9 +297,18 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
       finalNotes = `[Counseling Details]\nGender: ${counselGender}\nBudget: ${counselBudget}\nHighest Qualification: ${counselQual}\nUniversity: ${univName}\nCourse: ${courseName}\nExploring Other University: ${counselOtherUniv}\nEdvix Scholarship Pitched: ${counselScholarship}\nExploring offline Degree: ${counselOffline}\nIs Currently Working: ${counselWorking}\n\n[Additional Notes]\n${notes || 'No additional notes provided.'}`;
     }
 
-    if (activeDisposition?.name === 'Semester Fee Paid') {
+    if (isFormType(activeDisposition, 'semester_fee_paid')) {
       if (!enrollUniv || !enrollProgram || !enrollFeeType || !enrollStudentName || !enrollEmail || !enrollPhone || !enrollAppFee || !enrollReceivedAmount || !enrollPaymentType || !enrollUniScholarship || !enrollEdvixScholarship || !enrollTotalFee || !enrollDegreeAppId || !enrollConversionDate) {
         toast.error('Please fill out all required Enrollment Details fields');
+        return;
+      }
+
+      // Validate numeric monetary fields server-safe
+      const numAppFee = Number(enrollAppFee);
+      const numReceived = Number(enrollReceivedAmount);
+      const numTotal = Number(enrollTotalFee);
+      if (isNaN(numAppFee) || numAppFee < 0 || isNaN(numReceived) || numReceived < 0 || isNaN(numTotal) || numTotal < 0) {
+        toast.error('Application fee, received amount, and total fee must be valid non-negative numbers');
         return;
       }
 
@@ -287,12 +317,15 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
         return;
       }
 
-      if (enrollEdvixScholarship === 'Yes' && !enrollEdvixScholarshipAmount) {
-        toast.error('Please specify the Edvix Scholarship Amount');
-        return;
+      if (enrollEdvixScholarship === 'Yes') {
+        const numSchol = Number(enrollEdvixScholarshipAmount);
+        if (!enrollEdvixScholarshipAmount || isNaN(numSchol) || numSchol < 0) {
+          toast.error('Please specify a valid Edvix Scholarship Amount');
+          return;
+        }
       }
       
-      const univName = universities.find(u => u.id === enrollUniv)?.name || enrollUniv;
+      const univName = universities.find(u => u.id === counselUniv)?.name || enrollUniv;
       
       let loanText = '';
       if (enrollPaymentType === 'Loan') {
@@ -307,13 +340,23 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
       finalNotes = `[Enrollment Details]\nUniversity: ${univName}\nProgram: ${enrollProgram}\nFee Type: ${enrollFeeType}\nStudent Name: ${enrollStudentName}\nEmail: ${enrollEmail}\nPhone: ${enrollPhone}\nApp Fee: ${enrollAppFee}\nReceived Amount: ${enrollReceivedAmount}\nPayment Type: ${enrollPaymentType}${loanText}\nUni Scholarship: ${enrollUniScholarship}\n${scholarshipText}\nTotal Program Fee: ${enrollTotalFee}\nDegree App ID: ${enrollDegreeAppId}\nConversion Date: ${enrollConversionDate}\n\n[Additional Notes]\n${notes || 'No additional notes provided.'}`;
     }
 
-    if (activeDisposition?.name === 'Loan Rejected') {
+    if (isFormType(activeDisposition, 'loan_rejected')) {
       if (!lrApplicantName || !lrApplicantMobile || !lrRelationship || !lrPanCard || !lrAadhaarCard || !lrPinCode || !lrAadhaarMobile || !lrAccountName || !lrBankName || !lrAccountNumber || !lrIfscCode || !lrReason || !lrPartner || !lrNotes) {
         toast.error('Please fill out all required Loan Rejected fields');
         return;
       }
+
+      // Mask sensitive PII before persisting to activity logs / audit history
+      const cleanPan = lrPanCard.trim().toUpperCase();
+      const maskedPan = cleanPan.length >= 4 ? 'XXXXX' + cleanPan.slice(-4) : 'XXXXX';
+
+      const cleanAadhaar = lrAadhaarCard.trim().replace(/\s|-/g, '');
+      const maskedAadhaar = cleanAadhaar.length >= 4 ? 'XXXX-XXXX-' + cleanAadhaar.slice(-4) : 'XXXX-XXXX-XXXX';
+
+      const cleanAcc = lrAccountNumber.trim();
+      const maskedAccount = cleanAcc.length >= 4 ? 'X'.repeat(Math.max(4, cleanAcc.length - 4)) + cleanAcc.slice(-4) : 'XXXXXXXX';
       
-      finalNotes = `[Loan Applicant Details]\nName: ${lrApplicantName}\nMobile: ${lrApplicantMobile}\nRelationship: ${lrRelationship}\nPAN: ${lrPanCard}\nAadhaar: ${lrAadhaarCard}\nPIN Code: ${lrPinCode}\nAadhaar Mobile: ${lrAadhaarMobile}\nAlternate Mobile: ${lrAlternateMobile || 'N/A'}\n\n[Bank Account Details]\nAccount Holder: ${lrAccountName}\nBank Name: ${lrBankName}\nAccount Number: ${lrAccountNumber}\nIFSC Code: ${lrIfscCode}\n\n[Rejection Details]\nReason: ${lrReason}\nPartner: ${lrPartner}\nNotes: ${lrNotes}\n\n[Additional Notes]\n${notes || 'No additional notes provided.'}`;
+      finalNotes = `[Loan Applicant Details]\nName: ${lrApplicantName}\nMobile: ${lrApplicantMobile}\nRelationship: ${lrRelationship}\nPAN: ${maskedPan}\nAadhaar: ${maskedAadhaar}\nPIN Code: ${lrPinCode}\nAadhaar Mobile: ${lrAadhaarMobile}\nAlternate Mobile: ${lrAlternateMobile || 'N/A'}\n\n[Bank Account Details]\nAccount Holder: ${lrAccountName}\nBank Name: ${lrBankName}\nAccount Number: ${maskedAccount}\nIFSC Code: ${lrIfscCode}\n\n[Rejection Details]\nReason: ${lrReason}\nPartner: ${lrPartner}\nNotes: ${lrNotes}\n\n[Additional Notes]\n${notes || 'No additional notes provided.'}`;
     }
 
     if (activeDisposition?.requires_note && (!finalNotes || finalNotes.trim() === '')) {
@@ -326,7 +369,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
       return;
     }
 
-    if (activeDisposition?.name === 'Document Collected') {
+    if (isFormType(activeDisposition, 'document_collected')) {
       if (!documentLink.trim() && !documentFile) {
         toast.error('Please provide a document link or upload a document');
         return;
@@ -337,7 +380,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
     try {
       let uploadedScreenshotUrl = '';
       
-      if (meetingScreenshot && activeDisposition?.name === 'Meeting Done') {
+      if (meetingScreenshot && isFormType(activeDisposition, 'meeting_done')) {
         try {
           const path = generateStoragePath(leadId, undefined, meetingScreenshot);
           const uploadedPath = await uploadFileToStorage('documents', path, meetingScreenshot);
@@ -348,7 +391,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
         }
       }
 
-      if (enrollScreenshot && activeDisposition?.name === 'Semester Fee Paid') {
+      if (enrollScreenshot && isFormType(activeDisposition, 'semester_fee_paid')) {
         try {
           const path = generateStoragePath(leadId, undefined, enrollScreenshot);
           const uploadedPath = await uploadFileToStorage('documents', path, enrollScreenshot);
@@ -364,12 +407,11 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
       }
 
       let uploadedDocUrl = '';
-      if (documentFile && activeDisposition?.name === 'Document Collected') {
+      if (documentFile && isFormType(activeDisposition, 'document_collected')) {
         try {
           const path = generateStoragePath(leadId, undefined, documentFile);
           const uploadedPath = await uploadFileToStorage('documents', path, documentFile);
-          const { data } = supabase.storage.from('documents').getPublicUrl(uploadedPath);
-          uploadedDocUrl = data.publicUrl;
+          uploadedDocUrl = uploadedPath;
         } catch (e) {
           console.error("Failed to upload document", e);
           toast.error("Failed to upload document");
@@ -378,7 +420,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
         }
       }
 
-      if (activeDisposition?.name === 'Document Collected') {
+      if (isFormType(activeDisposition, 'document_collected')) {
          if (documentLink.trim()) finalNotes += `\n\n[Document Link]: ${documentLink.trim()}`;
          if (uploadedDocUrl) finalNotes += `\n\n[Document Uploaded]: ${uploadedDocUrl}`;
       }
@@ -397,7 +439,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
         followUpAt,
         userId: user.id,
         userName: user.name,
-        userRole: user.role,
+        
         lostReason: activeDisposition?.target_status === 'Rejected' ? lostReason : undefined,
         competitor: activeDisposition?.target_status === 'Rejected' ? competitor : undefined
       });
@@ -504,7 +546,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
             </div>
           )}
 
-          {activeDisposition?.name === 'Meeting Done' && (
+          {isFormType(activeDisposition, 'meeting_done') && (
             <div className="space-y-1.5 mt-4">
               <label className="uppercase text-[10px] font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <UploadCloud className="w-3.5 h-3.5" /> Meeting Screenshot (Optional)
@@ -525,7 +567,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
             </div>
           )}
 
-          {activeDisposition?.name === 'Document Collected' && (
+          {isFormType(activeDisposition, 'document_collected') && (
             <div className="space-y-1.5 mt-4">
               <label className="uppercase text-[10px] font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <UploadCloud className="w-3.5 h-3.5" /> Document Upload *
@@ -562,7 +604,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
         {activeDisposition && (
           <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
             
-            {activeDisposition?.name === 'Semester Fee Paid' && (
+            {isFormType(activeDisposition, 'semester_fee_paid') && (
               <div className="mt-6 mb-6">
                 <h4 className="text-sm font-bold text-primary mb-4">Enrollment Details</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-xl border border-border">
@@ -797,7 +839,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-                      <UploadCloud className="w-3.5 h-3.5" /> Payment Screenshot *
+                      <UploadCloud className="w-3.5 h-3.5" /> Payment Screenshot (Optional)
                     </label>
                     <div className="flex items-center gap-4 bg-background border border-input rounded-lg px-3 py-1.5 text-sm focus-within:border-primary transition-all h-[42px]">
                       <input
@@ -829,7 +871,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
               </div>
             )}
 
-            {activeDisposition?.name === 'Loan Rejected' && (
+            {isFormType(activeDisposition, 'loan_rejected') && (
               <div className="mt-6 mb-6">
                 <h4 className="text-sm font-bold text-primary mb-4">Loan Applicant Details</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-xl border border-border mb-6">
@@ -1043,7 +1085,7 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
               </div>
             )}
 
-            {activeDisposition.name === 'Counselled' && activeDisposition?.name !== 'Semester Fee Paid' && (
+            {isFormType(activeDisposition, 'counselled') && (
               <div className="mt-6">
                 <h4 className="text-sm font-bold text-primary mb-4">Counseling Details</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-secondary/20 p-4 rounded-xl border border-border">
@@ -1181,3 +1223,4 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Lead, LeadActivity } from '../../../types/schema';
-import { FileText, Plus, Sparkles, Hash, Target, User, ChevronDown, ChevronUp, Phone, MessageSquare, Mail, ShieldAlert, ArrowRight } from 'lucide-react';
+import { FileText, Plus, Sparkles, Hash, Target, User, ChevronDown, ChevronUp, Phone, MessageSquare, Mail, ShieldAlert, ArrowRight, BookOpen } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -26,7 +26,7 @@ export function LeadQuickViewSidebar({
     .filter(a => a.type === 'note')
     // Ensure no duplicates by ID (in case of double clicks or state issues)
     .filter((a, index, self) => index === self.findIndex((t) => t.id === a.id))
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => new Date(b.date || '').getTime() - new Date(a.date || '').getTime());
 
   const handleAddNote = () => {
     if (!noteText.trim()) return;
@@ -116,7 +116,7 @@ export function LeadQuickViewSidebar({
               notesList.map((n) => (
                 <div key={n.id} className="bg-muted/30 border border-border/50 rounded-lg p-2 sm:p-3 animate-in fade-in slide-in-from-top-2 duration-300">
                   <p className="text-[11px] sm:text-xs text-foreground leading-relaxed">{n.content}</p>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1.5 sm:mt-2 text-right">{format(new Date(n.date), 'dd MMM, hh:mm a')}</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1.5 sm:mt-2 text-right">{format(new Date(n.date || ''), 'dd MMM, hh:mm a')}</p>
                 </div>
               ))
             )}
@@ -250,9 +250,15 @@ export function LeadQuickViewSidebar({
             <div className="p-4 sm:p-6 overflow-y-auto">
               {aiModalTab === 'script' && (
                 <div>
+                  {lead.course && (
+                    <div className="flex items-center gap-2 text-sm mb-4">
+                      <BookOpen className="w-4 h-4 text-muted-foreground" />
+                      <span>{typeof lead.course === 'string' ? lead.course : lead.course.name}</span>
+                    </div>
+                  )}
                   <h4 className="text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 text-green-600"><Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Call Script</h4>
                   <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 bg-muted/30 p-3 sm:p-4 rounded-lg border border-border/50">
-                    "Hi {lead.name.split(' ')[0]}, this is your counselor from Edvix. I saw you were looking into {lead.course ? `the ${lead.course} program` : 'our programs'}. I just wanted to check if you had any questions regarding the curriculum or the fee structure? We have some great EMI options available right now."
+                    "Hi {lead.name?.split(' ')[0] || 'there'}, this is your counselor from Edvix. I saw you were looking into {lead.course ? `the ${typeof lead.course === 'string' ? lead.course : lead.course.name} program` : 'our programs'}. I just wanted to check if you had any questions regarding the curriculum or the fee structure? We have some great EMI options available right now."
                   </p>
                 </div>
               )}
@@ -260,7 +266,7 @@ export function LeadQuickViewSidebar({
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 text-emerald-600"><MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> WhatsApp Draft</h4>
                   <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 bg-muted/30 p-3 sm:p-4 rounded-lg border border-border/50 whitespace-pre-wrap">
-                    Hi {lead.name.split(' ')[0]} 👋,{'\n\n'}Here are the details for the {lead.course || 'programs'} you inquired about.{'\n\n'}✅ Duration: 2 Years{'\n'}✅ Fee: Reach out for best offers{'\n'}✅ Easy EMI available{'\n\n'}Let me know if you want to hop on a quick call! 📞
+                    Hi {(lead.name || 'Lead').split(' ')[0]} 👋,{'\n\n'}Here are the details for the {typeof lead.course === 'string' ? lead.course : lead.course?.name || 'programs'} you inquired about.{'\n\n'}✅ Duration: 2 Years{'\n'}✅ Fee: Reach out for best offers{'\n'}✅ Easy EMI available{'\n\n'}Let me know if you want to hop on a quick call! 📞
                   </p>
                 </div>
               )}
@@ -268,7 +274,7 @@ export function LeadQuickViewSidebar({
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 text-blue-600"><Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Email Draft</h4>
                   <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 bg-muted/30 p-3 sm:p-4 rounded-lg border border-border/50 whitespace-pre-wrap">
-                    Subject: Your Admission Inquiry{'\n\n'}Dear {lead.name.split(' ')[0]},{'\n\n'}Thank you for exploring programs with Edvix.{'\n\n'}To proceed with your application, we would need you to upload your academic documents on our portal. Once uploaded, we can process your admission within 48 hours.{'\n\n'}Best Regards,{'\n'}Edvix Admissions Team
+                    Subject: Your Admission Inquiry{'\n\n'}Dear {(lead.name || 'Lead').split(' ')[0]},{'\n\n'}Thank you for exploring programs with Edvix.{'\n\n'}To proceed with your application, we would need you to upload your academic documents on our portal. Once uploaded, we can process your admission within 48 hours.{'\n\n'}Best Regards,{'\n'}Edvix Admissions Team
                   </p>
                 </div>
               )}
@@ -277,7 +283,7 @@ export function LeadQuickViewSidebar({
                   <h4 className="text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3 text-rose-600"><ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4"/> Objection Handling</h4>
                   <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 bg-muted/30 p-3 sm:p-4 rounded-lg border border-border/50 whitespace-pre-wrap">
                     <strong className="text-foreground block mb-1">If they say "It's too expensive":</strong>
-                    "I understand it's a significant investment, {lead.name.split(' ')[0]}. However, we offer no-cost EMI options starting at just ₹5,000/month. Additionally, this degree typically increases salary prospects by 30-40%."
+                    "I understand it's a significant investment, {(lead.name || 'Lead').split(' ')[0]}. However, we offer no-cost EMI options starting at just ₹5,000/month. Additionally, this degree typically increases salary prospects by 30-40%."
                   </p>
                 </div>
               )}

@@ -37,8 +37,8 @@ export function SaveViewModal({ isOpen, onClose, filterState }: SaveViewModalPro
     }
   };
 
-  const canShareTeam = hasRole('Manager') || hasRole('Team Leader') || hasRole('Admin') || hasRole('Super Admin');
-  const canShareOrg = hasRole('Admin') || hasRole('Super Admin');
+  const canShareTeam = hasRole(['Manager']) || hasRole(['Team Leader']) || hasRole(['Admin']) || hasRole(['Super Admin']);
+  const canShareOrg = hasRole(['Admin']) || hasRole(['Super Admin']);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">

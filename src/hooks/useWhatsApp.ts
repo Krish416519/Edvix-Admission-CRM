@@ -4,6 +4,8 @@ import { whatsAppCoreService } from '../lib/whatsapp/WhatsAppService';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
+let waConversationsListSubscribed = false;
+
 export interface WAConversation {
   id: string;
   lead_id: string;
@@ -116,7 +118,7 @@ export function useWhatsApp(activeConversationId?: string) {
   useEffect(() => {
     if (!activeConversationId) return;
 
-    const channel = supabase.channel(`wa-messages-${activeConversationId}`)
+    const channel = supabase.channel(`wa-messages-${activeConversationId}-${Math.random()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -136,7 +138,9 @@ export function useWhatsApp(activeConversationId?: string) {
 
   // Realtime for conversation list updates (unread counts, last message)
   useEffect(() => {
-    const channel = supabase.channel('wa-conversations-list')
+    if (waConversationsListSubscribed) return;
+
+    const channel = supabase.channel(`wa-conversations-list-${Math.random()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -146,7 +150,12 @@ export function useWhatsApp(activeConversationId?: string) {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    waConversationsListSubscribed = true;
+
+    return () => {
+      waConversationsListSubscribed = false;
+      supabase.removeChannel(channel);
+    };
   }, [fetchConversations]);
 
   const sendMessage = async (conversationId: string, content: string, messageType: 'text' | 'template' = 'text', isInternalNote = false, templateId?: string) => {

@@ -17,7 +17,7 @@ export function PartnerAdmissions() {
   
   // Filter for Super Admins testing the view: only show admissions linked to their partner leads
   const myLeads = leads.filter(l => l.partnerId === user?.id);
-  const myAdmissions = admissions.filter(a => a.lead_id && myLeads.find(l => l.id === a.lead_id));
+  const myAdmissions = admissions.filter(a => a.leadId && myLeads.find(l => l.id === a.leadId));
 
   const isLoading = admissionsLoading || leadsLoading;
 

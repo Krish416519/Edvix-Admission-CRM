@@ -17,7 +17,7 @@ import { Construction } from 'lucide-react';
 import { CounselorDashboard } from './components/ai/CounselorDashboard';
 import { ManagerDashboard } from './components/ai/ManagerDashboard';
 import { FounderDashboard } from './components/ai/FounderDashboard';
-import { Layout } from './components/layout/Layout';
+import { DynamicWorkspaceLayout } from './components/layout/DynamicWorkspaceLayout';
 import { Login } from './components/auth/Login';
 import { ForgotPassword } from './components/auth/ForgotPassword';
 import { ResetPassword } from './components/auth/ResetPassword';
@@ -58,6 +58,7 @@ const SystemLogsTab = React.lazy(() => import('./components/admin/SystemLogsTab'
 const TenantBillingDashboard = React.lazy(() => import('./components/billing/TenantBillingDashboard').then(m => ({ default: m.TenantBillingDashboard })));
 const DeveloperSettings = React.lazy(() => import('./components/admin/DeveloperSettings').then(m => ({ default: m.DeveloperSettings })));
 const DispositionManagement = React.lazy(() => import('./components/admin/dispositions/DispositionManagement').then(m => ({ default: m.DispositionManagement })));
+const OrganizationPanel = React.lazy(() => import('./components/admin/organization/OrganizationPanel').then(m => ({ default: m.OrganizationPanel })));
 const SmartViewsAdmin = React.lazy(() => import('./components/admin/SmartViewsAdmin').then(m => ({ default: m.SmartViewsAdmin })));
 
 // BI Command Center
@@ -185,7 +186,7 @@ export default function App() {
 
                 {/* Main Application Routes */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Layout />}>
+                  <Route path="/" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<Dashboard />} />
                     <Route path="all-leads" element={<LeadsList />} />
                     <Route path="all-leads/:id" element={<LeadDetails />} />
@@ -214,6 +215,7 @@ export default function App() {
                         <Route path="team-intelligence" element={<ManagerDashboard />} />
                         <Route path="users" element={<UserManagement />} />
                         <Route path="roles" element={<RoleManagement />} />
+                        <Route path="organization" element={<OrganizationPanel />} />
                         <Route path="settings" element={<SystemSettings />} />
                         <Route path="lead-forms" element={<LeadFieldsManager />} />
                         <Route path="dispositions" element={<DispositionManagement />} />
@@ -247,7 +249,7 @@ export default function App() {
 
                 {/* Partner Portal Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['Partner', 'Admin', 'Super Admin']} />}>
-                  <Route path="/partner" element={<PartnerLayout />}>
+                  <Route path="/partner" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<PartnerDashboard />} />
                     <Route path="leads" element={<PartnerLeads />} />
                     <Route path="admissions" element={<PartnerAdmissions />} />
@@ -266,7 +268,7 @@ export default function App() {
 
                 {/* University Portal Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['University', 'Admin', 'Super Admin']} />}>
-                  <Route path="/university" element={<UniversityLayout />}>
+                  <Route path="/university" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<UniversityDashboard />} />
                     <Route path="leads" element={<UniversityLeads />} />
                     <Route path="admissions" element={<UniversityAdmissions />} />
@@ -281,7 +283,7 @@ export default function App() {
 
                 {/* University Operations Hub Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin', 'University Operations Manager' as any, 'University Operations Executive' as any, 'Manager' as any, 'Team Leader' as any, 'Counselor']} />}>
-                  <Route path="/university-ops" element={<UniversityOpsLayout />}>
+                  <Route path="/university-ops" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<UniversityOpsDashboard />} />
                     <Route path="queue" element={<SubmissionQueue />} />
                     <Route path="responses" element={<UniversityResponseInbox />} />
@@ -294,7 +296,7 @@ export default function App() {
 
                 {/* Marketing Hub Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['Marketing', 'Admin', 'Super Admin']} />}>
-                  <Route path="/marketing" element={<MarketingLayout />}>
+                  <Route path="/marketing" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<MarketingDashboard />} />
                     <Route path="campaigns" element={<CampaignsList />} />
                     <Route path="roi" element={<RoiDashboard />} />
@@ -307,7 +309,7 @@ export default function App() {
 
                 {/* Student Success Hub Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin', 'Student Success Executive' as any, 'Manager' as any, 'Team Leader' as any, 'Counselor']} />}>
-                  <Route path="/student-success" element={<StudentSuccessLayout />}>
+                  <Route path="/student-success" element={<DynamicWorkspaceLayout />}>
                     <Route index element={<StudentSuccessDashboard />} />
                     <Route path="enrollments" element={<EnrollmentList />} />
                     <Route path="enrollments/:id" element={<EnrollmentWorkspace />} />

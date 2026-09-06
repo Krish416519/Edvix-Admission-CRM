@@ -30,6 +30,20 @@ async function callAdminFunction(body: Record<string, any>) {
 
 // ── User CRUD ─────────────────────────────────────────────────────────────────
 
+/**
+ * Create a new user securely via the Supabase Admin API.
+ * Bypasses public signup restrictions and marks email as confirmed.
+ */
+export async function adminCreateUser(params: {
+  email: string;
+  password?: string;
+  name: string;
+  role_id?: string | null;
+  role_name?: string;
+}) {
+  return callAdminFunction({ action: 'create_user', data: params });
+}
+
 /** Permanently delete a single user from auth.users */
 export async function adminDeleteUser(userId: string) {
   return callAdminFunction({ action: 'delete_user', user_id: userId });

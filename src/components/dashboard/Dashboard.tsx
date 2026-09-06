@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { StatCard } from './StatCard';
 import { RevenueChart, LeadsSourceChart, AdmissionsByUniChart } from './DashboardCharts';
 import { CounselorPerformance, RecentActivities, UpcomingTasks, TodaysCalls } from './DashboardWidgets';
+import { DomainAdminWorkspace } from './DomainAdminWorkspace';
+import { ManagerWorkspace } from './ManagerWorkspace';
 import { AIDailyBriefing } from './AIDailyBriefing';
 import { Users, UserPlus, GraduationCap, IndianRupee, Percent, Plus, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,8 +42,8 @@ function useDashboardStats() {
     try {
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-      // Role-based filtering: Counselors only see their own leads
-      const isCounselor = user.role === 'Counselor';
+      const canViewTeamMetrics = user.isSystemAdmin || user.isDomainAdmin || user.role === 'Manager' || user.role === 'Team Leader';
+      const isCounselor = !canViewTeamMetrics;
 
       const leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null);
       const newLeadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).is('deleted_at', null).eq('lead_status', 'New');
@@ -102,12 +104,21 @@ function useDashboardStats() {
 }
 
 export function Dashboard() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin, isDomainAdmin, hasPermission } = useAuth();
   const navigate = useNavigate();
   const { stats, isLoading, refresh } = useDashboardStats();
   const { addLead } = useLeads();
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Workspace Routing Logic
+  if (isSuperAdmin() || isDomainAdmin()) {
+    return <DomainAdminWorkspace />;
+  }
+
+  if (hasPermission('View Team Metrics', 'Analytics')) {
+    return <ManagerWorkspace />;
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

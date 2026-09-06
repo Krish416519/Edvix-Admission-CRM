@@ -21,7 +21,7 @@ export function PartnerLeads() {
 
   const filteredLeads = useMemo(() => {
     return myLeads.filter(lead => 
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lead.phone.includes(searchTerm)
     );
@@ -102,7 +102,7 @@ export function PartnerLeads() {
                 {filteredLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-muted/30 transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">{lead.name}</div>
+                      <div className="font-medium text-foreground">{lead.name || 'Unnamed Lead'}</div>
                       <div className="text-xs text-muted-foreground">{lead.id}</div>
                     </td>
                     <td className="px-6 py-4">

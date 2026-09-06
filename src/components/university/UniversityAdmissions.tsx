@@ -48,7 +48,7 @@ export function UniversityAdmissions() {
             >
               <option value="All">All Stages</option>
               <option value="Application Submitted">Application Submitted</option>
-              <option value="Document Verification">Document Verification</option>
+              <option value="Documents Pending">Documents Pending</option>
               <option value="Fee Payment">Fee Payment</option>
               <option value="Admission Completed">Admission Completed</option>
             </select>

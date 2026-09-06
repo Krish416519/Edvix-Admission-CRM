@@ -6,9 +6,9 @@ import { cn } from '../../../lib/utils';
 interface LeadSortSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  sortField: keyof Lead;
+  sortField: string;
   sortDirection: 'asc' | 'desc';
-  onSort: (field: keyof Lead, direction: 'asc' | 'desc') => void;
+  onSort: (field: string, direction: 'asc' | 'desc') => void;
 }
 
 const SORT_OPTIONS: { label: string; field: keyof Lead; direction: 'asc' | 'desc' }[] = [

@@ -29,7 +29,7 @@ export function UniversityDashboard() {
 
   const activeLeads = leads.filter(l => l.status !== 'Rejected' && l.status !== 'Admitted').length;
   const enrolledStudents = admissions.filter(a => a.stage === 'Admission Completed').length;
-  const pendingVerifications = admissions.filter(a => a.stage === 'Document Verification').length;
+  const pendingVerifications = admissions.filter(a => a.stage === 'Documents Pending').length;
   
   if (isLoading) {
     return (

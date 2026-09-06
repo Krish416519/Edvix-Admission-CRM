@@ -9,7 +9,7 @@ export function UniversityReports() {
   // Calculate stats based on admissions data
   const totalApplications = admissions.length;
   const enrolledStudents = admissions.filter(a => a.stage === 'Admission Completed').length;
-  const pendingDocs = admissions.filter(a => a.stage === 'Document Verification').length;
+  const pendingDocs = admissions.filter(a => a.stage === 'Documents Pending').length;
   
   const approvalRate = totalApplications > 0 ? Math.round((enrolledStudents / totalApplications) * 100) : 0;
 

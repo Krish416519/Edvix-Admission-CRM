@@ -71,7 +71,7 @@ export function DispositionHistory({ leadId, refreshKey = 0 }: { leadId: string;
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border shrink-0">
                   <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="text-[11px] font-medium text-muted-foreground">
-                    {formatDistanceToNow(new Date(record.created_at || ''), { addSuffix: true })}
+                    {formatDistanceToNow(new Date((record as any).createdAt || (record as any).created_at || ''), { addSuffix: true })}
                   </span>
                 </div>
               </div>

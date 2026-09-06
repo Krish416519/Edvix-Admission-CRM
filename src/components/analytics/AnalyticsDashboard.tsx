@@ -387,7 +387,7 @@ export function AnalyticsDashboard() {
                           dataKey="value"
                           stroke="none"
                           labelLine={false}
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          label={({ name, percent }) => `${name} (${(percent ? percent * 100 : 0).toFixed(0)}%)`}
                         >
                           {leadSource.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

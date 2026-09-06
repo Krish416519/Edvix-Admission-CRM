@@ -17,6 +17,12 @@ export interface Disposition extends BaseEntity {
   is_active: boolean;
   order_index: number;
   crm_context?: string;
+  /**
+   * Controls which special UI form renders in DispositionWidget.
+   * Values: 'counselled' | 'semester_fee_paid' | 'loan_rejected' | 'meeting_done' | 'document_collected' | null
+   * Using this field instead of name-matching means dispositions can be freely renamed without breaking UI.
+   */
+  special_form_type?: string | null;
 }
 
 export interface SubDisposition extends BaseEntity {

@@ -65,7 +65,7 @@ BEGIN
                     'Unassigned', NEW.assigned_counselor::text, 'Assignment', 'Assignment', 'System'
                 );
             EXCEPTION WHEN OTHERS THEN NULL; END;
-        END;
+        END IF;
 
     ELSIF TG_OP = 'UPDATE' THEN
         IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN

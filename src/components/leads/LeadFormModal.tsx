@@ -15,7 +15,7 @@ interface LeadFormModalProps {
 export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFormModalProps) {
   const { fields } = useLeadFields();
 
-  const [formData, setFormData] = useState<Partial<Lead>>(
+  const [formData, setFormData] = useState<Partial<Lead> & { customFields?: any }>(
     initialData || {
       name: '',
       phone: '',
@@ -27,7 +27,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
       priority: 'Medium' as LeadPriority,
       status: 'New' as LeadStatus,
       score: 50,
-      customFields: initialData?.customFields || {}
+      customFields: (initialData as any)?.customFields || {}
     }
   );
   
@@ -44,7 +44,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
       setFormData(prev => ({
         ...prev,
         customFields: { ...prev.customFields, [fieldName]: value }
-      }));
+      } as any));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }

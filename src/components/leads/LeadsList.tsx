@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   Search, Filter, Upload, Plus, ChevronDown,
-  ArrowUpDown, Users, Trash2, Edit2, UserPlus, FileSpreadsheet, Clock,
+  ArrowUpDown, ArrowUp, ArrowDown, Users, Trash2, Edit2, UserPlus, FileSpreadsheet, Clock,
   X, CheckCircle, AlertCircle, FileUp, Copy, ArchiveRestore, Merge, Check, Columns, GripVertical
 } from 'lucide-react';
 import { useLeads } from '../../hooks/useLeads';
@@ -176,7 +176,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
   // Sorting
-  const [sortField, setSortField] = useState<keyof Lead>('createdAt');
+  const [sortField, setSortField] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Pagination
@@ -512,7 +512,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
     }
   };
 
-  const handleSort = (field: keyof Lead) => {
+  const handleSort = (field: string) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -520,6 +520,17 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       setSortDirection('asc');
     }
     setCurrentPage(1);
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortField === field) {
+      return sortDirection === 'asc' ? (
+        <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0 transition-transform duration-200" />
+      ) : (
+        <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0 transition-transform duration-200" />
+      );
+    }
+    return <ArrowUpDown className="w-3 h-3 text-muted-foreground/50 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />;
   };
 
   const paginatedLeads = leads;
@@ -1163,146 +1174,148 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                       )}
                     </th>
                     {visibleColumns.leadDetails && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
-                      <div className="flex items-center gap-1">Lead Details <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'name' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('name')}>
+                      <div className="flex items-center gap-1.5">Lead Details {renderSortIcon('name')}</div>
                     </th>
                     )}
                     {visibleColumns.callAttempts && (
-                    <th scope="col" className="px-4 py-3 font-semibold" onClick={() => handleSort('callAttempts' as keyof Lead)}>
-                      Call Attempts
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'callAttempts' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('callAttempts' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Call Attempts {renderSortIcon('callAttempts')}</div>
                     </th>
                     )}
                     {visibleColumns.interactions && (
-                    <th scope="col" className="px-4 py-3 font-semibold" onClick={() => handleSort('interactionsCount' as keyof Lead)}>
-                      Interactions
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'interactionsCount' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('interactionsCount' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Interactions {renderSortIcon('interactionsCount')}</div>
                     </th>
                     )}
                     {visibleColumns.courseUni && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('course')}>
-                      <div className="flex items-center gap-1">Course & Uni <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'course' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('course')}>
+                      <div className="flex items-center gap-1.5">Course & Uni {renderSortIcon('course')}</div>
                     </th>
                     )}
                     {visibleColumns.score && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('score')}>
-                      <div className="flex items-center gap-1">Score <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'score' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('score')}>
+                      <div className="flex items-center gap-1.5">Score {renderSortIcon('score')}</div>
                     </th>
                     )}
                     {visibleColumns.status && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('status')}>
-                      <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'status' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('status')}>
+                      <div className="flex items-center gap-1.5">Status {renderSortIcon('status')}</div>
                     </th>
                     )}
                     {visibleColumns.priority && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('priority')}>
-                       <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'priority' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('priority')}>
+                       <div className="flex items-center gap-1.5">Priority {renderSortIcon('priority')}</div>
                     </th>
                     )}
                     {!isCounselor && visibleColumns.counselor && (
-                    <th scope="col" className="px-4 py-3 font-semibold">Counselor</th>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'counselor' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('counselor' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Counselor {renderSortIcon('counselor')}</div>
+                    </th>
                     )}
                     {visibleColumns.createdOn && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors" onClick={() => handleSort('createdAt')}>
-                      <div className="flex items-center gap-1">Created On <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors ${sortField === 'createdAt' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('createdAt')}>
+                      <div className="flex items-center gap-1.5">Created On {renderSortIcon('createdAt')}</div>
                     </th>
                     )}
                     {visibleColumns.modifiedOn && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('modifiedOn' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Modified On <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'modifiedOn' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('modifiedOn' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Modified On {renderSortIcon('modifiedOn')}</div>
                     </th>
                     )}
                     {visibleColumns.assignmentDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('assignmentDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Assignment Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'assignmentDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('assignmentDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Assignment Date {renderSortIcon('assignmentDate')}</div>
                     </th>
                     )}
                     {visibleColumns.lastCallDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('lastCallDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Last Call Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'lastCallDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('lastCallDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Last Call Date {renderSortIcon('lastCallDate')}</div>
                     </th>
                     )}
                     {visibleColumns.firstCallDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('firstCallDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">First Call Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'firstCallDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('firstCallDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">First Call Date {renderSortIcon('firstCallDate')}</div>
                     </th>
                     )}
                     {visibleColumns.finalFollowUpDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('finalFollowUpDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Final Follow Up Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'finalFollowUpDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('finalFollowUpDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Final Follow Up Date {renderSortIcon('finalFollowUpDate')}</div>
                     </th>
                     )}
                     {visibleColumns.contactedTimestamp && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('contactedTimestamp' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Contacted Timestamp <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'contactedTimestamp' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('contactedTimestamp' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Contacted Timestamp {renderSortIcon('contactedTimestamp')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToFallOut && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToFallOut' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to FallOut <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToFallOut' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToFallOut' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to FallOut {renderSortIcon('transitionToFallOut')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToCounselled && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToCounselled' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Counselled <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToCounselled' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToCounselled' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Counselled {renderSortIcon('transitionToCounselled')}</div>
                     </th>
                     )}
                     {visibleColumns.moreThan5MContactedTime && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan5MContactedTime' as keyof Lead)}>
-                      <div className="flex items-center gap-1">More Than 5M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'moreThan5MContactedTime' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('moreThan5MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">More Than 5M Contacted Time {renderSortIcon('moreThan5MContactedTime')}</div>
                     </th>
                     )}
                     {visibleColumns.moreThan10MContactedTime && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan10MContactedTime' as keyof Lead)}>
-                      <div className="flex items-center gap-1">More Than 10M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'moreThan10MContactedTime' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('moreThan10MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">More Than 10M Contacted Time {renderSortIcon('moreThan10MContactedTime')}</div>
                     </th>
                     )}
                     {visibleColumns.moreThan15MContactedTime && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('moreThan15MContactedTime' as keyof Lead)}>
-                      <div className="flex items-center gap-1">More Than 15M Contacted Time <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'moreThan15MContactedTime' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('moreThan15MContactedTime' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">More Than 15M Contacted Time {renderSortIcon('moreThan15MContactedTime')}</div>
                     </th>
                     )}
                     {visibleColumns.conversionDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('conversionDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Conversion Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'conversionDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('conversionDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Conversion Date {renderSortIcon('conversionDate')}</div>
                     </th>
                     )}
                     {visibleColumns.managerPrioritized && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('managerPrioritized' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Manager Prioritized <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'managerPrioritized' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('managerPrioritized' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Manager Prioritized {renderSortIcon('managerPrioritized')}</div>
                     </th>
                     )}
                     {visibleColumns.firstAssignmentDate && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('firstAssignmentDate' as keyof Lead)}>
-                      <div className="flex items-center gap-1">First Assignment Date <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'firstAssignmentDate' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('firstAssignmentDate' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">First Assignment Date {renderSortIcon('firstAssignmentDate')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToAdmitted && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToAdmitted' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Admitted <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToAdmitted' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToAdmitted' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Admitted {renderSortIcon('transitionToAdmitted')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToOBInitiated && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToOBInitiated' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to OB Initiated <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToOBInitiated' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToOBInitiated' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to OB Initiated {renderSortIcon('transitionToOBInitiated')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToOffer && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToOffer' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Offer <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToOffer' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToOffer' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Offer {renderSortIcon('transitionToOffer')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToVerificationPending && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToVerificationPending' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Verification Pending <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToVerificationPending' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToVerificationPending' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Verification Pending {renderSortIcon('transitionToVerificationPending')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToConverted && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToConverted' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Converted <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToConverted' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToConverted' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Converted {renderSortIcon('transitionToConverted')}</div>
                     </th>
                     )}
                     {visibleColumns.transitionToScreening && (
-                    <th scope="col" className="px-4 py-3 font-semibold cursor-pointer hover:text-foreground transition-colors whitespace-nowrap" onClick={() => handleSort('transitionToScreening' as keyof Lead)}>
-                      <div className="flex items-center gap-1">Transition to Screening <ArrowUpDown className="w-3 h-3" /></div>
+                    <th scope="col" className={`px-4 py-3 font-semibold cursor-pointer select-none hover:text-foreground transition-colors whitespace-nowrap ${sortField === 'transitionToScreening' ? 'text-primary font-bold' : ''}`} onClick={() => handleSort('transitionToScreening' as keyof Lead)}>
+                      <div className="flex items-center gap-1.5">Transition to Screening {renderSortIcon('transitionToScreening')}</div>
                     </th>
                     )}
                     {!isCounselor && (

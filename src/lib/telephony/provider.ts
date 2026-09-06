@@ -1,7 +1,7 @@
 export interface CallConfig {
   to: string;
   from?: string; // Optional, defaults to provider config
-  leadId: string;
+  leadId?: string;
   counselorId: string;
 }
 

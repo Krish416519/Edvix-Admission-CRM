@@ -35,14 +35,14 @@ export function AICounselorPanel({ lead, activities }: AICounselorPanelProps) {
     const context = {
       course: lead.course,
       university: lead.university,
-      name: lead.name.split(' ')[0],
+      name: (lead.name || '').split(' ')[0],
     };
 
     switch (activeTab) {
       case 'next-action':
         return {
           title: 'Next Best Action',
-          content: lead.score > 80 
+          content: (lead.score || 0) > 80 
             ? `Call ${context.name} immediately to close the admission. They have a high lead score and are ready to convert.` 
             : `Send a WhatsApp message with the brochure for ${context.course} at ${context.university} to build more interest.`,
           icon: <ArrowRight className="w-4 h-4 text-blue-500" />
@@ -80,18 +80,18 @@ export function AICounselorPanel({ lead, activities }: AICounselorPanelProps) {
     }
   };
 
-  const currentSuggestion = getSuggestions();
+  const currentSuggestion = getSuggestions() || { title: '', content: '', icon: null };
 
   return (
     <div className="bg-gradient-to-b from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-card border border-indigo-100 dark:border-indigo-500/20 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-indigo-100 dark:border-indigo-500/20 flex items-center justify-between bg-white/50 dark:bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <Sparkles className="w-4 h-4" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-lg shrink-0">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground text-sm">AI Counselor</h3>
-            <p className="text-[10px] text-muted-foreground font-medium">Powered by Gemini</p>
+            <h3 className="font-semibold text-foreground">AI Intelligence for {lead.name?.split(' ')[0] || 'Lead'}</h3>
+            <p className="text-xs text-muted-foreground">Real-time analysis & recommendations</p>
           </div>
         </div>
         <button 
@@ -188,6 +188,7 @@ export function AICounselorPanel({ lead, activities }: AICounselorPanelProps) {
           {isGenerating ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-xl z-10 animate-in fade-in">
               <div className="w-8 h-8 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin mb-3"></div>
+              <div className="text-2xl font-bold text-emerald-600">{(lead as any).score || 0}/100</div>
               <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Analyzing context...</p>
               <p className="text-xs text-muted-foreground mt-1">Reading timeline & notes</p>
             </div>

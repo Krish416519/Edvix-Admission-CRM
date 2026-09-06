@@ -2,7 +2,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Shield, Settings, GraduationCap, 
-  BookOpen, Cpu, ShieldAlert, Database, Bell, Activity
+  BookOpen, Cpu, ShieldAlert, Database, Bell, Activity, Building2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -10,6 +10,7 @@ const ADMIN_TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '' },
   { id: 'users', label: 'User Management', icon: Users, path: 'users' },
   { id: 'roles', label: 'Roles & Permissions', icon: Shield, path: 'roles' },
+  { id: 'organization', label: 'Organization & Structure', icon: Building2, path: 'organization' },
   { id: 'settings', label: 'System Settings', icon: Settings, path: 'settings' },
   { id: 'lead_forms', label: 'Lead Form Config', icon: Settings, path: 'lead-forms' },
   { id: 'dispositions', label: 'Lead Dispositions', icon: Settings, path: 'dispositions' },

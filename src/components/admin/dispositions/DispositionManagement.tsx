@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { dispositionService, DispositionCategory, Disposition, CrmContextOption } from '../../../lib/dispositionService';
-import { Plus, Edit2, CheckCircle, ChevronDown, ChevronRight, Trash2, X, AlertTriangle, Loader2, Clock } from 'lucide-react';
+import { dispositionService, CrmContextOption } from '../../../lib/dispositionService';
+import { DispositionCategory, Disposition, SubDisposition, NextAction } from '../../../types/disposition';
+import { Plus, Edit2, CheckCircle, ChevronDown, ChevronRight, Trash2, X, AlertTriangle, Loader2, Clock, ListTree, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../../../lib/utils';
 import { DEFAULT_PIPELINE_STAGES } from '../../../constants/pipelineStages';
@@ -12,6 +13,12 @@ export function DispositionManagement() {
   const [dispositions, setDispositions] = useState<Record<string, Disposition[]>>({});
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sub-dispositions & Next Actions state
+  const [expandedDisps, setExpandedDisps] = useState<Record<string, boolean>>({});
+  const [subDispositions, setSubDispositions] = useState<Record<string, SubDisposition[]>>({});
+  const [nextActions, setNextActions] = useState<Record<string, NextAction[]>>({});
+  const [loadingSubData, setLoadingSubData] = useState<Record<string, boolean>>({});
 
   // Modals state
   const [catModalOpen, setCatModalOpen] = useState(false);
@@ -31,16 +38,41 @@ export function DispositionManagement() {
     requires_follow_up: false,
     requires_note: false,
     target_status: '',
-    crm_context: 'academic'
+    crm_context: 'academic',
+    special_form_type: ''
   });
   const [isSavingDisp, setIsSavingDisp] = useState(false);
 
+  // Sub-disposition Modal
+  const [subDispModalOpen, setSubDispModalOpen] = useState(false);
+  const [editingSubDisp, setEditingSubDisp] = useState<SubDisposition | null>(null);
+  const [subDispForm, setSubDispForm] = useState({ dispositionId: '', name: '' });
+  const [isSavingSubDisp, setIsSavingSubDisp] = useState(false);
+
+  // Next Action Modal
+  const [nextActionModalOpen, setNextActionModalOpen] = useState(false);
+  const [editingNextAction, setEditingNextAction] = useState<NextAction | null>(null);
+  const [nextActionForm, setNextActionForm] = useState({ dispositionId: '', name: '', action_type: 'Call' });
+  const [isSavingNextAction, setIsSavingNextAction] = useState(false);
+
+  // Toggle & Delete Modals
   const [toggleModalOpen, setToggleModalOpen] = useState(false);
-  const [itemToToggle, setItemToToggle] = useState<{ type: 'category' | 'disposition', id: string, categoryId?: string, name: string, is_active: boolean } | null>(null);
+  const [itemToToggle, setItemToToggle] = useState<{ 
+    type: 'category' | 'disposition' | 'sub_disposition' | 'next_action', 
+    id: string, 
+    parentId?: string,
+    name: string, 
+    is_active: boolean 
+  } | null>(null);
   const [isToggling, setIsToggling] = useState(false);
 
   const [hardDeleteModalOpen, setHardDeleteModalOpen] = useState(false);
-  const [itemToHardDelete, setItemToHardDelete] = useState<{ type: 'category' | 'disposition', id: string, name: string } | null>(null);
+  const [itemToHardDelete, setItemToHardDelete] = useState<{ 
+    type: 'category' | 'disposition' | 'sub_disposition' | 'next_action', 
+    id: string, 
+    parentId?: string,
+    name: string 
+  } | null>(null);
   const [isHardDeleting, setIsHardDeleting] = useState(false);
 
   const [deletePipelineModalOpen, setDeletePipelineModalOpen] = useState(false);
@@ -64,15 +96,40 @@ export function DispositionManagement() {
         dispMap[cat.id] = await dispositionService.getDispositions(cat.id, undefined, true);
       }
       setDispositions(dispMap);
-     } catch (error) {
+    } catch (error) {
       toast.error('Failed to load dispositions');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const loadSubData = async (dispId: string) => {
+    setLoadingSubData(prev => ({ ...prev, [dispId]: true }));
+    try {
+      const [subs, actions] = await Promise.all([
+        dispositionService.getSubDispositions(dispId, true),
+        dispositionService.getNextActions(dispId, true)
+      ]);
+      setSubDispositions(prev => ({ ...prev, [dispId]: subs }));
+      setNextActions(prev => ({ ...prev, [dispId]: actions }));
+    } catch (error) {
+      console.error('Failed to load sub-dispositions:', error);
+      toast.error('Failed to load sub-dispositions');
+    } finally {
+      setLoadingSubData(prev => ({ ...prev, [dispId]: false }));
+    }
+  };
+
   const toggleCategory = (id: string) => {
     setExpandedCats(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleDisposition = (dispId: string) => {
+    const nextState = !expandedDisps[dispId];
+    setExpandedDisps(prev => ({ ...prev, [dispId]: nextState }));
+    if (nextState && !subDispositions[dispId]) {
+      loadSubData(dispId);
+    }
   };
 
   // --- Category Handlers ---
@@ -90,7 +147,6 @@ export function DispositionManagement() {
       order_index: cat.order_index,
       crm_context: cat.crm_context || activeTab
     });
-    // Ensure the context exists in the dropdown, if not it's custom
     if (cat.crm_context && !availableContexts.find(c => c.id === cat.crm_context)) {
       setIsCustomContext(true);
     } else {
@@ -115,7 +171,6 @@ export function DispositionManagement() {
       } else {
         const newCat = await dispositionService.createCategory(catForm.name.trim(), categories.length * 10, catForm.crm_context);
         
-        // Only append if it belongs to the current tab
         if (catForm.crm_context === activeTab) {
           setCategories(prev => [...prev, newCat]);
           setExpandedCats(prev => ({ ...prev, [newCat.id]: true }));
@@ -141,12 +196,11 @@ export function DispositionManagement() {
     
     setIsSavingContext(true);
     try {
-      // To create a new context in the DB, we create a default category for it
       await dispositionService.createCategory('General', 0, contextForm.id);
       toast.success(`${contextForm.name} Pipeline created!`);
       setContextModalOpen(false);
       await loadData();
-      setActiveTab(contextForm.id); // switch to the new tab immediately
+      setActiveTab(contextForm.id);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create pipeline');
     } finally {
@@ -160,10 +214,9 @@ export function DispositionManagement() {
       await dispositionService.deletePipeline(activeTab);
       toast.success('Pipeline deleted successfully');
       setDeletePipelineModalOpen(false);
-      setActiveTab('academic'); // Switch back to default
-      // loadData will be called by the useEffect watching activeTab
+      setActiveTab('academic');
     } catch (error: any) {
-      if (error.code === '23503') { // Foreign key constraint violation
+      if (error.code === '23503') {
         toast.error('Cannot delete this pipeline because it contains dispositions that are already used by existing leads.');
       } else {
         toast.error(error.message || 'Failed to delete pipeline');
@@ -176,7 +229,7 @@ export function DispositionManagement() {
   // --- Disposition Handlers ---
   const openAddDisposition = (categoryId: string) => {
     setEditingDisp(null);
-    setDispForm({ categoryId, name: '', requires_follow_up: false, requires_note: false, target_status: '', crm_context: activeTab });
+    setDispForm({ categoryId, name: '', requires_follow_up: false, requires_note: false, target_status: '', crm_context: activeTab, special_form_type: '' });
     setDispModalOpen(true);
   };
 
@@ -188,7 +241,8 @@ export function DispositionManagement() {
       requires_follow_up: disp.requires_follow_up || false,
       requires_note: disp.requires_note || false,
       target_status: disp.target_status || '',
-      crm_context: disp.crm_context || activeTab
+      crm_context: disp.crm_context || activeTab,
+      special_form_type: disp.special_form_type || ''
     });
     setDispModalOpen(true);
   };
@@ -205,15 +259,14 @@ export function DispositionManagement() {
         requires_note: dispForm.requires_note,
         target_status: dispForm.target_status || null,
         crm_context: dispForm.crm_context,
-        category_id: dispForm.categoryId
+        category_id: dispForm.categoryId,
+        special_form_type: dispForm.special_form_type || null
       };
 
       if (editingDisp) {
         const updated = await dispositionService.updateDisposition(editingDisp.id, payload);
-        
-        // If moved to a new category or context changed
         if (dispForm.categoryId !== editingDisp.category_id || dispForm.crm_context !== activeTab) {
-           loadData(); // Just reload to properly reflect moves
+          loadData();
         } else {
           setDispositions(prev => ({
             ...prev,
@@ -243,6 +296,83 @@ export function DispositionManagement() {
     }
   };
 
+  // --- Sub-Disposition Handlers ---
+  const openAddSubDisposition = (dispositionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSubDisp(null);
+    setSubDispForm({ dispositionId, name: '' });
+    setSubDispModalOpen(true);
+  };
+
+  const openEditSubDisposition = (sub: SubDisposition, dispositionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSubDisp(sub);
+    setSubDispForm({ dispositionId, name: sub.name });
+    setSubDispModalOpen(true);
+  };
+
+  const handleSaveSubDisposition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subDispForm.name.trim() || !subDispForm.dispositionId) return;
+
+    setIsSavingSubDisp(true);
+    try {
+      if (editingSubDisp) {
+        await dispositionService.updateSubDisposition(editingSubDisp.id, { name: subDispForm.name.trim() });
+        toast.success('Sub-disposition updated');
+      } else {
+        await dispositionService.createSubDisposition(subDispForm.dispositionId, subDispForm.name.trim());
+        toast.success('Sub-disposition added');
+      }
+      setSubDispModalOpen(false);
+      await loadSubData(subDispForm.dispositionId);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save sub-disposition');
+    } finally {
+      setIsSavingSubDisp(false);
+    }
+  };
+
+  // --- Next Action Handlers ---
+  const openAddNextAction = (dispositionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingNextAction(null);
+    setNextActionForm({ dispositionId, name: '', action_type: 'Call' });
+    setNextActionModalOpen(true);
+  };
+
+  const openEditNextAction = (act: NextAction, dispositionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingNextAction(act);
+    setNextActionForm({ dispositionId, name: act.name, action_type: act.action_type || 'Call' });
+    setNextActionModalOpen(true);
+  };
+
+  const handleSaveNextAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nextActionForm.name.trim() || !nextActionForm.dispositionId) return;
+
+    setIsSavingNextAction(true);
+    try {
+      if (editingNextAction) {
+        await dispositionService.updateNextAction(editingNextAction.id, { 
+          name: nextActionForm.name.trim(), 
+          action_type: nextActionForm.action_type 
+        });
+        toast.success('Next action updated');
+      } else {
+        await dispositionService.createNextAction(nextActionForm.dispositionId, nextActionForm.name.trim(), nextActionForm.action_type);
+        toast.success('Next action added');
+      }
+      setNextActionModalOpen(false);
+      await loadSubData(nextActionForm.dispositionId);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save next action');
+    } finally {
+      setIsSavingNextAction(false);
+    }
+  };
+
   // --- Toggle (Activate/Deactivate) Handlers ---
   const requestToggleCategory = (cat: DispositionCategory, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -250,8 +380,21 @@ export function DispositionManagement() {
     setToggleModalOpen(true);
   };
 
-  const requestToggleDisposition = (disp: Disposition, categoryId: string) => {
-    setItemToToggle({ type: 'disposition', id: disp.id, categoryId, name: disp.name, is_active: disp.is_active });
+  const requestToggleDisposition = (disp: Disposition, categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToToggle({ type: 'disposition', id: disp.id, parentId: categoryId, name: disp.name, is_active: disp.is_active });
+    setToggleModalOpen(true);
+  };
+
+  const requestToggleSubDisposition = (sub: SubDisposition, dispId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToToggle({ type: 'sub_disposition', id: sub.id, parentId: dispId, name: sub.name, is_active: sub.is_active });
+    setToggleModalOpen(true);
+  };
+
+  const requestToggleNextAction = (act: NextAction, dispId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToToggle({ type: 'next_action', id: act.id, parentId: dispId, name: act.name, is_active: act.is_active });
     setToggleModalOpen(true);
   };
 
@@ -267,6 +410,7 @@ export function DispositionManagement() {
           await dispositionService.activateCategory(itemToToggle.id);
           toast.success(`Category "${itemToToggle.name}" activated`);
         }
+        await loadData();
       } else if (itemToToggle.type === 'disposition') {
         if (itemToToggle.is_active) {
           await dispositionService.deleteDisposition(itemToToggle.id);
@@ -275,22 +419,39 @@ export function DispositionManagement() {
           await dispositionService.activateDisposition(itemToToggle.id);
           toast.success(`Disposition "${itemToToggle.name}" activated`);
         }
+        await loadData();
+      } else if (itemToToggle.type === 'sub_disposition') {
+        if (itemToToggle.is_active) {
+          await dispositionService.deleteSubDisposition(itemToToggle.id);
+          toast.success(`Sub-disposition "${itemToToggle.name}" deactivated`);
+        } else {
+          await dispositionService.activateSubDisposition(itemToToggle.id);
+          toast.success(`Sub-disposition "${itemToToggle.name}" activated`);
+        }
+        if (itemToToggle.parentId) {
+          await loadSubData(itemToToggle.parentId);
+        }
+      } else if (itemToToggle.type === 'next_action') {
+        if (itemToToggle.is_active) {
+          await dispositionService.deleteNextAction(itemToToggle.id);
+          toast.success(`Next action "${itemToToggle.name}" deactivated`);
+        } else {
+          await dispositionService.activateNextAction(itemToToggle.id);
+          toast.success(`Next action "${itemToToggle.name}" activated`);
+        }
+        if (itemToToggle.parentId) {
+          await loadSubData(itemToToggle.parentId);
+        }
       }
-      
-      // Reload data to reflect changes
-      await loadData();
       setToggleModalOpen(false);
     } catch (error: any) {
-      if (error.message?.includes('dispositions_unique_name_per_category')) {
-        toast.error(`Cannot activate "${itemToToggle?.name}": An active disposition with this name already exists in this category.`);
-      } else {
-        toast.error(error.message || 'Failed to toggle item');
-      }
+      toast.error(error.message || 'Failed to toggle item');
     } finally {
       setIsToggling(false);
     }
   };
 
+  // --- Hard Delete Handlers ---
   const requestHardDeleteCategory = (cat: DispositionCategory, e: React.MouseEvent) => {
     e.stopPropagation();
     setItemToHardDelete({ type: 'category', id: cat.id, name: cat.name });
@@ -303,6 +464,18 @@ export function DispositionManagement() {
     setHardDeleteModalOpen(true);
   };
 
+  const requestHardDeleteSubDisposition = (sub: SubDisposition, dispId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToHardDelete({ type: 'sub_disposition', id: sub.id, parentId: dispId, name: sub.name });
+    setHardDeleteModalOpen(true);
+  };
+
+  const requestHardDeleteNextAction = (act: NextAction, dispId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setItemToHardDelete({ type: 'next_action', id: act.id, parentId: dispId, name: act.name });
+    setHardDeleteModalOpen(true);
+  };
+
   const confirmHardDelete = async () => {
     if (!itemToHardDelete) return;
     setIsHardDeleting(true);
@@ -310,15 +483,28 @@ export function DispositionManagement() {
       if (itemToHardDelete.type === 'category') {
         await dispositionService.hardDeleteCategory(itemToHardDelete.id);
         toast.success(`Category "${itemToHardDelete.name}" deleted permanently`);
-      } else {
+        await loadData();
+      } else if (itemToHardDelete.type === 'disposition') {
         await dispositionService.hardDeleteDisposition(itemToHardDelete.id);
         toast.success(`Disposition "${itemToHardDelete.name}" deleted permanently`);
+        await loadData();
+      } else if (itemToHardDelete.type === 'sub_disposition') {
+        await dispositionService.hardDeleteSubDisposition(itemToHardDelete.id);
+        toast.success(`Sub-disposition "${itemToHardDelete.name}" deleted permanently`);
+        if (itemToHardDelete.parentId) {
+          await loadSubData(itemToHardDelete.parentId);
+        }
+      } else if (itemToHardDelete.type === 'next_action') {
+        await dispositionService.hardDeleteNextAction(itemToHardDelete.id);
+        toast.success(`Next action "${itemToHardDelete.name}" deleted permanently`);
+        if (itemToHardDelete.parentId) {
+          await loadSubData(itemToHardDelete.parentId);
+        }
       }
-      await loadData();
       setHardDeleteModalOpen(false);
     } catch (error: any) {
-      if (error.code === '23503') { // Foreign key constraint violation
-        toast.error(`Cannot delete "${itemToHardDelete.name}" because it is already used by existing leads. Try deactivating it instead.`);
+      if (error.code === '23503') {
+        toast.error(`Cannot delete "${itemToHardDelete.name}" because it is referenced by existing lead history. Try deactivating it instead.`);
       } else {
         toast.error(error.message || 'Failed to delete item permanently');
       }
@@ -336,13 +522,12 @@ export function DispositionManagement() {
     );
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground tracking-tight">Disposition Configuration</h2>
-          <p className="text-muted-foreground mt-1">Manage lead dispositions, sub-dispositions, and next actions.</p>
+          <p className="text-muted-foreground mt-1">Manage lead dispositions, sub-dispositions, and next actions with full lifecycle control.</p>
         </div>
         <button 
           onClick={openAddCategory}
@@ -464,64 +649,231 @@ export function DispositionManagement() {
                         No dispositions in this category. Click 'Add Disposition' to create one.
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {dispositions[cat.id]?.map(disp => (
-                          <div key={disp.id} className="bg-background border border-border rounded-xl p-3 flex justify-between items-center group/disp hover:border-border-hover transition-colors shadow-sm">
-                            <div>
-                              <div className="font-bold text-sm text-foreground flex items-center gap-2">
-                                {disp.name}
-                                {!disp.is_active && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-destructive/10 text-destructive uppercase tracking-wider border border-destructive/20">Inactive</span>
-                                )}
+                      <div className="space-y-3">
+                        {dispositions[cat.id]?.map(disp => {
+                          const isExpanded = !!expandedDisps[disp.id];
+                          const subCount = subDispositions[disp.id]?.length || 0;
+                          const actionCount = nextActions[disp.id]?.length || 0;
+                          const isLoadingSubs = !!loadingSubData[disp.id];
+
+                          return (
+                            <div key={disp.id} className="bg-background border border-border rounded-xl overflow-hidden group/disp hover:border-border-hover transition-colors shadow-sm">
+                              <div className="p-3 flex justify-between items-center">
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={() => toggleDisposition(disp.id)}
+                                    className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+                                    title="View Sub-Dispositions & Next Actions"
+                                  >
+                                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  </button>
+                                  <div>
+                                    <div className="font-bold text-sm text-foreground flex items-center gap-2">
+                                      {disp.name}
+                                      {!disp.is_active && (
+                                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-destructive/10 text-destructive uppercase tracking-wider border border-destructive/20">Inactive</span>
+                                      )}
+                                      {disp.special_form_type && (
+                                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 uppercase tracking-wider border border-purple-200 dark:border-purple-500/20">
+                                          Form: {disp.special_form_type}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-2 mt-1.5 font-medium">
+                                      {disp.requires_follow_up && (
+                                        <span className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-500/20">
+                                          <Clock className="w-3 h-3" /> Follow-up Req
+                                        </span>
+                                      )}
+                                      {disp.requires_note && (
+                                        <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-500/20">
+                                          <Edit2 className="w-3 h-3" /> Note Req
+                                        </span>
+                                      )}
+                                      {disp.target_status && (
+                                        <span className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
+                                          Sets: {disp.target_status}
+                                        </span>
+                                      )}
+                                      <button 
+                                        onClick={() => toggleDisposition(disp.id)}
+                                        className="flex items-center gap-1 text-[10px] text-primary/80 hover:text-primary underline ml-1"
+                                      >
+                                        <ListTree className="w-3 h-3" />
+                                        {subCount} sub-items, {actionCount} next actions
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover/disp:opacity-100 transition-opacity">
+                                  <button 
+                                    onClick={() => openEditDisposition(disp, cat.id)}
+                                    className="p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors"
+                                    title="Edit Disposition"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => requestToggleDisposition(disp, cat.id, e)}
+                                    className={cn(
+                                      "p-2 rounded-lg transition-colors",
+                                      disp.is_active 
+                                        ? "text-muted-foreground hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
+                                        : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
+                                    )}
+                                    title={disp.is_active ? "Deactivate Disposition" : "Activate Disposition"}
+                                  >
+                                    {disp.is_active ? <X className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                  </button>
+                                  <button 
+                                    onClick={(e) => requestHardDeleteDisposition(disp, e)}
+                                    className="p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors"
+                                    title="Delete Permanently"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
-                              <div className="text-[11px] text-muted-foreground flex flex-wrap gap-2 mt-1.5 font-medium">
-                                {disp.requires_follow_up && (
-                                  <span className="flex items-center gap-1 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-500/20">
-                                    <Clock className="w-3 h-3" /> Follow-up Req
-                                  </span>
-                                )}
-                                {disp.requires_note && (
-                                  <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-500/20">
-                                    <Edit2 className="w-3 h-3" /> Note Req
-                                  </span>
-                                )}
-                                {disp.target_status && (
-                                  <span className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
-                                    Sets: {disp.target_status}
-                                  </span>
-                                )}
-                              </div>
+
+                              {/* Expanded Sub-Dispositions & Next Actions */}
+                              {isExpanded && (
+                                <div className="border-t border-border/60 bg-muted/20 p-4 space-y-4">
+                                  {isLoadingSubs ? (
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                                      Loading sub-dispositions &amp; next actions...
+                                    </div>
+                                  ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {/* Sub-Dispositions Column */}
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                            <ListTree className="w-3.5 h-3.5" /> Sub-Dispositions
+                                          </span>
+                                          <button
+                                            onClick={(e) => openAddSubDisposition(disp.id, e)}
+                                            className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/5"
+                                          >
+                                            <Plus className="w-3 h-3" /> Add Sub
+                                          </button>
+                                        </div>
+
+                                        {(subDispositions[disp.id] || []).length === 0 ? (
+                                          <div className="text-xs text-muted-foreground bg-background/50 border border-dashed border-border/80 rounded-lg p-2.5 text-center">
+                                            No sub-dispositions configured.
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-1.5">
+                                            {subDispositions[disp.id].map(sub => (
+                                              <div key={sub.id} className="flex justify-between items-center bg-background border border-border/70 rounded-lg px-2.5 py-1.5 text-xs group/sub hover:border-border transition-colors">
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                  <span className={cn("font-medium truncate", !sub.is_active && "text-muted-foreground line-through")}>
+                                                    {sub.name}
+                                                  </span>
+                                                  {!sub.is_active && (
+                                                    <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-destructive/10 text-destructive uppercase">Inactive</span>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover/sub:opacity-100 transition-opacity shrink-0">
+                                                  <button 
+                                                    onClick={(e) => openEditSubDisposition(sub, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-foreground rounded"
+                                                    title="Edit"
+                                                  >
+                                                    <Edit2 className="w-3 h-3" />
+                                                  </button>
+                                                  <button 
+                                                    onClick={(e) => requestToggleSubDisposition(sub, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-amber-600 rounded"
+                                                    title={sub.is_active ? "Deactivate" : "Activate"}
+                                                  >
+                                                    {sub.is_active ? <X className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                                                  </button>
+                                                  <button 
+                                                    onClick={(e) => requestHardDeleteSubDisposition(sub, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-red-600 rounded"
+                                                    title="Delete"
+                                                  >
+                                                    <Trash2 className="w-3 h-3" />
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Next Actions Column */}
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                            <ArrowRight className="w-3.5 h-3.5" /> Next Actions
+                                          </span>
+                                          <button
+                                            onClick={(e) => openAddNextAction(disp.id, e)}
+                                            className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/5"
+                                          >
+                                            <Plus className="w-3 h-3" /> Add Action
+                                          </button>
+                                        </div>
+
+                                        {(nextActions[disp.id] || []).length === 0 ? (
+                                          <div className="text-xs text-muted-foreground bg-background/50 border border-dashed border-border/80 rounded-lg p-2.5 text-center">
+                                            No next actions configured.
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-1.5">
+                                            {nextActions[disp.id].map(act => (
+                                              <div key={act.id} className="flex justify-between items-center bg-background border border-border/70 rounded-lg px-2.5 py-1.5 text-xs group/act hover:border-border transition-colors">
+                                                <div className="flex items-center gap-1.5 truncate">
+                                                  <span className={cn("font-medium truncate", !act.is_active && "text-muted-foreground line-through")}>
+                                                    {act.name}
+                                                  </span>
+                                                  {act.action_type && (
+                                                    <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400">
+                                                      {act.action_type}
+                                                    </span>
+                                                  )}
+                                                  {!act.is_active && (
+                                                    <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-destructive/10 text-destructive uppercase">Inactive</span>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover/act:opacity-100 transition-opacity shrink-0">
+                                                  <button 
+                                                    onClick={(e) => openEditNextAction(act, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-foreground rounded"
+                                                    title="Edit"
+                                                  >
+                                                    <Edit2 className="w-3 h-3" />
+                                                  </button>
+                                                  <button 
+                                                    onClick={(e) => requestToggleNextAction(act, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-amber-600 rounded"
+                                                    title={act.is_active ? "Deactivate" : "Activate"}
+                                                  >
+                                                    {act.is_active ? <X className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                                                  </button>
+                                                  <button 
+                                                    onClick={(e) => requestHardDeleteNextAction(act, disp.id, e)}
+                                                    className="p-1 text-muted-foreground hover:text-red-600 rounded"
+                                                    title="Delete"
+                                                  >
+                                                    <Trash2 className="w-3 h-3" />
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover/disp:opacity-100 transition-opacity">
-                              <button 
-                                onClick={() => openEditDisposition(disp, cat.id)}
-                                className="p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors"
-                                title="Edit Disposition"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); requestToggleDisposition(disp, cat.id); }}
-                                className={cn(
-                                  "p-2 rounded-lg transition-colors",
-                                  disp.is_active 
-                                    ? "text-muted-foreground hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
-                                    : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
-                                )}
-                                title={disp.is_active ? "Deactivate Disposition" : "Activate Disposition"}
-                              >
-                                {disp.is_active ? <X className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                              </button>
-                              <button 
-                                onClick={(e) => requestHardDeleteDisposition(disp, e)}
-                                className="p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors"
-                                title="Delete Permanently"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -744,6 +1096,23 @@ export function DispositionManagement() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Special Form Type (Optional)</label>
+                <p className="text-xs text-muted-foreground mb-2">Attaches a special data-collection form to this disposition. This survives renaming.</p>
+                <select
+                  value={dispForm.special_form_type}
+                  onChange={e => setDispForm({ ...dispForm, special_form_type: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                >
+                  <option value="">-- None (standard disposition) --</option>
+                  <option value="counselled">Counselled — Shows counseling details form</option>
+                  <option value="semester_fee_paid">Semester Fee Paid — Shows enrollment &amp; fee details form</option>
+                  <option value="loan_rejected">Loan Rejected — Shows loan applicant details form</option>
+                  <option value="meeting_done">Meeting Done — Allows screenshot upload</option>
+                  <option value="document_collected">Document Collected — Allows document link/upload</option>
+                </select>
+              </div>
+
               <div className="space-y-3 pt-2 border-t border-border">
                 <h4 className="text-sm font-semibold text-foreground">Requirements</h4>
                 <label className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:bg-muted/30 transition-colors">
@@ -787,6 +1156,99 @@ export function DispositionManagement() {
         </div>
       )}
 
+      {/* Sub-Disposition Modal */}
+      {subDispModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">
+                {editingSubDisp ? 'Edit Sub-Disposition' : 'Add Sub-Disposition'}
+              </h2>
+              <button onClick={() => setSubDispModalOpen(false)} className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveSubDisposition} className="p-5 flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Sub-Disposition Name *</label>
+                <input 
+                  autoFocus
+                  required
+                  type="text"
+                  value={subDispForm.name}
+                  onChange={e => setSubDispForm({ ...subDispForm, name: e.target.value })}
+                  placeholder="e.g. Payout too low, Budget Issue"
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setSubDispModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSavingSubDisp || !subDispForm.name.trim()} className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                  {isSavingSubDisp ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  {isSavingSubDisp ? 'Saving...' : 'Save Sub-Disposition'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Next Action Modal */}
+      {nextActionModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground">
+                {editingNextAction ? 'Edit Next Action' : 'Add Next Action'}
+              </h2>
+              <button onClick={() => setNextActionModalOpen(false)} className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveNextAction} className="p-5 flex flex-col gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Action Name *</label>
+                <input 
+                  autoFocus
+                  required
+                  type="text"
+                  value={nextActionForm.name}
+                  onChange={e => setNextActionForm({ ...nextActionForm, name: e.target.value })}
+                  placeholder="e.g. Follow-up Call, Send WhatsApp Brochure"
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-1.5">Action Type</label>
+                <select
+                  value={nextActionForm.action_type}
+                  onChange={e => setNextActionForm({ ...nextActionForm, action_type: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                >
+                  <option value="Call">Call</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Email">Email</option>
+                  <option value="Document">Document</option>
+                  <option value="Task">Task</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setNextActionModalOpen(false)} className="px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSavingNextAction || !nextActionForm.name.trim()} className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-foreground bg-primary rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                  {isSavingNextAction ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  {isSavingNextAction ? 'Saving...' : 'Save Next Action'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Toggle Confirmation Modal */}
       {toggleModalOpen && itemToToggle && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -800,12 +1262,12 @@ export function DispositionManagement() {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              {itemToToggle.is_active ? 'Deactivate' : 'Activate'} {itemToToggle.type}?
+              {itemToToggle.is_active ? 'Deactivate' : 'Activate'} {itemToToggle.type.replace('_', ' ')}?
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to {itemToToggle.is_active ? 'deactivate' : 'activate'} the {itemToToggle.type} <strong className="text-foreground">"{itemToToggle.name}"</strong>? 
+              Are you sure you want to {itemToToggle.is_active ? 'deactivate' : 'activate'} the {itemToToggle.type.replace('_', ' ')} <strong className="text-foreground">"{itemToToggle.name}"</strong>? 
               {itemToToggle.is_active 
-                ? " This will hide it from future use. Existing leads with this disposition will not be affected."
+                ? " This will hide it from future use. Existing leads will not be affected."
                 : " This will make it available for future use."}
             </p>
             <div className="flex flex-col gap-2">
@@ -874,7 +1336,7 @@ export function DispositionManagement() {
               <Trash2 className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              Permanently Delete {itemToHardDelete.type}?
+              Permanently Delete {itemToHardDelete.type.replace('_', ' ')}?
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
               Are you sure you want to permanently delete <strong className="text-foreground">"{itemToHardDelete.name}"</strong>? 

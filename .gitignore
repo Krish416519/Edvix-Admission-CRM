@@ -27,3 +27,24 @@ desktop.ini
 *.tsbuildinfo
 .eslintcache
 
+# Scratch & temporary audit scripts
+scratch/
+scratch.txt
+diag_rls.js
+extract.cjs
+fix_ts*
+run_migration.cjs
+run_org_migration.cjs
+smoke_gate_2_1_2.js
+test_rbac*
+tables.txt
+schema_dump.sql
+seed_org_data.sql
+apply_enterprise_rbac.sql
+apply_org_restructure.sql
+add_missing_fks.sql
+audit_script.ts
+rls_audit_script.ts
+security_audit*
+check_postgrest.ts
+test_role.ts

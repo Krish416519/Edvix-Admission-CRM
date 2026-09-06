@@ -47,9 +47,9 @@ export function SavedViewsDropdown({ currentFilterState, onSelectView, onClearVi
 
   const getVisibilityIcon = (visibility: ViewVisibility) => {
     switch (visibility) {
-      case 'private': return <Shield className="w-3 h-3 text-gray-400" title="Private" />;
-      case 'team': return <Share2 className="w-3 h-3 text-blue-400" title="Team" />;
-      case 'organization': return <Eye className="w-3 h-3 text-green-400" title="Organization" />;
+      case 'private': return <span title="Private"><Shield className="w-3 h-3 text-gray-400" /></span>;
+      case 'team': return <span title="Team"><Share2 className="w-3 h-3 text-blue-400" /></span>;
+      case 'organization': return <span title="Organization"><Eye className="w-3 h-3 text-green-400" /></span>;
       default: return null;
     }
   };

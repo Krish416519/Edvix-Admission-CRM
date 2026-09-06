@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Role } from '../types/auth';
+import { User, Role, DataScope } from '../types/auth';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
@@ -7,18 +7,57 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   permissions: { action: string; resource: string }[];
+  dataScope: DataScope;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (roles: Role[]) => boolean;
   hasPermission: (action: string, resource: string) => boolean;
   hasResourceAccess: (resource: string) => boolean;
+  canAccessScope: (requiredScope: DataScope) => boolean;
+  canAccessDomain: (domainName: string) => boolean;
   switchOrganization: (orgId: string) => void;
+  isSuperAdmin: () => boolean;
+  isDomainAdmin: (domainName?: string) => boolean;
+  isActive: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Fallback avatar for users without one
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=a042581f4e29026704d';
+
+const DEFAULT_ROLE_SCOPES: Record<string, DataScope> = {
+  'Super Admin': 'ORGANIZATION',
+  'Admin': 'ORGANIZATION',
+  'Admission Admin': 'DEPARTMENT',
+  'Admission Manager': 'DEPARTMENT',
+  'Team Leader': 'TEAM',
+  'Counselor': 'ASSIGNED',
+  'Academic Counselor': 'ASSIGNED',
+  'Admission Executive': 'ASSIGNED',
+  'HR Admin': 'DEPARTMENT',
+  'HR Manager': 'DEPARTMENT',
+  'HR Executive': 'DEPARTMENT',
+  'Marketing Admin': 'DEPARTMENT',
+  'Marketing Manager': 'DEPARTMENT',
+  'Marketing': 'DEPARTMENT',
+  'Finance Admin': 'DEPARTMENT',
+  'Finance Manager': 'DEPARTMENT',
+  'Finance Executive': 'DEPARTMENT',
+  'Accounts': 'DEPARTMENT',
+  'Viewer': 'ASSIGNED',
+  'Partner': 'OWN',
+  'Student': 'OWN',
+};
+
+const SCOPE_HIERARCHY: Record<DataScope, number> = {
+  'ORGANIZATION': 50,
+  'DEPARTMENT': 40,
+  'TEAM': 30,
+  'ASSIGNED': 20,
+  'OWN': 10,
+  'CUSTOM': 25,
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -31,7 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Role is pulled from the live DB (roles table) or falls back to 'Viewer'
     const role: Role = (profileData?.roles?.name as Role) || (sbUser.user_metadata?.role as Role) || 'Viewer';
     
-    const name = profileData?.name || sbUser.user_metadata?.name || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    // Explicit Security Metadata
+    const isSystemAdmin = profileData?.roles?.is_system_admin || profileData?.is_platform_super_admin || role === 'Super Admin' || false;
+    const isDomainAdmin = profileData?.roles?.is_domain_admin ?? false;
+    
+    const name = profileData?.name || sbUser.user_metadata?.name || email.split('@')[0].replace('.', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
     const avatar = sbUser.user_metadata?.avatar_url || profileData?.avatar_url || DEFAULT_AVATAR;
 
     let organizations = [];
@@ -48,6 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const dataScope: DataScope = isSystemAdmin
+      ? 'ORGANIZATION'
+      : (profileData?.access_profiles?.data_scope || DEFAULT_ROLE_SCOPES[role] || 'ASSIGNED');
+
     return {
       id: sbUser.id,
       email,
@@ -55,9 +102,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role,
       avatar,
       phone: profileData?.phone,
-      department: profileData?.department,
+      department: profileData?.departments?.name || profileData?.department || '',
+      department_id: profileData?.department_id || null,
+      designation_id: profileData?.designation_id || null,
+      team_id: profileData?.team_id || null,
+      manager_id: profileData?.manager_id || null,
+      access_profile_id: profileData?.access_profile_id || null,
+      dataScope,
+      departmentName: profileData?.departments?.name,
+      designationName: profileData?.designations?.name,
+      teamName: profileData?.teams?.name,
+      accessProfileName: profileData?.access_profiles?.name,
+      domain: profileData?.domains || null,
       lastLogin: profileData?.last_login,
       isActive: profileData?.is_active ?? true,
+      isSystemAdmin,
+      isDomainAdmin,
       activeOrganizationId: activeOrgId,
       organizations
     };
@@ -70,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('users')
-          .select('*, roles(name)')
+          .select('*, roles(name, is_system_admin, is_domain_admin), domains(id, name, slug)')
           .eq('id', userId)
           .single();
           
@@ -168,10 +228,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             table: 'users',
             filter: `id=eq.${session.user.id}`
           }, async (payload) => {
-            // Verify if the session is still valid by reaching out to the server
+            // Verify if the session is still valid by reaching out to the server or if they were deactivated
             const { error: userError } = await supabase.auth.getUser();
-            if (userError) {
-              console.log('Session invalidated, logging out...');
+            if (userError || (payload.new && payload.new.is_active === false)) {
+              console.log('Session invalidated or user deactivated, logging out...');
               await supabase.auth.signOut();
               setUser(null);
               window.location.href = '/login';
@@ -214,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn('Could not update last_login:', updateErr);
         }
         
-        const { data: profile } = await supabase.from('users').select('*, roles(name)').eq('id', data.user.id).single();
+        const { data: profile } = await supabase.from('users').select('*, roles(name, is_system_admin, is_domain_admin), domains(id, name, slug)').eq('id', data.user.id).single();
         const { data: orgData } = await supabase.from('organization_users').select('*, organizations(*)').eq('user_id', data.user.id).eq('status', 'Active');
 
         // Fetch permissions during login (non-blocking - don't fail login if this fails)
@@ -251,13 +311,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (roles: Role[]) => {
     if (!user) return false;
-    if (user.role === 'Super Admin') return true; // Super Admin has all access
+    // Removed implicit Super Admin bypass here, components must use isSuperAdmin explicitly if they want it
     return roles.includes(user.role);
+  };
+
+  const isSuperAdmin = () => {
+    return !!user?.isSystemAdmin;
+  };
+
+  const isDomainAdmin = (domainName?: string) => {
+    if (!user) return false;
+    
+    // Explicit security metadata check, no string parsing
+    if (!user.isDomainAdmin) return false;
+
+    if (domainName) {
+      return user.domain?.name === domainName || user.domain?.slug === domainName;
+    }
+    return true; // Is an admin for some domain
+  };
+
+  const isActive = () => {
+    return !!user?.isActive;
   };
 
   const hasPermission = (action: string, resource: string) => {
     if (!user) return false;
-    if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
+    if (user.isSystemAdmin) return true; // Super Admin bypasses all checks
     
     return permissions.some(
       (p) => p.action?.toLowerCase() === action.toLowerCase() && 
@@ -267,14 +347,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasResourceAccess = (resource: string) => {
     if (!user) return false;
-    if (user.role === 'Super Admin') return true; // Super Admin bypasses all checks
-    
-    // Fallback: Always grant Counselors access to Lead Management if the Admin forgot to set it up
-    if (user.role === 'Counselor' && resource.toLowerCase() === 'lead management') return true;
+    if (user.isSystemAdmin) return true; // Super Admin bypasses all checks
     
     return permissions.some(
       (p) => p.resource?.toLowerCase() === resource.toLowerCase()
     );
+  };
+
+  const canAccessDomain = (domainName: string) => {
+    if (!user) return false;
+    // Use explicit boolean flag, not role name string
+    if (user.isSystemAdmin) return true;
+    return user.domain?.name === domainName || user.domain?.slug === domainName;
   };
 
   const switchOrganization = (orgId: string) => {
@@ -287,8 +371,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const canAccessScope = (requiredScope: DataScope) => {
+    if (!user) return false;
+    if (user.isSystemAdmin || user.role === 'Super Admin') return true;
+    const currentLevel = SCOPE_HIERARCHY[user.dataScope || 'ASSIGNED'] ?? 10;
+    const targetLevel = SCOPE_HIERARCHY[requiredScope] ?? 10;
+    return currentLevel >= targetLevel;
+  };
+
+  const currentScope: DataScope = user?.dataScope || 'ASSIGNED';
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, permissions, login, logout, hasRole, hasPermission, hasResourceAccess, switchOrganization }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isLoading, 
+      permissions, 
+      dataScope: currentScope,
+      login, 
+      logout, 
+      hasRole, 
+      hasPermission, 
+      hasResourceAccess, 
+      canAccessScope,
+      canAccessDomain, 
+      switchOrganization, 
+      isSuperAdmin, 
+      isDomainAdmin, 
+      isActive 
+    }}>
       {children}
     </AuthContext.Provider>
   );

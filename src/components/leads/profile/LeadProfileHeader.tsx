@@ -80,9 +80,9 @@ export function LeadProfileHeader({ lead, actionButtons, onBack }: { lead: Lead,
       {/* Second Row: Meta info + Counselor */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-1.5 sm:gap-3">
         <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 md:gap-x-3 gap-y-0.5 text-[11px] sm:text-xs md:text-sm font-medium text-muted-foreground/80">
-          <span className="text-foreground/90 truncate max-w-[120px] sm:max-w-[150px] md:max-w-none">{lead.course || 'Not Selected'}</span>
+          <span className="text-foreground/90 truncate max-w-[120px] sm:max-w-[150px] md:max-w-none">{typeof lead.course === 'string' ? lead.course : lead.course?.name || 'Not Selected'}</span>
           <span className="text-border">|</span>
-          <span className="text-foreground/90 truncate max-w-[120px] sm:max-w-[150px] md:max-w-none">{lead.university || 'Not Selected'}</span>
+          <span className="text-foreground/90 truncate max-w-[120px] sm:max-w-[150px] md:max-w-none">{typeof lead.university === 'string' ? lead.university : lead.university?.name || 'Not Selected'}</span>
           <span className="text-border">|</span>
           <span className="text-foreground/90 tracking-wide">{lead.phone}</span>
           <span className="text-border hidden lg:inline">|</span>

@@ -23,7 +23,7 @@ export function UniversityAi() {
       let aiResponse = "I'm sorry, I couldn't process that request at the moment.";
       const lowerPrompt = userMessage.toLowerCase();
       
-      const pendingDocs = admissions.filter(a => a.stage === 'Document Verification').length;
+      const pendingDocs = admissions.filter(a => a.stage === 'Documents Pending').length;
       const enrolled = admissions.filter(a => a.stage === 'Admission Completed').length;
 
       if (lowerPrompt.includes('missing') || lowerPrompt.includes('document')) {

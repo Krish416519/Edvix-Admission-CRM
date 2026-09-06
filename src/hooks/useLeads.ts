@@ -108,12 +108,23 @@ export function useLeads(options?: UseLeadsOptions) {
         if (options?.filters?.source && options.filters.source !== 'All') {
           query = query.eq('lead_source', options.filters.source);
         }
-        // Apply Role-Based Data Isolation
-        if (user.role !== 'Super Admin' && user.role !== 'Admin') {
+        // Apply Enterprise Data Scope Isolation
+        const userScope = user.dataScope || (user.isSystemAdmin || user.role === 'Super Admin' || user.role === 'Admin' ? 'ORGANIZATION' : 'ASSIGNED');
+
+        if (userScope === 'ORGANIZATION') {
+          // Global scope: can view all or filter by specific counselor
+          if (options?.filters?.counselorId && options.filters.counselorId !== 'All') {
+            query = query.eq('assigned_counselor', options.filters.counselorId);
+          }
+        } else if (userScope === 'DEPARTMENT' || userScope === 'TEAM') {
+          // Department / Team supervisors can filter by counselors or view permitted scope
+          if (options?.filters?.counselorId && options.filters.counselorId !== 'All') {
+            query = query.eq('assigned_counselor', options.filters.counselorId);
+          }
+          // Backend RLS policy enforces departmental/team boundaries
+        } else {
+          // OWN or ASSIGNED scope
           query = query.eq('assigned_counselor', user.id);
-        } else if (options?.filters?.counselorId && options.filters.counselorId !== 'All') {
-          // Only Admins can filter by other counselors
-          query = query.eq('assigned_counselor', options.filters.counselorId);
         }
         if (options?.filters?.universityId && options.filters.universityId !== 'All') {
           query = query.eq('university_id', options.filters.universityId);
@@ -145,28 +156,31 @@ export function useLeads(options?: UseLeadsOptions) {
           let dbField = options.sort.field;
           // Map frontend fields to DB fields
           if (dbField === 'name') dbField = 'first_name';
-          if (dbField === 'counselor') dbField = 'users.name';
+          if (dbField === 'counselor') dbField = 'assigned_counselor';
           if (dbField === 'status') dbField = 'lead_status';
           if (dbField === 'source') dbField = 'lead_source';
           if (dbField === 'score') dbField = 'lead_score';
           if (dbField === 'createdAt') dbField = 'created_at';
-          if (dbField === 'updatedAt') dbField = 'updated_at';
+          if (dbField === 'updatedAt' || dbField === 'modifiedOn') dbField = 'updated_at';
+          if (dbField === 'course') dbField = 'course_id';
           if (dbField === 'callAttempts') dbField = 'call_attempts';
           if (dbField === 'interactionsCount') dbField = 'interactions_count';
           if (dbField === 'lastCallDate') dbField = 'last_call_date';
           if (dbField === 'finalFollowUpDate') dbField = 'final_follow_up_date';
-           if (dbField === 'transitionToFallOut') dbField = 'transition_to_fallout_at';
-           if (dbField === 'transitionToCounselled') dbField = 'transition_to_counselled_at';
-           if (dbField === 'transitionToOBInitiated') dbField = 'transition_to_ob_initiated_at';
-           if (dbField === 'transitionToOffer') dbField = 'transition_to_offer_at';
-           if (dbField === 'transitionToConverted') dbField = 'transition_to_converted_at';
-           if (dbField === 'transitionToScreening') dbField = 'transition_to_screening_at';
-           // Derived/removed fields - sort in frontend after mapping
-           if (['assignmentDate', 'firstAssignmentDate', 'firstCallDate', 'contactedTimestamp', 'conversionDate', 'managerPrioritized', 'moreThan5MContactedTime', 'moreThan10MContactedTime', 'moreThan15MContactedTime', 'transitionToAdmitted', 'transitionToVerificationPending'].includes(dbField)) {
+          if (dbField === 'transitionToFallOut') dbField = 'transition_to_fallout_at';
+          if (dbField === 'transitionToCounselled') dbField = 'transition_to_counselled_at';
+          if (dbField === 'transitionToOBInitiated') dbField = 'transition_to_ob_initiated_at';
+          if (dbField === 'transitionToOffer') dbField = 'transition_to_offer_at';
+          if (dbField === 'transitionToConverted') dbField = 'transition_to_converted_at';
+          if (dbField === 'transitionToScreening') dbField = 'transition_to_screening_at';
+          if (dbField === 'conversionDate') dbField = 'transition_to_converted_at';
+          if (dbField === 'managerPrioritized') dbField = 'priority';
+          // Derived/removed fields - sorted in frontend after mapping
+          if (['assignmentDate', 'firstAssignmentDate', 'firstCallDate', 'contactedTimestamp', 'moreThan5MContactedTime', 'moreThan10MContactedTime', 'moreThan15MContactedTime', 'transitionToAdmitted', 'transitionToVerificationPending'].includes(dbField)) {
             dbField = 'created_at';
           }
           
-          query = query.order(dbField, { ascending: options.sort.direction === 'asc' });
+          query = query.order(dbField, { ascending: options.sort.direction === 'asc', nullsFirst: false });
         } else {
           query = query.order('created_at', { ascending: false });
         }
@@ -423,6 +437,43 @@ export function useLeads(options?: UseLeadsOptions) {
           courseName: d.course?.name
         };
       });
+
+      // Sort relation & derived fields that cannot be sorted directly in SQL
+      if (options?.sort) {
+        const { field, direction } = options.sort;
+        const isClientSortable = [
+          'course', 'counselor', 'assignmentDate', 'firstAssignmentDate', 'firstCallDate',
+          'contactedTimestamp', 'moreThan5MContactedTime', 'moreThan10MContactedTime',
+          'moreThan15MContactedTime', 'transitionToAdmitted', 'transitionToVerificationPending',
+          'managerPrioritized'
+        ].includes(field);
+
+        if (isClientSortable) {
+          mappedLeads.sort((a: any, b: any) => {
+            let valA: any;
+            let valB: any;
+            if (field === 'course') {
+              valA = (a.courseName || a.universityName || '').toLowerCase();
+              valB = (b.courseName || b.universityName || '').toLowerCase();
+            } else if (field === 'counselor') {
+              valA = (a.counselorName || '').toLowerCase();
+              valB = (b.counselorName || '').toLowerCase();
+            } else {
+              valA = a[field];
+              valB = b[field];
+            }
+            if (valA == null && valB == null) return 0;
+            if (valA == null) return 1;
+            if (valB == null) return -1;
+            if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+              return direction === 'asc' ? (valA === valB ? 0 : valA ? 1 : -1) : (valA === valB ? 0 : valA ? -1 : 1);
+            }
+            if (valA < valB) return direction === 'asc' ? -1 : 1;
+            if (valA > valB) return direction === 'asc' ? 1 : -1;
+            return 0;
+          });
+        }
+      }
 
       setLeads(mappedLeads);
       setTotalCount(finalCount);
