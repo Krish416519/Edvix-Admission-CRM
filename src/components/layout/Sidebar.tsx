@@ -56,9 +56,11 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
       {/* Sidebar Drawer */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 md:my-4 md:ml-4 md:rounded-2xl bg-card md:bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/50 shadow-2xl transition-all duration-300 ease-in-out flex flex-col group overflow-hidden",
-        open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 bg-card md:bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/50 shadow-2xl transition-all duration-300 ease-in-out flex flex-col group",
+        open ? "translate-x-0" : "-translate-x-full",
         "w-[280px] max-w-[85vw]",
+        // On desktop: flow as a flex child instead of fixed overlay so main workspace is never covered
+        "md:relative md:inset-auto md:translate-x-0 md:z-30 md:shrink-0 md:my-4 md:ml-4 md:rounded-2xl md:overflow-visible overflow-hidden",
         isCollapsed ? "md:w-20" : "md:w-[260px]"
       )}>
         <div className={cn(
@@ -86,11 +88,11 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           </button>
         </div>
 
-        {/* Collapse Toggle Button (Desktop only) */}
+        {/* Collapse Toggle Button (Desktop only, positioned on outer border) */}
         <button
           onClick={toggleCollapse}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden md:flex absolute -right-3 top-20 bg-background border border-border/60 rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 shadow-sm z-50 transition-all"
+          className="hidden md:flex absolute -right-3.5 top-20 bg-card border border-border rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 shadow-md z-50 transition-all cursor-pointer items-center justify-center w-7 h-7"
         >
           <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform duration-300", isCollapsed && "rotate-180")} />
         </button>
