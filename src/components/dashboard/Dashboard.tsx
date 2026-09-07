@@ -170,27 +170,27 @@ export function Dashboard() {
   
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
          <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Welcome back, {user?.name?.split(' ')[0] || 'User'}. Here's what's happening today.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button 
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-semibold hover:bg-muted transition-colors shadow-sm text-foreground disabled:opacity-60"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-card border border-border rounded-xl text-xs sm:text-sm font-semibold hover:bg-muted transition-colors shadow-xs text-foreground disabled:opacity-60 active:scale-95 touch-manipulation"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button 
             onClick={() => setIsLeadModalOpen(true)}
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm shadow-sm active:scale-[0.98]"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-white px-3.5 py-2 rounded-xl font-semibold transition-all text-xs sm:text-sm shadow-xs active:scale-95 touch-manipulation"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             New Lead
           </button>
         </div>
@@ -198,8 +198,8 @@ export function Dashboard() {
 
       <AIDailyBriefing />
 
-      {/* KPI Cards — powered by server-side COUNT queries. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Cards — responsive 2-col on mobile, 5-col on desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
         <div className="w-full">
           <StatCard title="Total Leads" value={stats.total.toString()} icon={Users} trend="up" trendValue="12%" subtitle="All time" />
         </div>
@@ -212,7 +212,7 @@ export function Dashboard() {
         <div className="w-full">
           <StatCard title="Revenue (MTD)" value={formatRevenue(stats.revenueMTD)} icon={IndianRupee} trend="up" trendValue="18%" subtitle="vs last month" />
         </div>
-        <div className="w-full">
+        <div className="col-span-2 sm:col-span-1 w-full">
           <StatCard title="Conversion Rate" value={`${stats.conversionRate}%`} icon={Percent} trend="up" trendValue="1.2%" subtitle="All time" />
         </div>
       </div>

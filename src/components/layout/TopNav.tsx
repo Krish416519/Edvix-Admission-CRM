@@ -31,22 +31,14 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
   return (
     <>
     <header className="sticky top-0 z-30 flex h-14 md:h-16 md:mx-4 md:mt-4 md:rounded-2xl shrink-0 items-center gap-x-2 md:gap-x-4 border-b md:border border-border/40 bg-[var(--color-glass)] backdrop-blur-[40px] px-3 md:px-6 shadow-sm transition-all">
-      {/* Mobile Hamburger Trigger */}
-      <button
-        type="button"
-        className="md:hidden flex items-center justify-center w-10 h-10 -ml-1 text-foreground hover:bg-muted/80 rounded-xl transition-colors active:scale-95 touch-manipulation"
-        onClick={() => setSidebarOpen(true)}
-        aria-label="Open navigation menu"
-      >
-        <Menu className="h-5 w-5" aria-hidden="true" />
-      </button>
-
-      {/* Mobile App Title/Logo */}
+      {/* Mobile App Title/Logo — native app style header */}
       <Link to="/" className="flex md:hidden items-center gap-2 mr-auto hover:opacity-90 transition-opacity">
-        <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white font-bold shadow-sm text-xs">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold shadow-sm text-xs">
           E
         </div>
-        <span className="text-[15px] font-bold tracking-tight">Edvix CRM</span>
+        <span className="text-[16px] font-bold tracking-tight text-foreground">
+          Edvix<span className="text-primary font-extrabold">CRM</span>
+        </span>
       </Link>
 
       <div className="flex flex-1 gap-x-1 sm:gap-x-2 md:gap-x-4 self-stretch justify-end md:justify-between items-center">

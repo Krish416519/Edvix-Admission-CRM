@@ -1145,7 +1145,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
 
               {/* Mobile Floating Bulk Action Bar */}
               {selectedIds.size > 0 && (
-                <div className="md:hidden fixed bottom-6 left-3 right-3 z-50 bg-card/95 backdrop-blur-xl border border-primary/40 rounded-2xl shadow-2xl p-3 flex items-center justify-between gap-2 animate-in slide-in-from-bottom-5 duration-200">
+                <div className="md:hidden fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-3 right-3 z-50 bg-card/95 backdrop-blur-xl border border-primary/40 rounded-2xl shadow-2xl p-3 flex items-center justify-between gap-2 animate-in slide-in-from-bottom-5 duration-200">
                   <div className="flex items-center gap-2 pl-1">
                     <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-xs">
                       {selectedIds.size}

@@ -1,6 +1,10 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { X, Sparkles, FileText, GraduationCap, MessageSquare, Mail, Phone, Network, Workflow, PieChart, ShieldAlert, Server, IndianRupee, Megaphone, LogOut, LayoutDashboard, Users, CheckCircle } from 'lucide-react';
+import { 
+  X, Sparkles, FileText, GraduationCap, MessageSquare, Mail, Phone, Network, 
+  Workflow, PieChart, ShieldAlert, Server, IndianRupee, Megaphone, LogOut, 
+  LayoutDashboard, Users, CheckCircle, Building2, Bell 
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -18,12 +22,10 @@ export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
     { name: 'Smart View', href: '/smart-view', icon: Sparkles },
     { name: 'All Leads', href: '/all-leads', icon: Users, resource: 'Lead Management' },
     { name: 'Tasks', href: '/tasks', icon: CheckCircle },
+    { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Command Center', href: '/smart-view/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
     { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
-    { name: 'Applications', href: '/applications', icon: FileText, resource: 'Lead Management' },
-    { name: 'Admissions', href: '/admissions', icon: GraduationCap, resource: 'Lead Management' },
     { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
-    { name: 'Email', href: '/email', icon: Mail, resource: 'Communication' },
     { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },
     { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },
     { name: 'Automation', href: '/automation', icon: Workflow, permission: { action: 'Manage Settings', resource: 'System Settings' } },
@@ -31,10 +33,11 @@ export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
     { name: 'Admin Console', href: '/admin', icon: ShieldAlert, permission: { action: 'Manage Settings', resource: 'System Settings' } },
     { name: 'Founder AI Briefing', href: '/admin/founder', icon: Sparkles, roles: ['Super Admin'] },
     { name: 'Backend Status', href: '/admin/backend', icon: Server, permission: { action: 'Manage Settings', resource: 'System Settings' } },
-    { name: 'Finance', href: '/finance', icon: IndianRupee, permission: { action: 'Read', resource: 'Finance' } },
     { name: 'Marketing Hub', href: '/marketing', icon: Megaphone, roles: ['Super Admin', 'Admin', 'Marketing'] },
     { name: 'Partner Portal', href: '/partner', icon: Network, roles: ['Super Admin', 'Admin', 'Partner'] },
     { name: 'University Portal', href: '/university', icon: GraduationCap, roles: ['Super Admin', 'Admin', 'University'] },
+    { name: 'University Ops Hub', href: '/university-ops', icon: Building2, roles: ['Super Admin', 'Admin', 'University Operations Manager', 'University Operations Executive'] },
+    { name: 'Student Success Hub', href: '/student-success', icon: GraduationCap, roles: ['Super Admin', 'Admin', 'Student Success Executive', 'Manager', 'Team Leader', 'Counselor'] },
   ];
 
   if (!isOpen) return null;

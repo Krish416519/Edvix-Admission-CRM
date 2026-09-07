@@ -45,23 +45,11 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <>
-      {/* Mobile overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar Drawer */}
+      {/* Desktop Sidebar — on mobile, navigation is driven by MobileBottomNav and MobileMoreMenu */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 bg-card md:bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/50 shadow-2xl transition-all duration-300 ease-in-out flex flex-col group",
-        open ? "translate-x-0" : "-translate-x-full",
-        "w-[280px] max-w-[85vw]",
-        // On desktop: flow as a flex child instead of fixed overlay so main workspace is never covered
-        "md:relative md:inset-auto md:translate-x-0 md:z-30 md:shrink-0 md:my-4 md:ml-4 md:rounded-2xl md:overflow-visible overflow-hidden",
-        isCollapsed ? "md:w-20" : "md:w-[260px]"
+        "hidden md:flex relative inset-auto translate-x-0 z-30 shrink-0 my-4 ml-4 rounded-2xl overflow-visible",
+        "bg-[var(--color-glass)] backdrop-blur-[40px] border border-border/50 shadow-2xl transition-all duration-300 ease-in-out flex-col group",
+        isCollapsed ? "w-20" : "w-[260px]"
       )}>
         <div className={cn(
           "flex h-16 shrink-0 items-center border-b border-border/40 transition-all px-5 md:px-6 justify-between",
