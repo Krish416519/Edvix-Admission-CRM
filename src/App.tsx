@@ -14,19 +14,21 @@ import { PageLoader } from './components/layout/PageLoader';
 import { Construction } from 'lucide-react';
 
 // Core layout components (loaded eagerly)
-import { CounselorDashboard } from './components/ai/CounselorDashboard';
-import { ManagerDashboard } from './components/ai/ManagerDashboard';
-import { FounderDashboard } from './components/ai/FounderDashboard';
 import { DynamicWorkspaceLayout } from './components/layout/DynamicWorkspaceLayout';
-import { Login } from './components/auth/Login';
-import { ForgotPassword } from './components/auth/ForgotPassword';
-import { ResetPassword } from './components/auth/ResetPassword';
-import CallCenterDashboard from './components/telephony/CallCenterDashboard';
 import { DialerWidget } from './components/telephony/DialerWidget';
 import { CommandPalette } from './components/ai/CommandPalette';
-import { ChatWidget } from './components/public/ChatWidget';
-import AutomationBuilder from './components/admin/AutomationBuilder';
-import { WebhookDashboard } from './components/admin/WebhookDashboard';
+
+// Lazy loaded auth & secondary dashboards (saves hundreds of KB on initial load)
+const Login = React.lazy(() => import('./components/auth/Login').then(m => ({ default: m.Login })));
+const ForgotPassword = React.lazy(() => import('./components/auth/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
+const ResetPassword = React.lazy(() => import('./components/auth/ResetPassword').then(m => ({ default: m.ResetPassword })));
+const CounselorDashboard = React.lazy(() => import('./components/ai/CounselorDashboard').then(m => ({ default: m.CounselorDashboard })));
+const ManagerDashboard = React.lazy(() => import('./components/ai/ManagerDashboard').then(m => ({ default: m.ManagerDashboard })));
+const FounderDashboard = React.lazy(() => import('./components/ai/FounderDashboard').then(m => ({ default: m.FounderDashboard })));
+const CallCenterDashboard = React.lazy(() => import('./components/telephony/CallCenterDashboard'));
+const ChatWidget = React.lazy(() => import('./components/public/ChatWidget').then(m => ({ default: m.ChatWidget })));
+const AutomationBuilder = React.lazy(() => import('./components/admin/AutomationBuilder'));
+const WebhookDashboard = React.lazy(() => import('./components/admin/WebhookDashboard').then(m => ({ default: m.WebhookDashboard })));
 
 // Public API Documentation
 const ApiPortal = React.lazy(() => import('./components/api-docs/ApiPortal').then(m => ({ default: m.ApiPortal })));

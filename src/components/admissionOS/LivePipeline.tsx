@@ -21,7 +21,7 @@ export function LivePipeline() {
   const [savedConfigs, setSavedConfigs] = useState<Map<string, SavedViewConfig>>(new Map());
 
   const { leads, totalCount, isLoading, error, stageCounts } = useSmartView(activeView, {
-    pageSize: 1000,
+    pageSize: 50,
     sort: { field: 'createdAt', direction: 'desc' },
   });
 

@@ -10,7 +10,7 @@ import { Skeleton } from '../ui/Skeleton';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { LeadFormModal } from '../leads/LeadFormModal';
-import { useLeads } from '../../hooks/useLeads';
+import { createLeadDirect } from '../../lib/leadService';
 
 interface DashboardStats {
   total: number;
@@ -89,8 +89,8 @@ function useDashboardStats() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => fetchStats())
       .subscribe();
 
-    // Also poll every 15s as a safety net for bulk imports
-    const interval = setInterval(fetchStats, 15000);
+    // Also poll every 60s as a safety net for bulk imports
+    const interval = setInterval(fetchStats, 60000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -105,7 +105,6 @@ export function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { stats, isLoading, refresh } = useDashboardStats();
-  const { addLead } = useLeads();
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -118,7 +117,7 @@ export function Dashboard() {
 
   const handleCreateLead = async (data: any) => {
     try {
-      await addLead(data);
+      await createLeadDirect(data, user);
       toast.success('Lead created successfully!');
       setIsLeadModalOpen(false);
       refresh();
