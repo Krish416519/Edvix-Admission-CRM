@@ -341,90 +341,90 @@ export function UserManagement() {
   const isSomeSelected = selectedIds.size > 0 && selectedIds.size < filteredUsers.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-16 sm:pb-6">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
             Enterprise Staff Directory
           </h2>
-          <p className="text-xs md:text-sm text-muted-foreground mt-1">
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
             Staff records with department placement, hierarchy designation, operational teams, and access profiles.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-secondary text-secondary-foreground rounded-xl text-xs font-semibold hover:bg-secondary/80 transition-colors shadow-sm"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-secondary text-secondary-foreground rounded-xl text-xs font-semibold hover:bg-secondary/80 transition-colors shadow-sm min-h-[40px] sm:min-h-0 touch-manipulation active:scale-[0.98]"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV ({filteredUsers.length})
+            <span>Export CSV ({filteredUsers.length})</span>
           </button>
           <button
             onClick={() => {
               setSelectedUser(null);
               setIsWizardOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary-hover transition-colors shadow-sm"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary-hover transition-colors shadow-sm min-h-[40px] sm:min-h-0 touch-manipulation active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
-            Add New User
+            <span>Add New User</span>
           </button>
         </div>
       </div>
 
       {/* Quick Organization Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-2xl p-3.5 sm:p-4 shadow-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">Total Staff</span>
-            <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Users className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">{users.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-foreground mt-2">{users.length}</div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{users.filter(u => u.is_active).length} Active</span> · {users.filter(u => !u.is_active).length} Locked
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-3.5 sm:p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">Departments</span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-              <Building2 className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">{departments.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-foreground mt-2">{departments.length}</div>
           <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
             {departments.slice(0, 2).map(d => d.name).join(', ') || 'None configured'}
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-3.5 sm:p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">Operational Teams</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <Users2 className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 h-8 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+              <Users2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">{teams.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-foreground mt-2">{teams.length}</div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             Active team pods
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-3.5 sm:p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-2xl p-3 sm:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">Access Profiles</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="w-7 h-7 sm:w-8 h-8 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <div className="text-2xl font-bold text-foreground mt-2">{accessProfiles.length}</div>
+          <div className="text-xl sm:text-2xl font-bold text-foreground mt-2">{accessProfiles.length}</div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             Security governance
           </div>
@@ -546,57 +546,69 @@ export function UserManagement() {
                 </span>
               </div>
 
-              {/* Role & Org Details */}
-              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/20 p-2.5 rounded-xl border border-border/60">
+              {/* Role & Org Details (6 key dimensions) */}
+              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/20 p-3 rounded-xl border border-border/60">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block">Designation</span>
-                  <span className="font-medium text-foreground truncate block">{u.designation?.name || 'Unassigned'}</span>
+                  <span className="font-semibold text-foreground truncate block">{u.designation?.name || 'Unassigned'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block">Department</span>
-                  <span className="font-medium text-foreground truncate block">{u.department?.name || 'Unassigned'}</span>
+                  <span className="font-semibold text-foreground truncate block">{u.department?.name || 'Unassigned'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">Operational Team</span>
+                  <span className="font-medium text-foreground truncate block">{u.team?.name || 'None'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">Reports To</span>
+                  <span className="font-medium text-foreground truncate block">{u.manager?.name || 'None'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block">Access Profile</span>
-                  <span className="font-medium text-primary truncate block">{u.access_profile?.name || u.role?.name || 'Standard'}</span>
+                  <span className="font-semibold text-primary truncate block">{u.access_profile?.name || u.role?.name || 'Standard'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block">Data Scope</span>
-                  <span className="font-semibold text-indigo-500 text-[11px] block">{u.effective_scope}</span>
+                  <span className="font-bold text-indigo-500 text-[11px] block">{u.effective_scope}</span>
                 </div>
               </div>
 
-              {/* Mobile Actions */}
-              <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-border/40">
+              {/* Mobile Actions (Comfortable 40px touch targets) */}
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
                 <button
+                  type="button"
                   onClick={() => handleAction('Edit', u)}
-                  className="px-2.5 py-1.5 text-muted-foreground hover:text-primary rounded-lg bg-muted/40 hover:bg-muted text-xs font-medium flex items-center gap-1 min-h-[36px]"
+                  className="px-3 py-2 text-foreground hover:text-primary rounded-xl bg-muted/60 hover:bg-muted text-xs font-semibold flex items-center gap-1.5 min-h-[40px] touch-manipulation active:scale-[0.97] transition-all shadow-2xs"
                 >
-                  <Edit2 className="w-3.5 h-3.5" /> Edit
+                  <Edit2 className="w-3.5 h-3.5 text-primary" /> Edit
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleAction('Toggle Active', u)}
                   className={cn(
-                    "px-2.5 py-1.5 rounded-lg bg-muted/40 hover:bg-muted text-xs font-medium flex items-center gap-1 min-h-[36px]",
-                    u.is_active ? 'text-muted-foreground hover:text-amber-500' : 'text-muted-foreground hover:text-emerald-500'
+                    "px-3 py-2 rounded-xl bg-muted/60 hover:bg-muted text-xs font-semibold flex items-center gap-1.5 min-h-[40px] touch-manipulation active:scale-[0.97] transition-all shadow-2xs",
+                    u.is_active ? 'text-foreground hover:text-amber-500' : 'text-foreground hover:text-emerald-500'
                   )}
                 >
-                  {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                  {u.is_active ? <UserX className="w-3.5 h-3.5 text-amber-500" /> : <UserCheck className="w-3.5 h-3.5 text-emerald-500" />}
                   {u.is_active ? 'Lock' : 'Activate'}
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleAction('Force Logout', u)}
-                  className="p-1.5 text-muted-foreground hover:text-orange-500 rounded-lg bg-muted/40 hover:bg-muted min-h-[36px] min-w-[36px] flex items-center justify-center"
+                  className="p-2 text-foreground hover:text-orange-500 rounded-xl bg-muted/60 hover:bg-muted min-h-[40px] min-w-[40px] flex items-center justify-center touch-manipulation active:scale-[0.97] transition-all shadow-2xs"
                   title="Force Logout"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4 text-orange-500" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleAction('Delete', u)}
-                  className="p-1.5 text-muted-foreground hover:text-red-500 rounded-lg bg-muted/40 hover:bg-muted min-h-[36px] min-w-[36px] flex items-center justify-center"
+                  className="p-2 text-foreground hover:text-red-500 rounded-xl bg-muted/60 hover:bg-muted min-h-[40px] min-w-[40px] flex items-center justify-center touch-manipulation active:scale-[0.97] transition-all shadow-2xs"
                   title="Delete User"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4 text-destructive" />
                 </button>
               </div>
             </div>

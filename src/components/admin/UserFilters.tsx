@@ -161,12 +161,12 @@ export function UserFilters({
   return (
     <div className="space-y-3">
       {/* 1. Department Quick-Pill Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 px-0.5 hide-scrollbar touch-pan-x">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 px-0.5 hide-scrollbar touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => updateFilter('department', 'ALL')}
           className={cn(
-            "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border",
+            "shrink-0 flex items-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border min-h-[36px]",
             filters.department === 'ALL'
               ? "bg-primary text-primary-foreground border-primary shadow-xs"
               : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/70 border-border"
@@ -191,7 +191,7 @@ export function UserFilters({
               type="button"
               onClick={() => updateFilter('department', dept.id)}
               className={cn(
-                "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border",
+                "shrink-0 flex items-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border min-h-[36px]",
                 isSelected
                   ? "bg-primary text-primary-foreground border-primary shadow-xs"
                   : "bg-card text-muted-foreground hover:text-foreground hover:bg-muted/70 border-border"
@@ -213,7 +213,7 @@ export function UserFilters({
             type="button"
             onClick={() => updateFilter('department', 'UNASSIGNED')}
             className={cn(
-              "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border",
+              "shrink-0 flex items-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all touch-manipulation border min-h-[36px]",
               filters.department === 'UNASSIGNED'
                 ? "bg-amber-600 text-white border-amber-600 shadow-xs"
                 : "bg-card text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border-border"
@@ -234,19 +234,20 @@ export function UserFilters({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 flex-1 max-w-xl">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
-              placeholder="Search staff by name, email, phone, designation, team..."
+              placeholder="Search staff by name, role, dept..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary transition-colors text-foreground"
+              className="w-full pl-9 pr-9 py-2.5 sm:py-2 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary transition-colors text-foreground min-h-[40px] sm:min-h-[38px]"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 min-w-[28px] min-h-[28px] flex items-center justify-center rounded-lg"
+                aria-label="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -257,7 +258,7 @@ export function UserFilters({
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all border touch-manipulation shrink-0",
+              "flex items-center gap-1.5 px-3.5 sm:px-3 py-2 rounded-xl text-xs font-semibold transition-all border touch-manipulation shrink-0 min-h-[40px] sm:min-h-[38px]",
               isExpanded || activeFilterCount > 0
                 ? "bg-primary/10 text-primary border-primary/40 font-bold"
                 : "bg-card text-muted-foreground hover:text-foreground border-border hover:bg-muted/70"
@@ -276,12 +277,12 @@ export function UserFilters({
         </div>
 
         {/* Live Result Count Status */}
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5 self-center sm:self-auto">
+        <div className="text-xs text-muted-foreground flex items-center justify-between sm:justify-start gap-1.5 px-1 sm:px-0">
           <span>
             Showing <strong className="text-foreground">{filteredCount}</strong> of <strong className="text-foreground">{totalCount}</strong> staff
           </span>
           {(activeFilterCount > 0 || search) && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
               Filtered
             </span>
           )}
@@ -290,7 +291,7 @@ export function UserFilters({
 
       {/* 3. Expandable Advanced Filter Matrix Panel */}
       {isExpanded && (
-        <div className="p-4 bg-muted/20 border border-border/80 rounded-2xl animate-in slide-in-from-top-2 duration-200 space-y-4">
+        <div className="p-3.5 sm:p-4 bg-muted/20 border border-border/80 rounded-2xl animate-in slide-in-from-top-2 duration-200 space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -300,10 +301,10 @@ export function UserFilters({
               <button
                 type="button"
                 onClick={onReset}
-                className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors py-1 px-2 rounded-lg"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Reset all filters
+                <span>Reset all</span>
               </button>
             )}
           </div>
@@ -315,7 +316,7 @@ export function UserFilters({
               <select
                 value={filters.department}
                 onChange={(e) => updateFilter('department', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Departments</option>
                 {departments.map((d) => (
@@ -331,7 +332,7 @@ export function UserFilters({
               <select
                 value={filters.designation}
                 onChange={(e) => updateFilter('designation', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Designations</option>
                 {filteredDesignations.map((d) => (
@@ -346,7 +347,7 @@ export function UserFilters({
               <select
                 value={filters.team}
                 onChange={(e) => updateFilter('team', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Teams</option>
                 {teams.map((t) => (
@@ -362,7 +363,7 @@ export function UserFilters({
               <select
                 value={filters.manager}
                 onChange={(e) => updateFilter('manager', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Managers</option>
                 {availableManagers.map((m) => (
@@ -377,7 +378,7 @@ export function UserFilters({
               <select
                 value={filters.role}
                 onChange={(e) => updateFilter('role', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Profiles</option>
                 {accessProfiles.map((p) => (
@@ -392,7 +393,7 @@ export function UserFilters({
               <select
                 value={filters.scope}
                 onChange={(e) => updateFilter('scope', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Scopes</option>
                 <option value="ORGANIZATION">Organization (All Data)</option>
@@ -409,7 +410,7 @@ export function UserFilters({
               <select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground"
+                className="w-full px-3 py-2 sm:py-1.5 bg-background border border-border rounded-xl text-xs outline-none focus:border-primary text-foreground min-h-[42px] sm:min-h-0"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ACTIVE">Active Users</option>
@@ -417,26 +418,48 @@ export function UserFilters({
               </select>
             </div>
           </div>
+
+          {/* Mobile Action Bar inside Filter Drawer */}
+          <div className="flex items-center gap-2 pt-3 border-t border-border/60 sm:hidden">
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={onReset}
+                className="flex-1 py-2.5 px-3 bg-muted hover:bg-muted/80 text-foreground text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-colors min-h-[42px] touch-manipulation"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="flex-1 py-2.5 px-3 bg-primary text-primary-foreground text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all min-h-[42px] touch-manipulation"
+            >
+              <Check className="w-4 h-4" />
+              <span>Show Results ({filteredCount})</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* 4. Active Filter Tags Strip */}
       {activeFilterCount > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[11px] text-muted-foreground font-semibold mr-1">Active Filters:</span>
+          <span className="text-[11px] text-muted-foreground font-semibold mr-1">Active:</span>
           {(Object.keys(filters) as Array<keyof UserFilterState>).map((key) => {
             const val = filters[key];
             if (val === 'ALL') return null;
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-xs font-semibold"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-xs font-semibold min-h-[30px]"
               >
                 <span>{getFilterLabel(key, val)}</span>
                 <button
                   type="button"
                   onClick={() => removeFilter(key)}
-                  className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
+                  className="p-1 hover:bg-primary/20 rounded-full transition-colors min-w-[22px] min-h-[22px] flex items-center justify-center touch-manipulation"
                   aria-label={`Remove filter ${key}`}
                 >
                   <X className="w-3 h-3" />
@@ -447,7 +470,7 @@ export function UserFilters({
           <button
             type="button"
             onClick={onReset}
-            className="text-xs text-muted-foreground hover:text-foreground font-medium underline ml-1 cursor-pointer"
+            className="text-xs text-muted-foreground hover:text-foreground font-semibold underline ml-1 cursor-pointer py-1.5 px-1 touch-manipulation"
           >
             Clear all
           </button>
