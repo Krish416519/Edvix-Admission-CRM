@@ -601,10 +601,10 @@ export function DispositionManagement() {
                   <h3 className="font-bold text-base text-foreground tracking-tight">{cat.name}</h3>
                   {!cat.is_active && <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-destructive/10 text-destructive uppercase tracking-wider border border-destructive/20">Inactive</span>}
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/cat:opacity-100 transition-opacity shrink-0">
                   <button 
                     onClick={(e) => openEditCategory(cat, e)}
-                    className="p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors"
+                    className="p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     title="Edit Category"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -612,7 +612,7 @@ export function DispositionManagement() {
                   <button 
                     onClick={(e) => requestToggleCategory(cat, e)}
                     className={cn(
-                      "p-2 rounded-lg transition-colors",
+                      "p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center",
                       cat.is_active 
                         ? "text-muted-foreground hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
                         : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
@@ -623,7 +623,7 @@ export function DispositionManagement() {
                   </button>
                   <button 
                     onClick={(e) => requestHardDeleteCategory(cat, e)}
-                    className="p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors"
+                    className="p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                     title="Delete Permanently"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -632,8 +632,8 @@ export function DispositionManagement() {
               </div>
 
               {expandedCats[cat.id] && (
-                <div className="bg-muted/10 p-4 border-t border-border/50">
-                  <div className="flex justify-between items-center mb-4 pl-11">
+                <div className="bg-muted/10 p-3 sm:p-4 border-t border-border/50">
+                  <div className="flex justify-between items-center mb-3 sm:mb-4 pl-2 sm:pl-11">
                     <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Dispositions</h4>
                     <button 
                       onClick={() => openAddDisposition(cat.id)}
@@ -643,7 +643,7 @@ export function DispositionManagement() {
                     </button>
                   </div>
                   
-                  <div className="pl-11 pr-2">
+                  <div className="pl-0 sm:pl-11 pr-0 sm:pr-2">
                     {dispositions[cat.id]?.length === 0 ? (
                       <div className="p-4 border border-dashed border-border rounded-xl text-center text-sm text-muted-foreground">
                         No dispositions in this category. Click 'Add Disposition' to create one.
@@ -705,10 +705,10 @@ export function DispositionManagement() {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover/disp:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/disp:opacity-100 transition-opacity shrink-0">
                                   <button 
                                     onClick={() => openEditDisposition(disp, cat.id)}
-                                    className="p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors"
+                                    className="p-1.5 sm:p-2 text-muted-foreground hover:bg-muted rounded-lg hover:text-foreground transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                     title="Edit Disposition"
                                   >
                                     <Edit2 className="w-4 h-4" />
@@ -716,7 +716,7 @@ export function DispositionManagement() {
                                   <button 
                                     onClick={(e) => requestToggleDisposition(disp, cat.id, e)}
                                     className={cn(
-                                      "p-2 rounded-lg transition-colors",
+                                      "p-1.5 sm:p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center",
                                       disp.is_active 
                                         ? "text-muted-foreground hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
                                         : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
@@ -727,7 +727,7 @@ export function DispositionManagement() {
                                   </button>
                                   <button 
                                     onClick={(e) => requestHardDeleteDisposition(disp, e)}
-                                    className="p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors"
+                                    className="p-1.5 sm:p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                                     title="Delete Permanently"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -737,7 +737,7 @@ export function DispositionManagement() {
 
                               {/* Expanded Sub-Dispositions & Next Actions */}
                               {isExpanded && (
-                                <div className="border-t border-border/60 bg-muted/20 p-4 space-y-4">
+                                <div className="border-t border-border/60 bg-muted/20 p-3 sm:p-4 space-y-4">
                                   {isLoadingSubs ? (
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
                                       <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
@@ -775,7 +775,7 @@ export function DispositionManagement() {
                                                     <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-destructive/10 text-destructive uppercase">Inactive</span>
                                                   )}
                                                 </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover/sub:opacity-100 transition-opacity shrink-0">
+                                                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/sub:opacity-100 transition-opacity shrink-0">
                                                   <button 
                                                     onClick={(e) => openEditSubDisposition(sub, disp.id, e)}
                                                     className="p-1 text-muted-foreground hover:text-foreground rounded"
@@ -839,7 +839,7 @@ export function DispositionManagement() {
                                                     <span className="px-1 py-0.2 text-[8px] font-bold rounded bg-destructive/10 text-destructive uppercase">Inactive</span>
                                                   )}
                                                 </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover/act:opacity-100 transition-opacity shrink-0">
+                                                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/act:opacity-100 transition-opacity shrink-0">
                                                   <button 
                                                     onClick={(e) => openEditNextAction(act, disp.id, e)}
                                                     className="p-1 text-muted-foreground hover:text-foreground rounded"

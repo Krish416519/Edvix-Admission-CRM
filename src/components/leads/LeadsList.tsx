@@ -811,21 +811,41 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
               className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
-        <button 
-          onClick={() => setIsFiltersSheetOpen(true)}
-          className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 relative shrink-0"
-        >
-          <Filter className="w-5 h-5" />
-          {(statusFilter !== 'All' || showDeleted || minScoreFilter !== undefined) && (
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
-          )}
-        </button>
-        <button 
-          onClick={() => setIsSortSheetOpen(true)}
-          className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 shrink-0"
-        >
-          <ArrowUpDown className="w-5 h-5" />
-        </button>
+          <button 
+            onClick={() => setIsFiltersSheetOpen(true)}
+            className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 relative shrink-0 touch-manipulation"
+            aria-label="Filter leads"
+          >
+            <Filter className="w-5 h-5" />
+            {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted || minScoreFilter !== undefined) && (
+              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-card" />
+            )}
+          </button>
+          <button 
+            onClick={() => setIsSortSheetOpen(true)}
+            className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 shrink-0 touch-manipulation"
+            aria-label="Sort leads"
+          >
+            <ArrowUpDown className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Mobile quick count & select strip */}
+        <div className="flex items-center justify-between pt-1 px-1 text-xs text-muted-foreground">
+          <span>Showing <strong className="text-foreground">{paginatedLeads.length}</strong> of {totalCount} leads</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedIds.size === paginatedLeads.length && paginatedLeads.length > 0) {
+                setSelectedIds(new Set());
+              } else {
+                setSelectedIds(new Set(paginatedLeads.map(l => l.id)));
+              }
+            }}
+            className="font-bold text-primary hover:underline py-1 px-1 touch-manipulation"
+          >
+            {selectedIds.size === paginatedLeads.length && paginatedLeads.length > 0 ? 'Deselect All' : 'Select All'}
+          </button>
         </div>
       </div>
 
@@ -1116,8 +1136,60 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                     key={lead.id}
                     lead={lead}
                     statusColors={statusColors}
+                    isSelected={selectedIds.has(lead.id)}
+                    onToggleSelect={handleSelectOne}
+                    showCheckbox={selectedIds.size > 0}
                   />
                 ))
+              )}
+
+              {/* Mobile Floating Bulk Action Bar */}
+              {selectedIds.size > 0 && (
+                <div className="md:hidden fixed bottom-6 left-3 right-3 z-50 bg-card/95 backdrop-blur-xl border border-primary/40 rounded-2xl shadow-2xl p-3 flex items-center justify-between gap-2 animate-in slide-in-from-bottom-5 duration-200">
+                  <div className="flex items-center gap-2 pl-1">
+                    <span className="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shadow-xs">
+                      {selectedIds.size}
+                    </span>
+                    <span className="text-xs font-bold text-foreground">Selected</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {canAssign && (
+                      <button 
+                        onClick={() => setShowBulkAssign(true)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-primary/10 text-primary border border-primary/30 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors touch-manipulation"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Assign
+                      </button>
+                    )}
+                    {canUpdate && (
+                      <button 
+                        onClick={() => setShowBulkUpdate(true)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors touch-manipulation"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Update
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button 
+                        onClick={handleDeleteSelected}
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors touch-manipulation"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelectedIds(new Set())}
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted ml-0.5 touch-manipulation"
+                      aria-label="Clear selection"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               )}
               {!isLoading && paginatedLeads.length === 0 && (
                 <EmptyState
@@ -2048,6 +2120,16 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         setStatusFilter={setStatusFilter}
         showDeleted={showDeleted}
         setShowDeleted={setShowDeleted}
+        sourceFilter={sourceFilter}
+        setSourceFilter={setSourceFilter}
+        counselorFilter={counselorFilter}
+        setCounselorFilter={setCounselorFilter}
+        dispositionFilter={dispositionFilter}
+        setDispositionFilter={setDispositionFilter}
+        minScoreFilter={minScoreFilter}
+        setMinScoreFilter={setMinScoreFilter}
+        counselors={allUsers}
+        dispositionCategories={dispositionCategories}
       />
 
        <LeadSortSheet 

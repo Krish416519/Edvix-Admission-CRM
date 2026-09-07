@@ -451,21 +451,21 @@ export function UserCreationWizard({ isOpen, onClose, onSuccess, initialData }: 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92dvh] animate-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between bg-muted/20 shrink-0">
           <div>
-            <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-              {initialData ? `Edit User: ${initialData.name}` : 'Enterprise User Creation'}
+            <h3 className="font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+              <span className="truncate">{initialData ? `Edit User: ${initialData.name}` : 'Enterprise User Creation'}</span>
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Step {step} of 7: {STEPS[step - 1].label}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -502,7 +502,7 @@ export function UserCreationWizard({ isOpen, onClose, onSuccess, initialData }: 
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
           {/* STEP 1: BASIC INFO */}
           {step === 1 && (
             <div className="space-y-4">
@@ -928,12 +928,12 @@ export function UserCreationWizard({ isOpen, onClose, onSuccess, initialData }: 
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between">
+        <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between shrink-0 [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
           {step > 1 ? (
             <button
               onClick={handleBack}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors min-h-[44px]"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
@@ -945,7 +945,7 @@ export function UserCreationWizard({ isOpen, onClose, onSuccess, initialData }: 
           {step < 7 ? (
             <button
               onClick={handleNext}
-              className="flex items-center gap-1.5 px-5 py-2 text-sm font-medium bg-primary text-white hover:bg-primary-hover rounded-xl shadow-sm transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium bg-primary text-white hover:bg-primary-hover rounded-xl shadow-sm transition-colors min-h-[44px]"
             >
               Next
               <ChevronRight className="w-4 h-4" />
@@ -954,7 +954,7 @@ export function UserCreationWizard({ isOpen, onClose, onSuccess, initialData }: 
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md transition-colors disabled:opacity-50 min-h-[44px]"
             >
               <CheckCircle2 className="w-4 h-4" />
               {saving ? (initialData ? 'Saving Changes...' : 'Creating User...') : initialData ? 'Save Changes' : 'Confirm & Create User'}

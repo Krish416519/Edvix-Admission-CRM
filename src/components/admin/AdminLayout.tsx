@@ -31,8 +31,8 @@ export function AdminLayout() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-11rem)] md:h-[calc(100vh-8rem)] animate-in fade-in duration-500 max-w-[90rem] mx-auto w-full px-2 md:px-0">
-      <div className="mb-4 md:mb-6 shrink-0">
+    <div className="flex flex-col flex-1 min-h-0 h-full animate-in fade-in duration-500 max-w-[90rem] mx-auto w-full px-1 sm:px-2 md:px-0">
+      <div className="mb-3 md:mb-6 shrink-0">
         <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 md:w-6 md:h-6 text-red-500" />
           Super Admin Console
@@ -40,10 +40,10 @@ export function AdminLayout() {
         <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">Centralized control center for system settings, security, and master data.</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6 flex-1 min-h-0">
+      <div className="flex flex-col md:flex-row gap-3 md:gap-6 flex-1 min-h-0">
         {/* Sidebar */}
-        <div className="w-full md:w-64 shrink-0 bg-card border border-border rounded-xl overflow-hidden flex flex-col h-fit md:max-h-full">
-          <div className="flex md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1 md:space-y-1 hide-scrollbar md:custom-scrollbar">
+        <div className="w-full md:w-64 shrink-0 bg-card border border-border rounded-xl overflow-hidden flex flex-col h-fit md:max-h-full shadow-sm">
+          <div className="flex md:flex-col overflow-x-auto md:overflow-y-auto p-1.5 md:p-2 gap-1.5 md:gap-1 md:space-y-1 hide-scrollbar md:custom-scrollbar scroll-smooth">
             {ADMIN_TABS.map((tab) => {
               const Icon = tab.icon;
               const path = tab.path ? `/admin/${tab.path}` : '/admin';

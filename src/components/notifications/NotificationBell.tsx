@@ -88,7 +88,9 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-xl bg-card border border-border shadow-lg ring-1 ring-black/5 overflow-hidden z-50 animate-in slide-in-from-top-2">
+        <>
+          <div className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent" onClick={() => setIsOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 w-auto sm:w-96 rounded-2xl bg-card border border-border shadow-2xl ring-1 ring-black/5 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
             <h3 className="font-semibold text-foreground">Notifications</h3>
             {unreadCount > 0 && (
@@ -166,6 +168,7 @@ export function NotificationBell() {
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
   );

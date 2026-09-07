@@ -41,11 +41,11 @@ export function SaveViewModal({ isOpen, onClose, filterState }: SaveViewModalPro
   const canShareOrg = hasRole(['Admin']) || hasRole(['Super Admin']);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
-      <div className="bg-card w-full max-w-md rounded-xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-card w-full max-w-md rounded-t-2xl sm:rounded-xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="text-lg font-semibold text-foreground">Save as View</h3>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
+          <button onClick={onClose} className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -73,17 +73,17 @@ export function SaveViewModal({ isOpen, onClose, filterState }: SaveViewModalPro
             </select>
           </div>
         </div>
-        <div className="p-4 border-t border-border flex justify-end gap-2 bg-muted/30">
+        <div className="p-4 border-t border-border flex justify-end gap-2 bg-muted/30 [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted transition-colors"
+            className="px-4 py-2.5 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted transition-colors min-h-[44px]"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!name.trim() || isSaving}
-            className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {isSaving ? 'Saving...' : 'Save View'}
           </button>

@@ -90,18 +90,18 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
 
   if (showConflict) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-        <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-xl animate-in zoom-in-95 duration-200">
-          <div className="flex items-center justify-between p-6 border-b border-border">
-            <h2 className="text-xl font-semibold text-destructive flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" /> Duplicate Leads Found
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-background/80 backdrop-blur-sm">
+        <div className="w-full max-w-2xl max-h-[92dvh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-xl animate-in zoom-in-95 duration-200 overflow-hidden">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border shrink-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 shrink-0" /> Duplicate Leads Found
             </h2>
-            <button onClick={onClose} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center">
               <X className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="p-6 space-y-4">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
             <p className="text-sm text-foreground">
               We found {duplicates.length} existing lead(s) with the same email or phone number. 
               Please review them before proceeding.
@@ -150,16 +150,17 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-xl animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-semibold">{initialData ? 'Edit Lead' : 'Add New Lead'}</h2>
-          <button onClick={onClose} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm">
+      <div className="w-full max-w-2xl max-h-[92dvh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-xl animate-in zoom-in-95 duration-200 overflow-hidden">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border shrink-0">
+          <h2 className="text-lg sm:text-xl font-semibold">{initialData ? 'Edit Lead' : 'Add New Lead'}</h2>
+          <button onClick={onClose} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto custom-scrollbar flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium">Full Name *</label>
@@ -321,18 +322,20 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-border">
+          </div>
+
+          <div className="flex justify-end gap-3 p-4 sm:p-6 border-t border-border bg-card shrink-0 [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-muted transition-colors"
+              className="px-4 py-2.5 text-sm font-medium border border-border rounded-lg hover:bg-muted transition-colors min-h-[44px]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isChecking}
-              className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 min-h-[44px] flex items-center justify-center"
             >
               {isChecking ? 'Checking...' : initialData ? 'Update Lead' : 'Create Lead'}
             </button>

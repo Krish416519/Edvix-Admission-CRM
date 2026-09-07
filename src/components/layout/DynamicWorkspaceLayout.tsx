@@ -18,13 +18,13 @@ export function DynamicWorkspaceLayout() {
 
   return (
     <ThemeProvider>
-      <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         
-        <div className="flex-1 flex flex-col h-screen min-w-0">
+        <div className="flex-1 flex flex-col h-[100dvh] min-w-0">
           <TopNav setSidebarOpen={setSidebarOpen} />
-          <main className={`flex-1 overflow-y-auto bg-background/50 ${getWorkspaceStyle()}`}>
-            <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
+          <main className={`flex-1 overflow-y-auto bg-background/50 ${getWorkspaceStyle()} scroll-ios`}>
+            <div className="w-full max-w-[1600px] mx-auto p-2.5 sm:p-4 md:p-6 lg:p-8 animate-in fade-in duration-500 [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
               <Outlet />
             </div>
           </main>

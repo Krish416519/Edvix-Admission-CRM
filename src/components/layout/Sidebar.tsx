@@ -48,25 +48,40 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
           onClick={() => setOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-50 md:my-4 md:ml-4 md:rounded-2xl bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/40 shadow-2xl transition-all duration-300 ease-in-out md:translate-x-0 md:static flex flex-col group overflow-hidden",
-        open ? "translate-x-0" : "-translate-x-full",
-        isCollapsed ? "w-20" : "w-[260px]"
+      {/* Sidebar Drawer */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 md:my-4 md:ml-4 md:rounded-2xl bg-card md:bg-[var(--color-glass)] backdrop-blur-[40px] border-r md:border border-border/50 shadow-2xl transition-all duration-300 ease-in-out flex flex-col group overflow-hidden",
+        open ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        "w-[280px] max-w-[85vw]",
+        isCollapsed ? "md:w-20" : "md:w-[260px]"
       )}>
-        <div className={cn("flex h-16 shrink-0 items-center border-b border-border/40 transition-all", isCollapsed ? "justify-center px-0" : "px-6 justify-between")}>
-          <Link to="/" className="flex items-center gap-3 overflow-hidden hover:opacity-80 transition-opacity">
+        <div className={cn(
+          "flex h-16 shrink-0 items-center border-b border-border/40 transition-all px-5 md:px-6 justify-between",
+          isCollapsed && "md:justify-center md:px-0"
+        )}>
+          <Link
+            to="/"
+            className="flex items-center gap-3 overflow-hidden hover:opacity-80 transition-opacity"
+            onClick={() => setOpen(false)}
+          >
             <div className="w-8 h-8 shrink-0 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-white font-bold shadow-inner">
               E
             </div>
-            {!isCollapsed && <span className="text-[19px] font-bold tracking-tight whitespace-nowrap animate-in fade-in">Edvix<span className="text-muted-foreground font-medium">.in</span></span>}
+            <span className={cn("text-[19px] font-bold tracking-tight whitespace-nowrap animate-in fade-in", isCollapsed && "md:hidden")}>
+              Edvix<span className="text-muted-foreground font-medium">.in</span>
+            </span>
           </Link>
-          <button className="md:hidden text-muted-foreground hover:text-foreground" onClick={() => setOpen(false)}>
+          <button
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors active:scale-95"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -74,13 +89,14 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         {/* Collapse Toggle Button (Desktop only) */}
         <button
           onClick={toggleCollapse}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="hidden md:flex absolute -right-3 top-20 bg-background border border-border/60 rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted hover:scale-110 shadow-sm z-50 transition-all"
         >
           <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform duration-300", isCollapsed && "rotate-180")} />
         </button>
 
-        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5 custom-scrollbar relative">
-          <nav className="flex-1 space-y-1.5">
+        <div className="flex flex-1 flex-col overflow-y-auto px-3 py-4 custom-scrollbar relative">
+          <nav className="flex-1 space-y-1">
             {navigation.map((item) => {
               // Backward compatibility for roles, preferred is permissions
               if (item.roles && !hasRole(item.roles as any)) return null;
@@ -97,11 +113,11 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                   to={item.href}
                   title={isCollapsed ? item.name : undefined}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden group/link",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden group/link touch-manipulation min-h-[44px]",
                     isActive
                       ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary shadow-[inset_3px_0_0_0_currentColor]"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                    isCollapsed ? "justify-center p-3" : ""
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground active:scale-[0.98]",
+                    isCollapsed ? "md:justify-center md:p-3" : ""
                   )}
                   onClick={() => setOpen(false)}
                 >
@@ -113,15 +129,17 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     isActive ? "text-primary drop-shadow-md" : "text-muted-foreground",
                     item.name === 'Notifications' && hasHighPriorityUnread && "text-red-500 animate-pulse"
                   )} />
-                  {!isCollapsed && <span className="truncate animate-in fade-in relative z-10 font-semibold">{item.name}</span>}
+                  <span className={cn("truncate relative z-10 font-semibold", isCollapsed && "md:hidden")}>
+                    {item.name}
+                  </span>
 
                   {item.name === 'Notifications' && unreadCount > 0 && (
                     <span className={cn(
                       "text-white text-[10px] font-bold rounded-full min-w-[20px] text-center shadow-sm",
                       hasHighPriorityUnread ? "bg-red-500 animate-pulse" : "bg-primary",
-                      isCollapsed ? "absolute top-1 right-1 w-4 h-4 flex items-center justify-center text-[8px] min-w-0" : "ml-auto px-1.5 py-0.5"
+                      isCollapsed ? "md:absolute md:top-1 md:right-1 md:w-4 md:h-4 md:flex md:items-center md:justify-center md:text-[8px] md:min-w-0 ml-auto px-1.5 py-0.5" : "ml-auto px-1.5 py-0.5"
                     )}>
-                      {isCollapsed ? '' : (unreadCount > 9 ? '9+' : unreadCount)}
+                      {isCollapsed ? <span className="md:hidden">{unreadCount > 9 ? '9+' : unreadCount}</span> : (unreadCount > 9 ? '9+' : unreadCount)}
                     </span>
                   )}
                 </Link>
@@ -130,8 +148,11 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           </nav>
         </div>
 
-        <div className="p-4 border-t border-border/40">
-          <div className={cn("flex items-center rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors group relative border border-transparent hover:border-border/50", isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2.5")}>
+        <div className="p-3 md:p-4 border-t border-border/40 [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
+          <div className={cn(
+            "flex items-center rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors group relative border border-transparent hover:border-border/50",
+            isCollapsed ? "md:justify-center md:p-2 gap-3 px-3 py-2.5" : "gap-3 px-3 py-2.5"
+          )}>
             <div className="w-9 h-9 shrink-0 rounded-full bg-background shadow-inner overflow-hidden flex items-center justify-center border border-border/60">
               {user?.avatar ? (
                 <img src={user.avatar} alt="User avatar" className="w-full h-full object-cover" />
@@ -141,33 +162,34 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 </div>
               )}
             </div>
-            {!isCollapsed && (
-              <>
-                <div className="flex flex-col flex-1 overflow-hidden animate-in fade-in">
-                  <span className="text-sm font-semibold truncate text-foreground">{user?.name || 'User'}</span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground/80 truncate tracking-wider">{user?.role || 'Staff'}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="text-muted-foreground hover:text-red-500 transition-all duration-200 p-1.5 rounded-md hover:bg-red-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4 transition-transform group-hover:scale-110" />
-                </button>
-              </>
-            )}
+            <div className={cn("flex flex-col flex-1 overflow-hidden", isCollapsed && "md:hidden")}>
+              <span className="text-sm font-semibold truncate text-foreground">{user?.name || 'User'}</span>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground/80 truncate tracking-wider">{user?.role || 'Staff'}</span>
+            </div>
+            <button
+              onClick={logout}
+              className={cn(
+                "text-muted-foreground hover:text-red-500 transition-all duration-200 p-2 rounded-lg hover:bg-red-500/10 shrink-0 touch-manipulation",
+                isCollapsed && "md:hidden"
+              )}
+              title="Logout"
+              aria-label="Logout"
+            >
+              <LogOut className="w-4 h-4 transition-transform group-hover:scale-110" />
+            </button>
             {isCollapsed && (
               <button
                 onClick={logout}
-                className="absolute -top-12 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-red-500 bg-card border border-border/60 shadow-lg p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all z-50 pointer-events-none group-hover:pointer-events-auto"
+                className="hidden md:block absolute -top-12 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-red-500 bg-card border border-border/60 shadow-lg p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all z-50 pointer-events-none group-hover:pointer-events-auto"
                 title="Logout"
+                aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
-      </div>
+      </aside>
     </>
   );
 }

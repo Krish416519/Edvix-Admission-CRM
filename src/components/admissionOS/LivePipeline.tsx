@@ -66,16 +66,16 @@ export function LivePipeline() {
   }, [activeView]);
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 min-w-0">
       {/* View Header */}
-      <div className="p-4 border-b border-border/40">
-        <h1 className="text-2xl font-bold">Smart View</h1>
-        <div className="flex items-center gap-3 mt-1">
-          <p className="text-sm text-muted-foreground">
+      <div className="p-3 sm:p-4 border-b border-border/40">
+        <h1 className="text-xl sm:text-2xl font-bold">Smart View</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {activeViewConfig.description}
           </p>
           {totalCount > 0 && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
               {totalCount} leads
             </span>
           )}
@@ -83,15 +83,15 @@ export function LivePipeline() {
       </div>
 
       {/* View Tabs - only show visible views from config */}
-      <div className="flex gap-2 overflow-x-auto px-4 py-3 border-b border-border/40 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/40 hide-scrollbar">
         {visibleViews.map((sv) => (
           <button
             key={sv.id}
             onClick={() => setActiveView(sv.id)}
             className={cn(
-              "shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap",
+              "shrink-0 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap touch-manipulation",
               activeView === sv.id
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-card text-muted-foreground hover:bg-muted border border-border"
             )}
           >
@@ -101,7 +101,7 @@ export function LivePipeline() {
       </div>
 
       {/* Results */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-2.5 sm:p-4">
         {error && (
           <div className="text-center text-red-500 py-8">
             Error: {error}
@@ -118,13 +118,13 @@ export function LivePipeline() {
             ) : (
               <div className="space-y-4">
                 {/* Total Summary */}
-                <div className="bg-card border border-border rounded-xl p-6 mb-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-2">All Leads — Stage Overview</h2>
-                  <p className="text-3xl font-bold text-primary">{totalCount.toLocaleString()} Total Leads</p>
+                <div className="bg-card border border-border rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground mb-1">All Leads — Stage Overview</h2>
+                  <p className="text-2xl sm:text-3xl font-bold text-primary">{totalCount.toLocaleString()} Total Leads</p>
                 </div>
 
                 {/* Stage Breakdown */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3">
                   {stageCounts.map((sc: StageCount) => (
                     <div
                       key={sc.stage}

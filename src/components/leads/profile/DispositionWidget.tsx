@@ -482,8 +482,8 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-sm p-4 sm:p-5 max-h-[90vh] overflow-y-auto">
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-border">
+    <div className="bg-card border border-border rounded-2xl sm:rounded-xl shadow-xl sm:shadow-sm p-4 sm:p-5 max-h-[88dvh] overflow-y-auto custom-scrollbar [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="flex justify-between items-center mb-4 pb-3 border-b border-border sticky top-0 bg-card z-10 -mt-1 pt-1">
         <h3 className="font-bold text-lg flex items-center gap-2">
           Add Activity
         </h3>

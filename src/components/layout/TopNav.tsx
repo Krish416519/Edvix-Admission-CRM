@@ -31,13 +31,13 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
   return (
     <>
     <header className="sticky top-0 z-30 flex h-14 md:h-16 md:mx-4 md:mt-4 md:rounded-2xl shrink-0 items-center gap-x-2 md:gap-x-4 border-b md:border border-border/40 bg-[var(--color-glass)] backdrop-blur-[40px] px-3 md:px-6 shadow-sm transition-all">
-      {/* Mobile Logo & Hamburger (Kept for desktop compatibility, but hidden on mobile since we have bottom nav) */}
+      {/* Mobile Hamburger Trigger */}
       <button
         type="button"
-        className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground hidden"
+        className="md:hidden flex items-center justify-center w-10 h-10 -ml-1 text-foreground hover:bg-muted/80 rounded-xl transition-colors active:scale-95 touch-manipulation"
         onClick={() => setSidebarOpen(true)}
+        aria-label="Open navigation menu"
       >
-        <span className="sr-only">Open sidebar</span>
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
 
@@ -49,7 +49,7 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
         <span className="text-[15px] font-bold tracking-tight">Edvix CRM</span>
       </Link>
 
-      <div className="flex flex-1 gap-x-2 md:gap-x-4 self-stretch justify-end md:justify-between items-center">
+      <div className="flex flex-1 gap-x-1 sm:gap-x-2 md:gap-x-4 self-stretch justify-end md:justify-between items-center">
         {/* Desktop Search */}
         <div className="relative hidden md:flex flex-1 items-center max-w-2xl">
           <button
@@ -69,41 +69,44 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
         {/* Mobile Search Button */}
         <button
           onClick={() => setShowGlobalSearch(true)}
-          className="md:hidden p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
+          className="md:hidden w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors active:scale-95"
+          aria-label="Search"
         >
-          <Search className="w-5 h-5" />
+          <Search className="w-4.5 h-4.5" />
         </button>
 
-        <div className="flex items-center gap-x-1 md:gap-x-4 lg:gap-x-6">
+        <div className="flex items-center gap-x-1 sm:gap-x-2 md:gap-x-4 lg:gap-x-6">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground transition-colors"
+            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors"
             onClick={toggleTheme}
+            aria-label="Toggle theme"
           >
-            <span className="sr-only">Toggle dark mode</span>
             {theme === 'dark' ? (
-              <Sun className="h-5 w-5" aria-hidden="true" />
+              <Sun className="h-4.5 w-4.5" aria-hidden="true" />
             ) : (
-              <Moon className="h-5 w-5" aria-hidden="true" />
+              <Moon className="h-4.5 w-4.5" aria-hidden="true" />
             )}
           </button>
           
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-primary hover:bg-primary/10 rounded-full transition-colors flex items-center gap-1.5"
+            className="h-9 px-2.5 text-primary hover:bg-primary/10 rounded-full transition-colors flex items-center gap-1.5"
             onClick={toggleAssistant}
+            aria-label="AI Assistant"
           >
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="h-4.5 w-4.5" />
             <span className="hidden sm:inline text-sm font-semibold">AI</span>
           </button>
           
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-foreground hover:bg-muted rounded-full transition-colors flex items-center justify-center"
+            className="w-9 h-9 flex items-center justify-center text-foreground hover:bg-muted rounded-full transition-colors"
             onClick={() => setIsDialerOpen(true)}
             title="Open Dialer"
+            aria-label="Open Dialer"
           >
-            <Phone className="h-5 w-5" />
+            <Phone className="h-4.5 w-4.5" />
           </button>
 
           <NotificationBell />
@@ -128,17 +131,21 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
             </div>
           )}
 
-          {/* Profile dropdown Placeholder */}
-          <div className="hidden lg:flex items-center gap-x-4 relative">
-             <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="focus:outline-none flex items-center">
+          {/* User Profile dropdown */}
+          <div className="flex items-center gap-x-2 sm:gap-x-4 relative">
+             <button
+               onClick={() => setShowProfileMenu(!showProfileMenu)}
+               className="focus:outline-none flex items-center touch-manipulation"
+               aria-label="User profile menu"
+             >
                {user?.avatar ? (
                  <img
-                    className="h-8 w-8 rounded-full bg-muted object-cover cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all border border-border"
+                    className="h-8 w-8 rounded-full bg-muted object-cover cursor-pointer ring-2 ring-transparent hover:ring-primary/30 transition-all border border-border"
                     src={user.avatar}
                     alt={user?.name}
                   />
                ) : (
-                 <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all border border-border font-medium text-sm">
+                 <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center cursor-pointer ring-2 ring-transparent hover:ring-primary/30 transition-all border border-border font-bold text-xs">
                    {user?.name?.charAt(0) || 'U'}
                  </div>
                )}
@@ -146,15 +153,18 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
              
              {showProfileMenu && (
                <>
-                 <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)}></div>
-                 <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 py-1">
-                   <div className="px-4 py-2 border-b border-border">
-                     <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                 <div className="fixed inset-0 z-40 bg-black/20 md:bg-transparent" onClick={() => setShowProfileMenu(false)}></div>
+                 <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 py-1">
+                   <div className="px-4 py-2.5 border-b border-border bg-muted/20">
+                     <p className="text-sm font-semibold text-foreground truncate">{user?.name || 'User'}</p>
                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                     <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-primary/10 text-primary tracking-wider">
+                       {user?.role || 'Staff'}
+                     </span>
                    </div>
                    <button
                      onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
-                     className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                     className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2.5"
                    >
                      <User className="w-4 h-4 text-muted-foreground" />
                      My Profile
@@ -162,15 +172,16 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
                    {hasRole(['Admin', 'Super Admin']) && (
                      <button
                        onClick={() => { setShowProfileMenu(false); navigate('/admin/billing'); }}
-                       className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                       className="w-full text-left px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2.5"
                      >
                        <CreditCard className="w-4 h-4 text-muted-foreground" />
                        Billing
                      </button>
                    )}
+                   <div className="h-px bg-border my-1" />
                    <button
                      onClick={() => { setShowProfileMenu(false); logout(); navigate('/login'); }}
-                     className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                     className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-2.5 font-medium"
                    >
                      <LogOut className="w-4 h-4" />
                      Log out
