@@ -377,6 +377,7 @@ export function useLeads(options?: UseLeadsOptions) {
           priority: d.priority,
           leadScore: d.lead_score,
           score: d.lead_score, // legacy map
+          urgency: d.urgency,
           
           preferredLanguage: d.preferred_language,
           counselingMode: d.counseling_mode,
@@ -705,6 +706,19 @@ export function useLeads(options?: UseLeadsOptions) {
       if (updates.universityBrandPreference !== undefined) payload.university_brand_preference = updates.universityBrandPreference;
       if (updates.lostReason !== undefined) payload.lost_reason = updates.lostReason;
       if (updates.competitor !== undefined) payload.competitor = updates.competitor;
+      
+      // Keep database temperature in sync with status / urgency changes
+      if (payload.lead_status !== undefined || payload.urgency !== undefined) {
+        const s = (payload.lead_status || '').toLowerCase();
+        const u = (payload.urgency || '').toLowerCase();
+        if (u === 'immediate' || s === 'hot' || s === 'qualified' || s === 'admitted' || s.includes('application')) {
+          payload.temperature = 'Hot';
+        } else if (u === 'high' || s === 'warm' || s === 'interested' || s === 'connected' || s === 'docs pending') {
+          payload.temperature = 'Warm';
+        } else {
+          payload.temperature = 'Cold';
+        }
+      }
       
       const { error } = await supabase.from('leads').update(payload).eq('id', id);
       if (error) throw error;

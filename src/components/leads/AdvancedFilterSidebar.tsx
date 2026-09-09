@@ -1993,6 +1993,22 @@ export function AdvancedFilterSidebar({
                     </button>
                   ))}
                 </div>
+
+                {/* Active Intent Logic Explanation */}
+                {draft.intent !== 'All' && (
+                  <p className="text-[11px] text-muted-foreground bg-muted/40 px-2.5 py-1.5 rounded-lg border border-border/50 flex items-center gap-1.5 animate-in fade-in duration-200">
+                    <span className="font-semibold text-foreground shrink-0">
+                      {draft.intent === 'HOT' && '🔥 Hot Intent:'}
+                      {draft.intent === 'WARM' && '⚡ Warm Intent:'}
+                      {draft.intent === 'COLD' && '❄️ Cold Intent:'}
+                    </span>
+                    <span>
+                      {draft.intent === 'HOT' && 'Admitted, Qualified, Application, or Immediate urgency.'}
+                      {draft.intent === 'WARM' && 'Connected, Interested, Docs Pending, or High urgency.'}
+                      {draft.intent === 'COLD' && 'New Inquiries, Not Connected, Cold, or Fallout.'}
+                    </span>
+                  </p>
+                )}
               </div>
 
               {/* Priority (Multi-Select) */}

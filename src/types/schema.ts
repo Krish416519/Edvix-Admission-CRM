@@ -135,6 +135,7 @@ export interface Lead extends BaseEntity {
   latestDispositionName?: string;
   latestDispositionTargetStatus?: string;
   nextActionDate?: string;
+  urgency?: string;
   
   // Legacy UI Fields (mapped in useLeads)
   name?: string;

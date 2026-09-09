@@ -689,62 +689,47 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
 
 function buildIntentFilterString(targetValues: string[]): string {
   const { hot, warm } = getIntentStatusMappingSync();
+  const upperTargets = targetValues.map(v => v.toUpperCase());
 
-  if (targetValues.includes('COLD')) {
-    const includeHot = targetValues.includes('HOT');
-    const includeWarm = targetValues.includes('WARM');
-    
-    const rootOrParts: string[] = [];
-    const coldAndParts: string[] = [];
-    
-    if (hot.length > 0) {
-      coldAndParts.push(`lead_status.not.in.(${hot.join(',')})`);
-      coldAndParts.push(`lead_status.not.ilike.*application*`);
-    }
-    if (warm.length > 0) {
-      coldAndParts.push(`lead_status.not.in.(${warm.join(',')})`);
-    }
-    if (coldAndParts.length > 0) {
-      rootOrParts.push(`and(${coldAndParts.join(',')})`);
-    }
+  const includeHot = upperTargets.includes('HOT');
+  const includeWarm = upperTargets.includes('WARM');
+  const includeCold = upperTargets.includes('COLD');
 
-    if (includeHot) {
-      rootOrParts.push(`or(urgency.eq.Immediate,lead_status.in.(${hot.join(',')}),urgency.is.null)`);
-    }
-    if (includeWarm) {
-      rootOrParts.push(`or(urgency.eq.High,lead_status.in.(${warm.join(',')}),urgency.is.null)`);
-    }
-
-    if (rootOrParts.length === 1) return rootOrParts[0];
-    if (rootOrParts.length > 1) return `or(${rootOrParts.join(',')})`;
+  // If all three or none are selected, no filter constraint is needed
+  if ((includeHot && includeWarm && includeCold) || (!includeHot && !includeWarm && !includeCold)) {
     return '';
   }
 
+  const nonCold = Array.from(new Set([...hot, ...warm]));
   const orParts: string[] = [];
-  const statusParts: string[] = [];
 
-  if (targetValues.includes('HOT')) {
-    orParts.push('urgency.eq.Immediate');
-    statusParts.push(...hot);
-  }
-  if (targetValues.includes('WARM')) {
-    orParts.push('urgency.eq.High');
-    statusParts.push(...warm);
+  if (includeHot) {
+    orParts.push('temperature.ilike.Hot');
+    orParts.push('urgency.ilike.Immediate');
+    if (hot.length > 0) {
+      orParts.push(`lead_status.in.(${hot.join(',')})`);
+    }
+    orParts.push('lead_status.ilike.*application*');
   }
 
-  if (statusParts.length > 0) {
-    const uniqueStatuses = Array.from(new Set(statusParts));
-    const statusList = uniqueStatuses.join(',');
-    orParts.push(`lead_status.in.(${statusList})`);
-    if (targetValues.includes('HOT') || targetValues.includes('WARM')) {
-      orParts.push('urgency.is.null');
+  if (includeWarm) {
+    orParts.push('temperature.ilike.Warm');
+    orParts.push('urgency.ilike.High');
+    if (warm.length > 0) {
+      orParts.push(`lead_status.in.(${warm.join(',')})`);
+    }
+    orParts.push('lead_status.ilike.*documentation*');
+  }
+
+  if (includeCold) {
+    orParts.push('temperature.ilike.Cold');
+    if (nonCold.length > 0) {
+      orParts.push(`and(lead_status.not.in.(${nonCold.join(',')}),lead_status.not.ilike.*application*)`);
     }
   }
 
-  if (orParts.length > 0) {
-    return `or(${orParts.join(',')})`;
-  }
-  return '';
+  if (orParts.length === 0) return '';
+  return orParts.join(',');
 }
 
 function buildConditionString(cond: FilterCondition): string {

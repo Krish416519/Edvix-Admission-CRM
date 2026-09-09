@@ -17,10 +17,15 @@ export class LeadAnalyzer {
     if (lead.notesCount) engagementScore += lead.notesCount * 5;
     if (lead.tasksCount) engagementScore += lead.tasksCount * 5;
     
-    // Temperature
+    // Temperature (canonical intent computation)
+    const status = (lead.lead_status || '').toLowerCase();
+    const urgency = (lead.urgency || '').toLowerCase();
     let temperature = 'Cold';
-    if (engagementScore > 60 || lead.lead_status === 'Application') temperature = 'Hot';
-    else if (engagementScore > 25 || lead.lead_status === 'Hot') temperature = 'Warm';
+    if (urgency === 'immediate' || status === 'hot' || status === 'qualified' || status === 'admitted' || status.includes('application') || engagementScore > 60) {
+      temperature = 'Hot';
+    } else if (urgency === 'high' || status === 'warm' || status === 'interested' || status === 'connected' || status === 'docs pending' || engagementScore > 25) {
+      temperature = 'Warm';
+    }
 
     // Conversion Probability
     let conversionProb = 5.0; // base

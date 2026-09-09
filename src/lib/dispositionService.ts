@@ -396,6 +396,28 @@ export const dispositionService = {
       throw new Error(error.message);
     }
 
+    // Synchronize temperature in database based on disposition's target_status
+    try {
+      const { data: disp } = await supabase
+        .from('dispositions')
+        .select('target_status')
+        .eq('id', dispositionId)
+        .single();
+
+      if (disp?.target_status) {
+        const s = disp.target_status.toLowerCase();
+        let temperature: 'Hot' | 'Warm' | 'Cold' = 'Cold';
+        if (s === 'hot' || s === 'qualified' || s === 'admitted' || s.includes('application')) {
+          temperature = 'Hot';
+        } else if (s === 'warm' || s === 'interested' || s === 'connected' || s === 'docs pending') {
+          temperature = 'Warm';
+        }
+        await supabase.from('leads').update({ temperature }).eq('id', leadId);
+      }
+    } catch {
+      // Non-blocking sync
+    }
+
     return data;
   },
 
