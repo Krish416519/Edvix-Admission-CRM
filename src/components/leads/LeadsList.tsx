@@ -784,25 +784,6 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         </div>
       </div>
 
-      {/* Mobile Quick Stats 4-Pill Strip */}
-      <div className="md:hidden grid grid-cols-4 gap-2 mb-3 px-1">
-        <div className="bg-card border border-border/80 rounded-xl p-2 text-center shadow-2xs">
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase truncate">Total</p>
-          <p className="text-sm font-bold text-foreground mt-0.5">{totalLeads}</p>
-        </div>
-        <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-2 text-center shadow-2xs">
-          <p className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold uppercase truncate">New</p>
-          <p className="text-sm font-bold text-purple-700 dark:text-purple-300 mt-0.5">{newLeadsCount}</p>
-        </div>
-        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-2 text-center shadow-2xs">
-          <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase truncate">Contacted</p>
-          <p className="text-sm font-bold text-blue-700 dark:text-blue-300 mt-0.5">{contactedLeadsCount}</p>
-        </div>
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-2 text-center shadow-2xs">
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase truncate">Enrolled</p>
-          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{enrolledLeadsCount}</p>
-        </div>
-      </div>
 
       {/* Mobile Search & Filter Bar */}
       <div className="md:hidden flex flex-col gap-2 mb-3 px-1">
