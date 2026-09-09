@@ -1189,6 +1189,11 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                 valDisplay = 'Due Today'; opDisplay = '';
               } else if (field?.id === 'task_overdue') {
                 valDisplay = 'Overdue'; opDisplay = '';
+              } else if (cond.operator === 'between') {
+                opDisplay = '';
+                const v1 = Array.isArray(cond.value) ? cond.value[0] : cond.value;
+                const v2 = Array.isArray(cond.value) ? cond.value[1] : cond.value2;
+                valDisplay = `${v1 || ''} to ${v2 || ''}`;
               } else if (Array.isArray(cond.value)) {
                 valDisplay = cond.value.filter(Boolean).join(' - ');
               } else if (cond.value === true) {
