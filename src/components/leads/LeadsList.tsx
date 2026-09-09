@@ -10,6 +10,7 @@ import { useLeads } from '../../hooks/useLeads';
 import { useDispositions } from '../../hooks/useDispositions';
 import { AdvancedFilterSidebar } from './AdvancedFilterSidebar';
 import type { FilterState } from '../../types/filter';
+import { FILTER_FIELD_MAP } from '../../lib/filterQueryBuilder';
 import { Lead, LeadStatus, LeadPriority } from '../../types/schema';
 import { cn, formatDate } from '../../lib/utils';
 import { computeIntent } from '../../lib/leadIntent';
@@ -197,7 +198,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   // Derive CRM context strictly from the user's active organization.
   // If it cannot be confirmed, pass undefined — never assume Academic or B2B.
   const crmContext = user?.organizations?.find(o => o.id === user.activeOrganizationId)?.crm_context ?? undefined;
-  const { categories: dispositionCategories } = useDispositions(crmContext);
+  const { categories: dispositionCategories, dispositions: allDispositions } = useDispositions(crmContext);
 
   // Mobile State
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
@@ -654,13 +655,13 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   };
 
   const totalLeads = totalCount;
-  // Use leadStatus which is the canonical field
-  const newLeadsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Inquiry').length;
-  const admissionsCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Admitted').length;
-  const qualifiedCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Qualified').length;
-  const lostCount = paginatedLeads.filter(l => (l.leadStatus || l.status) === 'Rejected').length;
-  const hotLeadsCount = paginatedLeads.filter(l => computeIntent(l) === 'HOT').length;
-  const conversionRate = paginatedLeads.length ? Math.round((admissionsCount / paginatedLeads.length) * 100) : 0;
+  // Derive canonical status counts across database
+  const newLeadsCount = (statusCounts['Inquiry'] || 0) + (statusCounts['New'] || 0);
+  const admissionsCount = statusCounts['Admitted'] || 0;
+  const qualifiedCount = statusCounts['Qualified'] || 0;
+  const lostCount = statusCounts['Rejected'] || 0;
+  const hotLeadsCount = statusCounts['Hot'] || 0;
+  const conversionRate = totalLeads ? Math.round((admissionsCount / totalLeads) * 100) : 0;
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500 pb-10">
@@ -767,24 +768,44 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       )}
 
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between mb-4 mt-2 px-1">
+      <div className="md:hidden flex items-center justify-between mb-3 mt-1 px-1">
         <div>
-          <h1 className="text-2xl font-black text-foreground leading-tight">All Leads</h1>
-          <p className="text-xs text-muted-foreground font-medium">{totalLeads} Total Leads</p>
+          <h1 className="text-xl sm:text-2xl font-black text-foreground leading-tight">All Leads</h1>
+          <p className="text-xs text-muted-foreground font-medium">{totalCount || totalLeads} Total Inquiries</p>
         </div>
-        {!isCounselor && (
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => { setSelectedLead(undefined); setIsFormOpen(true); }}
-            className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-3 py-1.5 rounded-lg font-bold transition-all text-sm shadow-sm active:scale-95"
+            className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-white px-3 py-2 rounded-xl font-bold transition-all text-xs shadow-sm active:scale-95 touch-manipulation"
           >
-            <Plus className="w-4 h-4" />
-            Lead
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Lead</span>
           </button>
-        )}
+        </div>
+      </div>
+
+      {/* Mobile Quick Stats 4-Pill Strip */}
+      <div className="md:hidden grid grid-cols-4 gap-2 mb-3 px-1">
+        <div className="bg-card border border-border/80 rounded-xl p-2 text-center shadow-2xs">
+          <p className="text-[10px] text-muted-foreground font-semibold uppercase truncate">Total</p>
+          <p className="text-sm font-bold text-foreground mt-0.5">{totalLeads}</p>
+        </div>
+        <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-2 text-center shadow-2xs">
+          <p className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold uppercase truncate">New</p>
+          <p className="text-sm font-bold text-purple-700 dark:text-purple-300 mt-0.5">{newLeadsCount}</p>
+        </div>
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-2 text-center shadow-2xs">
+          <p className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold uppercase truncate">Contacted</p>
+          <p className="text-sm font-bold text-blue-700 dark:text-blue-300 mt-0.5">{contactedLeadsCount}</p>
+        </div>
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-2 text-center shadow-2xs">
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase truncate">Enrolled</p>
+          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{enrolledLeadsCount}</p>
+        </div>
       </div>
 
       {/* Mobile Search & Filter Bar */}
-      <div className="md:hidden flex flex-col gap-2 mb-4 px-1">
+      <div className="md:hidden flex flex-col gap-2 mb-3 px-1">
         {minScoreFilter === 80 && (
           <div className="flex items-center justify-between px-3 py-2 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 rounded-xl text-sm font-semibold border border-orange-200 dark:border-orange-500/30">
             <span>🔥 Hot Leads Only</span>
@@ -812,13 +833,21 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
             />
           </div>
           <button 
-            onClick={() => setIsFiltersSheetOpen(true)}
-            className="w-11 h-11 flex items-center justify-center bg-card border border-border rounded-xl text-foreground hover:bg-muted transition-colors active:scale-95 relative shrink-0 touch-manipulation"
+            onClick={() => setIsFilterOpen(true)}
+            className={cn(
+              "w-11 h-11 flex items-center justify-center border rounded-xl transition-all active:scale-95 relative shrink-0 touch-manipulation",
+              ((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0)
+                ? "bg-primary/10 border-primary/40 text-primary font-bold shadow-xs"
+                : "bg-card border-border text-foreground hover:bg-muted"
+            )}
             aria-label="Filter leads"
+            title="Open Advanced Filters"
           >
             <Filter className="w-5 h-5" />
-            {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted || minScoreFilter !== undefined) && (
-              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-card" />
+            {((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0 || statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted || minScoreFilter !== undefined) && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center shadow-xs">
+                {(advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0 ? advancedFilterState!.rootGroup.conditions.length : '!'}
+              </span>
             )}
           </button>
           <button 
@@ -1101,13 +1130,132 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
             >
               <Filter className="w-4 h-4" />
               Filters
-              {(statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted || ((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0)) && (
-                <span className="w-2 h-2 rounded-full bg-primary" />
+              {((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0) ? (
+                <span className="px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-primary text-primary-foreground">
+                  {advancedFilterState!.rootGroup.conditions.length}
+                </span>
+              ) : (
+                (statusFilter !== 'All' || sourceFilter !== 'All' || counselorFilter !== 'All' || dispositionFilter !== 'All' || showDeleted) && (
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                )
               )}
             </button>
           </div>
         </div>
 
+        {/* Active Advanced Filter Chips Strip */}
+        {((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0) && (
+          <div className="px-4 py-2.5 bg-primary/5 border-b border-border/80 flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-bold text-primary flex items-center gap-1.5 mr-1">
+              <Filter className="w-3.5 h-3.5" />
+              Active Filters ({advancedFilterState?.rootGroup?.conditions?.length}):
+            </span>
+            {advancedFilterState?.rootGroup?.conditions?.map((cond) => {
+              const field = FILTER_FIELD_MAP[cond.fieldId];
+              const label = field?.label || cond.fieldId;
+              let valDisplay = '';
+              let opDisplay = cond.operator !== '=' ? cond.operator : '';
+
+              if (field?.id === 'assigned_counselor') {
+                if (cond.operator === 'is_null') {
+                  valDisplay = 'Unassigned';
+                  opDisplay = '';
+                } else if (cond.value === user?.id) {
+                  valDisplay = 'Assigned to Me';
+                  opDisplay = '';
+                } else {
+                  const c = allUsers.find(u => u.id === cond.value);
+                  valDisplay = c ? c.name : String(cond.value || '');
+                  opDisplay = '';
+                }
+              } else if (field?.id === 'latest_disposition_id') {
+                const d = allDispositions?.find(x => x.id === cond.value);
+                valDisplay = d ? d.name : String(cond.value || '');
+                opDisplay = '';
+              } else if (field?.id === 'disposition_category') {
+                const cat = dispositionCategories?.find(c => c.id === cond.value);
+                valDisplay = cat ? cat.name : String(cond.value || '');
+                opDisplay = '';
+              } else if (field?.id === 'created_at') {
+                if (cond.operator === 'today') { valDisplay = 'Today'; opDisplay = ''; }
+                else if (cond.operator === 'yesterday') { valDisplay = 'Yesterday'; opDisplay = ''; }
+                else if (cond.operator === 'this_week') { valDisplay = 'This Week'; opDisplay = ''; }
+                else if (cond.operator === 'this_month') { valDisplay = 'This Month'; opDisplay = ''; }
+                else if (cond.operator === 'relative_date') { valDisplay = String(cond.value).replace(/_/g, ' '); opDisplay = ''; }
+                else if (Array.isArray(cond.value)) { valDisplay = cond.value.filter(Boolean).join(' to '); opDisplay = ''; }
+                else { valDisplay = String(cond.value || ''); }
+              } else if (field?.id === 'final_follow_up_date') {
+                if (cond.operator === 'before') { valDisplay = 'Overdue'; opDisplay = ''; }
+                else if (cond.operator === 'today') { valDisplay = 'Due Today'; opDisplay = ''; }
+                else if (cond.operator === 'this_week') { valDisplay = 'Due This Week'; opDisplay = ''; }
+                else if (cond.operator === 'is_null') { valDisplay = 'No Follow-up Set'; opDisplay = ''; }
+                else { valDisplay = String(cond.value || ''); }
+              } else if (field?.id === 'last_call_date') {
+                if (cond.operator === 'is_null') { valDisplay = 'Never Called'; opDisplay = ''; }
+                else if (cond.operator === 'today') { valDisplay = 'Called Today'; opDisplay = ''; }
+                else if (cond.operator === 'relative_date' && cond.value === 'last_3_days') { valDisplay = 'Not in 3+ Days'; opDisplay = ''; }
+                else if (cond.operator === 'relative_date' && cond.value === 'last_7_days') { valDisplay = 'Not in 7+ Days'; opDisplay = ''; }
+                else { valDisplay = String(cond.value || ''); }
+              } else if (field?.id === 'has_no_activity') {
+                valDisplay = 'Untouched'; opDisplay = '';
+              } else if (field?.id === 'has_whatsapp_activity') {
+                valDisplay = 'Active'; opDisplay = '';
+              } else if (field?.id === 'has_email_activity') {
+                valDisplay = 'Active'; opDisplay = '';
+              } else if (field?.id === 'has_pending_task') {
+                valDisplay = 'Pending Task'; opDisplay = '';
+              } else if (field?.id === 'task_due_today') {
+                valDisplay = 'Due Today'; opDisplay = '';
+              } else if (field?.id === 'task_overdue') {
+                valDisplay = 'Overdue'; opDisplay = '';
+              } else if (Array.isArray(cond.value)) {
+                valDisplay = cond.value.filter(Boolean).join(' - ');
+              } else if (cond.value === true) {
+                valDisplay = 'Yes';
+                opDisplay = '';
+              } else if (cond.value === false) {
+                valDisplay = 'No';
+                opDisplay = '';
+              } else {
+                valDisplay = String(cond.value || '');
+              }
+
+              return (
+                <span 
+                  key={cond.id}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border/80 text-foreground font-medium shadow-xs"
+                >
+                  <span className="font-semibold text-muted-foreground">{label}:</span>
+                  {opDisplay && <span className="text-xs text-muted-foreground">{opDisplay}</span>}
+                  {valDisplay && <span className="font-bold text-primary">{valDisplay}</span>}
+                  <button
+                    onClick={() => {
+                      const newConditions = advancedFilterState?.rootGroup?.conditions?.filter(c => c.id !== cond.id) || [];
+                      setAdvancedFilterState(newConditions.length > 0 ? {
+                        ...advancedFilterState!,
+                        rootGroup: { ...advancedFilterState!.rootGroup, conditions: newConditions }
+                      } : undefined);
+                      setCurrentPage(1);
+                    }}
+                    className="ml-1 text-muted-foreground hover:text-destructive p-0.5 rounded transition-colors"
+                    title="Remove this filter"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
+            <button
+              onClick={() => {
+                setAdvancedFilterState(undefined);
+                setCurrentPage(1);
+              }}
+              className="text-xs font-bold text-destructive hover:underline ml-auto pl-2 py-0.5"
+            >
+              Reset all
+            </button>
+          </div>
+        )}
 
           <>
             <div 
@@ -2155,6 +2303,8 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         onClear={() => {
           setAdvancedFilterState(undefined);
         }}
+        counselors={allUsers}
+        leadsCount={totalCount}
       />
     </div>
   );

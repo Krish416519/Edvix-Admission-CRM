@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || process.env.VITE_SUPABASE_URL || "https://kwvlfslmviunwmmuajxb.supabase.co";
+const supabaseAnonKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || process.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_Mc0vlkIrWX-jdWsc_viSVA_njqhQCGE";
 
 // Optional: check if keys are provided to avoid runtime crash on import if missing
 export const hasSupabaseKeys = Boolean(supabaseUrl && supabaseAnonKey);

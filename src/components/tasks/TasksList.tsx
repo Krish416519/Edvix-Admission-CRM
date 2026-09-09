@@ -6,38 +6,211 @@ import { cn } from '../../lib/utils';
 import { 
   Search, Plus, Calendar as CalendarIcon, CheckCircle2, 
   Circle, Clock, Phone, MessageCircle, Mail, Video, Bell, 
-  MoreHorizontal, Filter, AlertCircle, LayoutList, List
+  MoreHorizontal, Filter, AlertCircle, LayoutList, List, X,
+  RotateCcw
 } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
-import { format, isPast, isToday } from 'date-fns';
-import { TasksDashboard } from './components/TasksDashboard';
+import { format, isPast, isToday, parseISO, isTomorrow, isThisWeek, addDays, startOfDay } from 'date-fns';
+import { TasksDashboard, TaskDashboardPreset } from './components/TasksDashboard';
 import { TasksCalendar } from './components/TasksCalendar';
 import { TaskFormDialog } from './components/TaskFormDialog';
 import { TaskFollowUpDialog } from './components/TaskFollowUpDialog';
+import { TaskFilterDrawer, TaskFilterState, INITIAL_TASK_FILTERS } from './components/TaskFilterDrawer';
 import { MobileTaskCard } from './mobile/MobileTaskCard';
 import { toast } from 'sonner';
-
 import { useTasks } from '../../hooks/useTasks';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function TasksList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const taskIdParam = searchParams.get('taskId');
+  
+  // Search and view state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | 'All'>('All');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
+  // Advanced Filters State
+  const [filters, setFilters] = useState<TaskFilterState>(INITIAL_TASK_FILTERS);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [activeDashboardPreset, setActiveDashboardPreset] = useState<TaskDashboardPreset>('all');
+
+  // Fetch all tasks for current user/organization
   const { tasks, isLoading, addTask, updateTask, refresh } = useTasks({
-    status: statusFilter === 'All' ? undefined : statusFilter,
-    searchTerm: searchTerm || undefined
+    pageSize: 200,
   });
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | 'All'>(25);
 
   // Dialog States
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [followUpTask, setFollowUpTask] = useState<Task | undefined>();
 
-  const filteredTasks = tasks; // Data is already filtered by useTasks hook
+  // Multi-dimensional filtered tasks
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      // 1. Search filter across title, number, description, lead, and assignee
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const matchesTitle = task.title?.toLowerCase().includes(term);
+        const matchesNum = task.taskNumber?.toLowerCase().includes(term);
+        const matchesDesc = task.description?.toLowerCase().includes(term);
+        const matchesLead = task.leadName?.toLowerCase().includes(term);
+        const assignedName = typeof task.assignedTo === 'string' ? task.assignedTo : task.assignedTo?.name;
+        const matchesAssigned = assignedName?.toLowerCase().includes(term);
+        if (!matchesTitle && !matchesNum && !matchesDesc && !matchesLead && !matchesAssigned) {
+          return false;
+        }
+      }
+
+      // 2. Toolbar quick status filter
+      if (statusFilter !== 'All' && task.status !== statusFilter) {
+        return false;
+      }
+
+      // 3. Drawer Status filter
+      if (filters.status !== 'All' && task.status !== filters.status) {
+        return false;
+      }
+
+      // 4. Priority filter
+      if (filters.priority !== 'All' && task.priority !== filters.priority) {
+        return false;
+      }
+
+      // 5. Task Type filter
+      if (filters.type !== 'All' && task.type !== filters.type) {
+        return false;
+      }
+
+      // 6. Assigned Counselor / User
+      if (filters.assignedUser === 'me') {
+        const isAssigned = user && (task.assignedUser === user.id || (task as any).assignedToId === user.id);
+        if (!isAssigned) return false;
+      } else if (filters.assignedUser !== 'All') {
+        const isAssigned = task.assignedUser === filters.assignedUser || (task as any).assignedToId === filters.assignedUser;
+        if (!isAssigned) return false;
+      }
+
+      // 7. Lead Association
+      if (filters.leadFilter === 'with_lead' && !task.leadId && !task.leadName) {
+        return false;
+      }
+      if (filters.leadFilter === 'without_lead' && (task.leadId || task.leadName)) {
+        return false;
+      }
+
+      // 8. Due Date Preset / Range
+      if (task.dueDate) {
+        try {
+          const dueDate = parseISO(task.dueDate);
+          const isFinished = task.status === 'Completed' || task.status === 'Cancelled';
+
+          if (filters.datePreset === 'overdue') {
+            if (!isPast(dueDate) || isToday(dueDate) || isFinished) return false;
+          } else if (filters.datePreset === 'today') {
+            if (!isToday(dueDate)) return false;
+          } else if (filters.datePreset === 'tomorrow') {
+            if (!isTomorrow(dueDate)) return false;
+          } else if (filters.datePreset === 'this_week') {
+            if (!isThisWeek(dueDate)) return false;
+          } else if (filters.datePreset === 'next_7_days') {
+            const now = startOfDay(new Date());
+            const in7Days = addDays(now, 7);
+            if (dueDate < now || dueDate > in7Days) return false;
+          } else if (filters.datePreset === 'custom') {
+            const taskDay = task.dueDate.split('T')[0];
+            if (filters.customStartDate && taskDay < filters.customStartDate) return false;
+            if (filters.customEndDate && taskDay > filters.customEndDate) return false;
+          }
+        } catch {
+          // ignore invalid date formats
+        }
+      } else if (filters.datePreset !== 'all') {
+        return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      // Sorting
+      if (filters.sortBy === 'due_asc') {
+        return (a.dueDate || '').localeCompare(b.dueDate || '') || (a.dueTime || '').localeCompare(b.dueTime || '');
+      } else if (filters.sortBy === 'due_desc') {
+        return (b.dueDate || '').localeCompare(a.dueDate || '');
+      } else if (filters.sortBy === 'priority_desc') {
+        const score = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+        return (score[b.priority] || 0) - (score[a.priority] || 0);
+      } else if (filters.sortBy === 'created_desc') {
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      }
+      return 0;
+    });
+  }, [tasks, searchTerm, statusFilter, filters, user]);
+
+  // Reset pagination to page 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, filters]);
+
+  const totalPages = pageSize === 'All' ? 1 : Math.max(1, Math.ceil(filteredTasks.length / pageSize));
+  
+  const paginatedTasks = useMemo(() => {
+    if (pageSize === 'All') return filteredTasks;
+    const start = (currentPage - 1) * pageSize;
+    return filteredTasks.slice(start, start + pageSize);
+  }, [filteredTasks, currentPage, pageSize]);
+
+  // Active filter count in drawer
+  const activeDrawerFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.status !== 'All') count++;
+    if (filters.priority !== 'All') count++;
+    if (filters.type !== 'All') count++;
+    if (filters.datePreset !== 'all') count++;
+    if (filters.assignedUser !== 'All') count++;
+    if (filters.leadFilter !== 'all') count++;
+    if (filters.sortBy !== 'due_asc') count++;
+    return count;
+  }, [filters]);
+
+  // Overall check if any filter or search is applied
+  const hasAnyFilterActive = activeDrawerFilterCount > 0 || statusFilter !== 'All' || searchTerm.trim() !== '' || activeDashboardPreset !== 'all';
+
+  // Handle clicking dashboard KPI cards
+  const handleSelectDashboardPreset = (preset: TaskDashboardPreset) => {
+    setActiveDashboardPreset(preset);
+    if (preset === 'all') {
+      setFilters(prev => ({ ...prev, datePreset: 'all', priority: 'All', status: 'All' }));
+      setStatusFilter('All');
+    } else if (preset === 'due_today') {
+      setFilters(prev => ({ ...prev, datePreset: 'today', status: 'All' }));
+      setStatusFilter('All');
+    } else if (preset === 'overdue') {
+      setFilters(prev => ({ ...prev, datePreset: 'overdue', status: 'All' }));
+      setStatusFilter('All');
+    } else if (preset === 'completed_today') {
+      setFilters(prev => ({ ...prev, datePreset: 'today', status: 'Completed' }));
+      setStatusFilter('Completed');
+    } else if (preset === 'upcoming_week') {
+      setFilters(prev => ({ ...prev, datePreset: 'this_week', status: 'All' }));
+      setStatusFilter('All');
+    } else if (preset === 'high_priority') {
+      setFilters(prev => ({ ...prev, priority: 'High', datePreset: 'all' }));
+      setStatusFilter('All');
+    }
+  };
+
+  const handleResetAllFilters = () => {
+    setFilters(INITIAL_TASK_FILTERS);
+    setStatusFilter('All');
+    setSearchTerm('');
+    setActiveDashboardPreset('all');
+  };
 
   const handleCreateOrEditTask = async (taskData: Partial<Task>) => {
     if (editingTask) {
@@ -79,14 +252,12 @@ export function TasksList() {
       
       // Automations based on status change
       if (data.newLeadStatus === 'Admitted' && followUpTask.leadId) {
-        // Find pending tasks for this lead
         const pendingTasks = tasks.filter(t => t.leadId === followUpTask.leadId && t.status === 'Pending');
         for (const pt of pendingTasks) {
           await updateTask(pt.id, { status: 'Cancelled' });
         }
         toast.info('Auto-cancelled pending tasks for admitted lead');
       } else if (data.newLeadStatus === 'Hot' && followUpTask.leadId) {
-        // Create follow-up in 2 days
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 2);
         await addTask({
@@ -100,7 +271,6 @@ export function TasksList() {
         });
         toast.info('Auto-scheduled follow-up in 2 days for Hot lead');
       } else if (data.newLeadStatus === 'Docs Pending' && followUpTask.leadId) {
-        // Reminder in 3 days
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 3);
         await addTask({
@@ -121,11 +291,9 @@ export function TasksList() {
 
   const toggleTaskStatus = async (task: Task) => {
     if (task.status === 'Completed') {
-      // Reopen task
       await updateTask(task.id, { status: 'Pending' });
       toast.success('Task reopened');
     } else {
-      // Open Follow up dialog to complete
       setFollowUpTask(task);
     }
   };
@@ -172,11 +340,12 @@ export function TasksList() {
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Tasks & Follow-ups</h1>
-          <p className="text-muted-foreground mt-1">Manage your daily activities and follow-ups.</p>
+          <p className="text-muted-foreground mt-1">Manage your daily activities, follow-ups, and commitments.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex bg-card border border-border rounded-lg p-1">
@@ -201,60 +370,216 @@ export function TasksList() {
           </div>
           <button 
             onClick={() => { setEditingTask(undefined); setIsFormOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm font-medium"
+            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors shadow-sm font-semibold text-xs sm:text-sm shrink-0 touch-manipulation"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New Task</span>
+            <span>New Task</span>
           </button>
         </div>
       </div>
 
-      <TasksDashboard tasks={tasks} />
+      {/* Interactive KPI Dashboard */}
+      <TasksDashboard 
+        tasks={tasks} 
+        activePreset={activeDashboardPreset}
+        onSelectPreset={handleSelectDashboardPreset}
+      />
 
       {/* Main Content */}
       <div className="bg-card border border-border rounded-xl shadow-sm flex flex-col flex-1 min-h-[500px]">
         {/* Toolbar */}
         {viewMode === 'list' && (
-          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-muted/10">
-            <div className="relative max-w-md w-full">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input 
-                type="text" 
-                placeholder="Search tasks or leads..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 hide-scrollbar shrink-0">
-              <div className="flex items-center gap-2 bg-background border border-border rounded-lg p-1">
-                {(['All', 'Pending', 'In Progress', 'Completed'] as const).map(status => (
-                  <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap",
-                      statusFilter === status 
-                        ? "bg-primary/10 text-primary" 
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {status}
-                  </button>
-                ))}
+          <div className="flex flex-col border-b border-border bg-muted/10">
+            <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="relative max-w-md w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="text" 
+                  placeholder="Search tasks, number, lead..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
               </div>
               
-              <button className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors">
-                <Filter className="w-4 h-4" /> Filters
-              </button>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+                {/* Status Quick Pills */}
+                <div className="flex items-center gap-1 bg-background border border-border rounded-lg p-1 overflow-x-auto hide-scrollbar">
+                  {(['All', 'Pending', 'In Progress', 'Completed'] as const).map(status => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        setStatusFilter(status);
+                        if (status !== 'All' && filters.status !== 'All') {
+                          setFilters(f => ({ ...f, status: 'All' }));
+                        }
+                      }}
+                      className={cn(
+                        "px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap touch-manipulation",
+                        statusFilter === status 
+                          ? "bg-primary/10 text-primary font-semibold" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Filters Drawer Trigger Button */}
+                <button 
+                  type="button"
+                  onClick={() => setIsFilterDrawerOpen(true)}
+                  className={cn(
+                    "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all shadow-xs border shrink-0 touch-manipulation",
+                    activeDrawerFilterCount > 0 
+                      ? "bg-primary/10 border-primary/40 text-primary font-semibold hover:bg-primary/15" 
+                      : "bg-background border-border text-foreground hover:bg-muted"
+                  )}
+                  title="Open filter options"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Filters</span>
+                  {activeDrawerFilterCount > 0 && (
+                    <span className="w-5 h-5 flex items-center justify-center text-[11px] font-bold rounded-full bg-primary text-primary-foreground leading-none">
+                      {activeDrawerFilterCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Active Filter Badges / Chips Row */}
+            {hasAnyFilterActive && (
+              <div className="px-4 py-2 bg-muted/20 border-t border-border flex items-center gap-2 flex-wrap text-xs animate-in fade-in duration-200">
+                <span className="text-muted-foreground font-semibold flex items-center gap-1">
+                  Active Filters:
+                </span>
+
+                {filters.datePreset !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Due: <strong className="text-primary">{filters.datePreset === 'overdue' ? 'Overdue' : filters.datePreset === 'today' ? 'Today' : filters.datePreset === 'tomorrow' ? 'Tomorrow' : filters.datePreset === 'this_week' ? 'This Week' : filters.datePreset === 'next_7_days' ? 'Next 7 Days' : 'Custom'}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => { setFilters(f => ({ ...f, datePreset: 'all' })); setActiveDashboardPreset('all'); }} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {filters.priority !== 'All' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Priority: <strong className="text-primary">{filters.priority}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => { setFilters(f => ({ ...f, priority: 'All' })); if (activeDashboardPreset === 'high_priority') setActiveDashboardPreset('all'); }} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {filters.type !== 'All' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Type: <strong className="text-primary">{filters.type}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => setFilters(f => ({ ...f, type: 'All' }))} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {statusFilter !== 'All' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Status: <strong className="text-primary">{statusFilter}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => { setStatusFilter('All'); if (activeDashboardPreset === 'completed_today') setActiveDashboardPreset('all'); }} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {filters.status !== 'All' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Status: <strong className="text-primary">{filters.status}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => setFilters(f => ({ ...f, status: 'All' }))} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {filters.assignedUser !== 'All' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Counselor: <strong className="text-primary">{filters.assignedUser === 'me' ? 'My Tasks' : 'Selected'}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => setFilters(f => ({ ...f, assignedUser: 'All' }))} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {filters.leadFilter !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Lead: <strong className="text-primary">{filters.leadFilter === 'with_lead' ? 'Has Lead' : 'No Lead'}</strong>
+                    <button 
+                      type="button"
+                      onClick={() => setFilters(f => ({ ...f, leadFilter: 'all' }))} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                {searchTerm.trim() !== '' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-background border border-border text-foreground font-medium shadow-xs">
+                    Keyword: "<strong className="text-primary">{searchTerm}</strong>"
+                    <button 
+                      type="button"
+                      onClick={() => setSearchTerm('')} 
+                      className="hover:text-red-500 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+
+                <div className="ml-auto flex items-center gap-3">
+                  <span className="text-muted-foreground">
+                    Showing <strong className="text-foreground">{filteredTasks.length}</strong> of {tasks.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResetAllFilters}
+                    className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Reset all
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Task List or Calendar */}
         {viewMode === 'calendar' ? (
-           <TasksCalendar tasks={tasks} />
+           <TasksCalendar tasks={filteredTasks} />
         ) : (
           <div className="overflow-x-auto flex-1">
             {filteredTasks.length === 0 ? (
@@ -262,12 +587,21 @@ export function TasksList() {
                 icon={LayoutList}
                 title="No tasks found" 
                 description="Try adjusting your search or filters to find what you're looking for."
+                action={hasAnyFilterActive ? (
+                  <button
+                    type="button"
+                    onClick={handleResetAllFilters}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                  >
+                    Clear All Filters
+                  </button>
+                ) : undefined}
               />
             ) : (
               <>
                 {/* Mobile View */}
-                <div className="md:hidden p-4 bg-muted/5">
-                  {filteredTasks.map((task) => (
+                <div className="md:hidden p-4 bg-muted/5 divide-y divide-border">
+                  {paginatedTasks.map((task) => (
                     <MobileTaskCard 
                       key={task.id} 
                       task={task} 
@@ -292,7 +626,7 @@ export function TasksList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredTasks.map((task) => (
+                  {paginatedTasks.map((task) => (
                      <tr 
                        key={task.id} 
                        id={`task-${task.id}`}
@@ -301,7 +635,6 @@ export function TasksList() {
                         task.status === 'Completed' && "opacity-60 bg-muted/10"
                       )}
                       onClick={(e) => {
-                        // Prevent opening edit dialog if clicking on checkbox or actions
                         const target = e.target as HTMLElement;
                         if (!target.closest('button')) {
                           setEditingTask(task);
@@ -374,19 +707,31 @@ export function TasksList() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <span className={cn(
-                            "font-medium",
-                            isPast(new Date(task.dueDate)) && !isToday(new Date(task.dueDate)) && task.status !== 'Completed' ? "text-red-600" : "text-foreground"
-                          )}>
-                            {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                          </span>
+                          {(() => {
+                            const isTaskOverdue = task.dueDate && isPast(parseISO(task.dueDate)) && !isToday(parseISO(task.dueDate)) && task.status !== 'Completed';
+                            return (
+                              <span className={cn(
+                                "font-medium",
+                                isTaskOverdue ? "text-red-600" : "text-foreground"
+                              )}>
+                                {task.dueDate ? format(parseISO(task.dueDate), 'MMM d, yyyy') : 'No date'}
+                              </span>
+                            );
+                          })()}
                           {task.dueTime && (
                              <span className="text-xs text-muted-foreground mt-0.5">{task.dueTime}</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTask(task);
+                            setIsFormOpen(true);
+                          }}
+                          className="p-2 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        >
                           <MoreHorizontal className="w-5 h-5" />
                         </button>
                       </td>
@@ -394,12 +739,77 @@ export function TasksList() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination Controls */}
+              <div className="p-4 border-t border-border bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span>
+                    Showing <strong className="text-foreground">{filteredTasks.length === 0 ? 0 : (currentPage - 1) * (pageSize === 'All' ? filteredTasks.length : pageSize) + 1}</strong> to{' '}
+                    <strong className="text-foreground">
+                      {pageSize === 'All' ? filteredTasks.length : Math.min(currentPage * pageSize, filteredTasks.length)}
+                    </strong>{' '}
+                    of <strong className="text-foreground">{filteredTasks.length}</strong> tasks
+                  </span>
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <span>Per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setPageSize(val === 'All' ? 'All' : Number(val));
+                        setCurrentPage(1);
+                      }}
+                      className="px-2 py-1 bg-background border border-border rounded text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value="All">All</option>
+                    </select>
+                  </div>
+                </div>
+
+                {pageSize !== 'All' && totalPages > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                      className="px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1.5 text-muted-foreground font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className="px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
               </>
             )}
           </div>
         )}
       </div>
 
+      {/* Task Filter Drawer */}
+      <TaskFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
+        onResetFilters={handleResetAllFilters}
+        tasksCount={filteredTasks.length}
+      />
+
+      {/* Create / Edit Task Dialog */}
       <TaskFormDialog 
         task={editingTask} 
         isOpen={isFormOpen} 
@@ -407,6 +817,7 @@ export function TasksList() {
         onSave={handleCreateOrEditTask} 
       />
 
+      {/* Follow-up / Complete Dialog */}
       {followUpTask && (
         <TaskFollowUpDialog 
           task={followUpTask}

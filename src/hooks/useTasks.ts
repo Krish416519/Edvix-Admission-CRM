@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Task } from '../types/schema';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,7 +44,7 @@ export function useTasks(options: UseTasksOptions = {}) {
     assignedUser,
     searchTerm,
     page = 1,
-    pageSize = 50,
+    pageSize = 100,
     enableRealtime = true
   } = options;
 
@@ -66,14 +66,15 @@ export function useTasks(options: UseTasksOptions = {}) {
 
       if (leadId) query = query.eq('lead_id', leadId);
       if (status && status !== 'All') query = query.eq('status', status);
-      if (priority) query = query.eq('priority', priority);
-      if (type) query = query.eq('task_type', type);
+      if (priority && priority !== 'All') query = query.eq('priority', priority);
+      if (type && type !== 'All') query = query.eq('task_type', type);
       
       // Role-based data isolation
       if (user.role !== 'Super Admin' && user.role !== 'Admin') {
         query = query.eq('assigned_user', user.id);
       } else if (assignedUser && assignedUser !== 'All') {
-        query = query.eq('assigned_user', assignedUser);
+        const targetUserId = assignedUser === 'me' ? user.id : assignedUser;
+        query = query.eq('assigned_user', targetUserId);
       }
       if (searchTerm) {
         query = query.or(`title.ilike.%${searchTerm}%,task_number.ilike.%${searchTerm}%`);
@@ -139,21 +140,24 @@ export function useTasks(options: UseTasksOptions = {}) {
     fetchTasks();
   }, [fetchTasks]);
 
+  const fetchTasksRef = useRef(fetchTasks);
+  fetchTasksRef.current = fetchTasks;
+
   useEffect(() => {
     if (!enableRealtime || !user) return;
     
-    const channelId = `tasks_realtime_${Date.now()}`;
+    const channelId = `tasks_realtime_${user.id}`;
     const channel = supabase
       .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
-        fetchTasks();
+        fetchTasksRef.current();
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, enableRealtime, fetchTasks]);
+  }, [user?.id, enableRealtime]);
 
   const addTask = async (task: Partial<Task>) => {
     try {

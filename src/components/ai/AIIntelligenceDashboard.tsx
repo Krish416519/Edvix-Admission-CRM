@@ -132,53 +132,53 @@ export function AIIntelligenceDashboard() {
         {/* Decorative Grid Lines */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 lg:gap-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
             <div className="relative shrink-0">
               {/* Outer glowing ring */}
               <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 opacity-30 blur group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse" />
-              <div className="relative w-16 h-16 rounded-2xl bg-slate-900 border border-white/20 flex items-center justify-center shadow-inner overflow-hidden">
+              <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-slate-900 border border-white/20 flex items-center justify-center shadow-inner overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent" />
-                <Brain className="w-8 h-8 text-violet-400 relative z-10 drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
+                <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-violet-400 relative z-10 drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
               </div>
             </div>
             
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-bold text-white tracking-tight drop-shadow-md">
+              <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight drop-shadow-md">
                   Intelligence Core
                 </h1>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                   Online
                 </span>
               </div>
-              <p className="text-slate-400 text-sm max-w-md leading-relaxed">
-                Autonomous decision support engine analyzing your CRM data in real-time to surface hidden opportunities.
+              <p className="text-slate-400 text-xs sm:text-sm max-w-md leading-relaxed">
+                Autonomous decision support engine analyzing CRM data in real-time.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full lg:w-auto">
+          <div className="flex items-center gap-2 sm:gap-4 w-full lg:w-auto">
             {/* Glassmorphism Stat Pills */}
-            <div className="flex items-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-xl w-full lg:w-auto overflow-x-auto hide-scrollbar">
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center min-w-[100px]">
-                <span className="text-2xl font-bold text-white drop-shadow-md">{stats.totalRecommendations}</span>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Total Insights</span>
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/5 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-xl w-full lg:w-auto justify-between sm:justify-start">
+              <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center flex-1 sm:flex-initial min-w-[80px] sm:min-w-[100px]">
+                <span className="text-xl sm:text-2xl font-bold text-white drop-shadow-md">{stats.totalRecommendations}</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-slate-400 uppercase tracking-wider text-center">Total Insights</span>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center min-w-[100px]">
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 drop-shadow-md">{stats.newRecommendations}</span>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">New Today</span>
+              <div className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center flex-1 sm:flex-initial min-w-[80px] sm:min-w-[100px]">
+                <span className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 drop-shadow-md">{stats.newRecommendations}</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-slate-400 uppercase tracking-wider text-center">New Today</span>
               </div>
               <button
                 onClick={handleRefresh}
                 className={cn(
-                  "ml-2 mr-1 p-3 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 hover:text-white transition-all shadow-[0_0_20px_rgba(139,92,246,0.15)] hover:shadow-[0_0_25px_rgba(139,92,246,0.25)]",
+                  "p-2.5 sm:p-3 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 hover:bg-violet-500/30 hover:text-white transition-all shadow-[0_0_20px_rgba(139,92,246,0.15)] hover:shadow-[0_0_25px_rgba(139,92,246,0.25)] shrink-0 touch-manipulation",
                   isRefreshing && "animate-[spin_1s_linear_infinite] text-white bg-violet-500/40"
                 )}
                 title="Refresh Intelligence"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
@@ -186,13 +186,13 @@ export function AIIntelligenceDashboard() {
       </div>
 
       {/* Premium Floating Tab Navigation */}
-      <div className="flex gap-2 mb-8 p-1.5 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl overflow-x-auto hide-scrollbar sticky top-4 z-30 shadow-sm shadow-black/5">
+      <div className="flex gap-1.5 sm:gap-2 mb-6 sm:mb-8 p-1 sm:p-1.5 bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl overflow-x-auto hide-scrollbar sticky top-0 z-20 shadow-sm shadow-black/5">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "relative flex items-center gap-2.5 px-5 py-2.5 text-sm font-semibold transition-all duration-300 whitespace-nowrap rounded-xl overflow-hidden group outline-none",
+              "relative flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all duration-300 whitespace-nowrap rounded-xl overflow-hidden group outline-none touch-manipulation shrink-0",
               activeTab === tab.id
                 ? "text-white shadow-md transform scale-[1.02]"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
@@ -233,9 +233,9 @@ export function AIIntelligenceDashboard() {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
             
             {/* Bento Grid Architecture */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-6">
               
-              {/* Primary Stats - Spans 12 cols total, 3 each */}
+              {/* Primary Stats - Spans 12 cols total, 3 each on desktop, 1 col each on 2-col mobile */}
               <BentoMetric
                 icon={Bell}
                 label="New Insights"
@@ -243,7 +243,7 @@ export function AIIntelligenceDashboard() {
                 change="+12%"
                 trend="up"
                 gradient="from-blue-500 to-cyan-500"
-                className="lg:col-span-3"
+                className="col-span-1 lg:col-span-3"
               />
               <BentoMetric
                 icon={Target}
@@ -252,7 +252,7 @@ export function AIIntelligenceDashboard() {
                 change="+5"
                 trend="up"
                 gradient="from-emerald-500 to-teal-500"
-                className="lg:col-span-3"
+                className="col-span-1 lg:col-span-3"
               />
               <BentoMetric
                 icon={AlertTriangle}
@@ -261,7 +261,7 @@ export function AIIntelligenceDashboard() {
                 change="-2"
                 trend="down"
                 gradient="from-rose-500 to-red-500"
-                className="lg:col-span-3"
+                className="col-span-1 lg:col-span-3"
               />
               <BentoMetric
                 icon={Check}
@@ -270,31 +270,32 @@ export function AIIntelligenceDashboard() {
                 change="+18%"
                 trend="up"
                 gradient="from-violet-500 to-purple-500"
-                className="lg:col-span-3"
+                className="col-span-1 lg:col-span-3"
               />
 
               {/* Major Bento Block: Recent Insights (Spans 8 cols) */}
-              <div className="lg:col-span-8 bg-card border border-border/60 rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 group flex flex-col">
-                <div className="bg-muted/20 rounded-[1.75rem] p-6 h-full border border-white/5 flex flex-col">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                        <Bell className="w-5 h-5 text-blue-500" />
+              <div className="col-span-2 lg:col-span-8 bg-card border border-border/60 rounded-[1.75rem] sm:rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 group flex flex-col">
+                <div className="bg-muted/20 rounded-[1.5rem] sm:rounded-[1.75rem] p-4 sm:p-6 h-full border border-white/5 flex flex-col">
+                  <div className="flex items-center justify-between mb-4 sm:mb-6">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                        <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-foreground tracking-tight">Recent Insights</h3>
-                        <p className="text-xs text-muted-foreground">High-value AI generated recommendations</p>
+                        <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight">Recent Insights</h3>
+                        <p className="text-[11px] sm:text-xs text-muted-foreground truncate">High-value AI generated recommendations</p>
                       </div>
                     </div>
                     <button
                       onClick={() => setActiveTab('recommendations')}
-                      className="text-sm font-semibold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/5 hover:bg-primary/10 px-4 py-2 rounded-xl transition-colors"
+                      className="text-xs sm:text-sm font-semibold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/5 hover:bg-primary/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-colors touch-manipulation"
                     >
-                      View All <ChevronRight className="w-4 h-4" />
+                      <span>View All</span>
+                      <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   </div>
 
-                  <div className="space-y-3 flex-1">
+                  <div className="space-y-2.5 sm:space-y-3 flex-1">
                     {recommendations.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
                         <Bell className="w-10 h-10 text-muted-foreground mb-4" />
@@ -304,7 +305,7 @@ export function AIIntelligenceDashboard() {
                       recommendations.slice(0, 4).map((rec) => (
                         <div
                           key={rec.id}
-                          className="group/item flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden"
+                          className="group/item flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-md transition-all duration-300 cursor-pointer relative overflow-hidden touch-manipulation"
                           onClick={() => handleViewRecommendation(rec.id)}
                         >
                           {/* Hover Gradient Sweep */}
@@ -314,28 +315,30 @@ export function AIIntelligenceDashboard() {
                           
                           <div className="flex-1 min-w-0 relative z-10">
                             <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-sm font-bold text-foreground truncate group-hover/item:text-primary transition-colors">{rec.title}</p>
-                              <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border", getPriorityBg(rec.priority))}>
+                              <p className="text-xs sm:text-sm font-bold text-foreground truncate group-hover/item:text-primary transition-colors">{rec.title}</p>
+                              <span className={cn("px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border shrink-0", getPriorityBg(rec.priority))}>
                                 {rec.priority}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground truncate">{rec.message}</p>
+                            <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{rec.message}</p>
                           </div>
                           
-                          <div className="relative z-10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 translate-x-4 group-hover/item:translate-x-0 flex items-center gap-2">
+                          <div className="relative z-10 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity duration-300 sm:translate-x-4 sm:group-hover/item:translate-x-0 flex items-center gap-1.5 sm:gap-2 shrink-0">
                             {rec.status === 'new' && (
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleAcceptRecommendation(rec.id); }}
-                                  className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-colors"
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500 hover:text-white flex items-center justify-center transition-colors touch-manipulation"
+                                  title="Accept"
                                 >
-                                  <Check className="w-4 h-4" />
+                                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleRejectRecommendation(rec.id); }}
-                                  className="w-8 h-8 rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-white flex items-center justify-center transition-colors"
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-muted text-muted-foreground hover:bg-destructive hover:text-white flex items-center justify-center transition-colors touch-manipulation"
+                                  title="Dismiss"
                                 >
-                                  <X className="w-4 h-4" />
+                                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </button>
                               </>
                             )}
@@ -348,19 +351,19 @@ export function AIIntelligenceDashboard() {
               </div>
 
               {/* Minor Bento Block: Top Priority Actions (Spans 4 cols) */}
-              <div className="lg:col-span-4 bg-card border border-border/60 rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 group flex flex-col">
-                <div className="bg-gradient-to-b from-emerald-500/5 to-transparent rounded-[1.75rem] p-6 h-full border border-white/5 flex flex-col">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-emerald-500" />
+              <div className="col-span-2 lg:col-span-4 bg-card border border-border/60 rounded-[1.75rem] sm:rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 group flex flex-col">
+                <div className="bg-gradient-to-b from-emerald-500/5 to-transparent rounded-[1.5rem] sm:rounded-[1.75rem] p-4 sm:p-6 h-full border border-white/5 flex flex-col">
+                  <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                      <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg text-foreground tracking-tight">Top Actions</h3>
-                      <p className="text-xs text-muted-foreground">Highest ROI next steps</p>
+                      <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight">Top Actions</h3>
+                      <p className="text-[11px] sm:text-xs text-muted-foreground">Highest ROI next steps</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3 flex-1">
+                  <div className="space-y-2.5 sm:space-y-3 flex-1">
                     {nextBestActions.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
                         <Target className="w-8 h-8 text-muted-foreground mb-3" />
@@ -370,18 +373,18 @@ export function AIIntelligenceDashboard() {
                       nextBestActions.slice(0, 5).map((action) => (
                         <div
                           key={action.leadId}
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/50 hover:border-emerald-500/30 hover:shadow-md transition-all duration-300 cursor-pointer group/action"
+                          className="flex items-center gap-2.5 sm:gap-3 p-3 rounded-2xl bg-card border border-border/50 hover:border-emerald-500/30 hover:shadow-md transition-all duration-300 cursor-pointer group/action touch-manipulation"
                         >
                           <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", getRiskDot(action.priority))} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground truncate group-hover/action:text-emerald-600 dark:group-hover/action:text-emerald-400 transition-colors">{action.leadName}</p>
+                            <p className="text-xs sm:text-sm font-bold text-foreground truncate group-hover/action:text-emerald-600 dark:group-hover/action:text-emerald-400 transition-colors">{action.leadName}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                              <span className="text-[9px] sm:text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                                 {action.actionLabel}
                               </span>
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover/action:opacity-100 group-hover/action:translate-x-1 transition-all" />
+                          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-100 sm:opacity-0 sm:group-hover/action:opacity-100 sm:group-hover/action:translate-x-1 transition-all shrink-0" />
                         </div>
                       ))
                     )}
@@ -573,26 +576,26 @@ function BentoMetric({ icon: Icon, label, value, change, trend, gradient, classN
   className?: string;
 }) {
   return (
-    <div className={cn("bg-card border border-border/60 rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-500 group", className)}>
-      <div className="bg-muted/10 rounded-[1.75rem] p-5 sm:p-6 h-full border border-white/5 flex flex-col justify-between relative overflow-hidden">
+    <div className={cn("bg-card border border-border/60 rounded-[1.5rem] sm:rounded-[2rem] p-1 shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-500 group", className)}>
+      <div className="bg-muted/10 rounded-[1.25rem] sm:rounded-[1.75rem] p-3.5 sm:p-6 h-full border border-white/5 flex flex-col justify-between relative overflow-hidden">
         {/* Subtle background glow */}
         <div className={cn("absolute -top-10 -right-10 w-32 h-32 rounded-full blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 bg-gradient-to-br", gradient)} />
         
-        <div className="flex items-center justify-between mb-4 relative z-10">
-          <div className={cn("w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-inner", gradient)}>
-            <Icon className="w-6 h-6 text-white drop-shadow-sm group-hover:scale-110 transition-transform duration-500" />
+        <div className="flex items-center justify-between mb-2 sm:mb-4 relative z-10">
+          <div className={cn("w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-inner", gradient)}>
+            <Icon className="w-4 h-4 sm:w-6 sm:h-6 text-white drop-shadow-sm group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div className={cn(
-            "flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border backdrop-blur-sm",
+            "flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg border backdrop-blur-sm",
             trend === 'up' ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" : "text-red-500 bg-red-500/10 border-red-500/20"
           )}>
-            {trend === 'up' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5 rotate-180" />}
+            {trend === 'up' ? <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 rotate-180" />}
             {change}
           </div>
         </div>
-        <div className="relative z-10 mt-auto pt-2">
-          <p className="text-3xl font-extrabold text-foreground tracking-tight drop-shadow-sm">{value}</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">{label}</p>
+        <div className="relative z-10 mt-auto pt-1 sm:pt-2">
+          <p className="text-xl sm:text-3xl font-extrabold text-foreground tracking-tight drop-shadow-sm">{value}</p>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground mt-0.5 sm:mt-1 truncate">{label}</p>
         </div>
       </div>
     </div>

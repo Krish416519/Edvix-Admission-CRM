@@ -2,7 +2,7 @@
 import { Task, TaskPriority, TaskType } from '../../../types/task';
 import { Phone, MessageCircle, Mail, Video, Bell, Clock, CheckCircle2, Circle, Calendar, AlertCircle, User } from 'lucide-react';
 import { cn } from '../../../lib/utils';
-import { format, isPast, isToday } from 'date-fns';
+import { format, isPast, isToday, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 interface MobileTaskCardProps {
@@ -35,7 +35,8 @@ export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCard
     }
   };
 
-  const isOverdue = isPast(new Date(task.dueDate)) && !isToday(new Date(task.dueDate)) && task.status !== 'Completed';
+  const dueDateObj = task.dueDate ? parseISO(task.dueDate) : null;
+  const isOverdue = dueDateObj && isPast(dueDateObj) && !isToday(dueDateObj) && task.status !== 'Completed';
 
   return (
     <div 
@@ -51,11 +52,12 @@ export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCard
             <button 
               onClick={(e) => { e.stopPropagation(); onToggleStatus(task); }}
               className={cn(
-                "w-6 h-6 rounded-full flex shrink-0 items-center justify-center border transition-all",
+                "w-7 h-7 -ml-0.5 rounded-full flex shrink-0 items-center justify-center border transition-all touch-manipulation",
                 task.status === 'Completed' 
-                  ? "bg-green-500 border-green-500 text-white" 
-                  : "border-muted-foreground/30 text-transparent"
+                  ? "bg-green-500 border-green-500 text-white shadow-xs" 
+                  : "border-muted-foreground/40 text-transparent hover:border-primary"
               )}
+              aria-label={task.status === 'Completed' ? "Mark task pending" : "Mark task completed"}
             >
               {task.status === 'Completed' ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
             </button>
@@ -112,7 +114,7 @@ export function MobileTaskCard({ task, onToggleStatus, onClick }: MobileTaskCard
           {isOverdue && <AlertCircle className="w-3.5 h-3.5" />}
           {!isOverdue && <Calendar className="w-3.5 h-3.5" />}
           <span>
-            {isToday(new Date(task.dueDate)) ? 'Today' : format(new Date(task.dueDate), 'MMM d')}
+            {dueDateObj ? (isToday(dueDateObj) ? 'Today' : format(dueDateObj, 'MMM d')) : 'No date'}
             {task.dueTime && `, ${task.dueTime}`}
           </span>
         </div>

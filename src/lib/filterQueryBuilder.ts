@@ -94,6 +94,22 @@ export const FILTER_FIELDS: FilterField[] = [
     operators: ['=', '!='],
   },
   {
+    id: 'university_id',
+    label: 'University',
+    category: 'academic',
+    type: 'uuid',
+    dbColumn: 'university_id',
+    operators: ['=', '!=', 'in', 'not_in', 'is_null', 'is_not_null'],
+  },
+  {
+    id: 'course_id',
+    label: 'Course',
+    category: 'academic',
+    type: 'uuid',
+    dbColumn: 'course_id',
+    operators: ['=', '!=', 'in', 'not_in', 'is_null', 'is_not_null'],
+  },
+  {
     id: 'name',
     label: 'Lead Name',
     category: 'lead_info',
@@ -453,6 +469,38 @@ export const FILTER_FIELDS: FilterField[] = [
     dbColumn: 'conversion_probability',
     operators: ['=', '!=', '>', '<', '>=', '<=', 'between'],
   },
+  {
+    id: 'drop_off_risk',
+    label: 'Drop-off Risk',
+    category: 'analytics',
+    type: 'string',
+    dbColumn: 'drop_off_risk',
+    operators: ['=', '!=', 'in', 'not_in'],
+  },
+  {
+    id: 'ai_score',
+    label: 'AI Predictive Score',
+    category: 'analytics',
+    type: 'number',
+    dbColumn: 'ai_score',
+    operators: ['=', '!=', '>', '<', '>=', '<=', 'between'],
+  },
+  {
+    id: 'partner_id',
+    label: 'Partner / Agency',
+    category: 'assignment',
+    type: 'uuid',
+    dbColumn: 'partner_id',
+    operators: ['=', '!=', 'in', 'not_in', 'is_null', 'is_not_null'],
+  },
+  {
+    id: 'budget',
+    label: 'Budget Band',
+    category: 'lead_info',
+    type: 'string',
+    dbColumn: 'budget',
+    operators: ['=', '!=', 'contains', 'in', 'not_in'],
+  },
 ];
 
 export const FILTER_FIELDS_BY_CATEGORY: Record<string, FilterField[]> = {};
@@ -516,12 +564,14 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
     }
     
     // Process date range
-    if (operator === 'between' && value && value2) {
-      const isStartValid = typeof value === 'string' && !!value.match(/^\d{4}-\d{2}-\d{2}$/);
-      const isEndValid = typeof value2 === 'string' && !!value2.match(/^\d{4}-\d{2}-\d{2}$/);
+    if (operator === 'between') {
+      const startVal = Array.isArray(value) ? value[0] : value;
+      const endVal = Array.isArray(value) ? value[1] : value2;
+      const isStartValid = typeof startVal === 'string' && !!startVal.match(/^\d{4}-\d{2}-\d{2}$/);
+      const isEndValid = typeof endVal === 'string' && !!endVal.match(/^\d{4}-\d{2}-\d{2}$/);
       if (isStartValid && isEndValid) {
-        const start = `${value}T00:00:00.000Z`;
-        const dEnd = new Date(`${value2}T00:00:00.000Z`);
+        const start = `${startVal}T00:00:00.000Z`;
+        const dEnd = new Date(`${endVal}T00:00:00.000Z`);
         dEnd.setUTCDate(dEnd.getUTCDate() + 1);
         const end = dEnd.toISOString();
         return `and(${col}.gte.${start},${col}.lt.${end})`;
@@ -567,8 +617,14 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
     case 'not_in':
       const notInList = Array.isArray(value) ? value.join(',') : value;
       return `or(${col}.not.in.(${notInList}),${col}.is.null)`;
-    case 'between':
-      return value && value2 ? `and(${col}.gte.${value},${col}.lte.${value2})` : '';
+    case 'between': {
+      const val1 = Array.isArray(value) ? value[0] : value;
+      const val2 = Array.isArray(value) ? value[1] : value2;
+      if (val1 !== undefined && val1 !== '' && val2 !== undefined && val2 !== '') {
+        return `and(${col}.gte.${val1},${col}.lte.${val2})`;
+      }
+      return '';
+    }
     case 'before':
       return `${col}.lt.${value}`;
     case 'after':
@@ -577,8 +633,11 @@ function buildPostgrestFilterString(field: string, type: FilterFieldType, operat
       return `${col}.is.null`;
     case 'is_not_null':
       return `${col}.not.is.null`;
-    case 'relative_date':
-      return `${col}.gte.${value}`;
+    case 'relative_date': {
+      if (!value) return '';
+      const isoVal = getRelativeDateValue(value) || (typeof value === 'string' && value.includes('T') ? value : null);
+      return isoVal ? `${col}.gte.${isoVal}` : '';
+    }
     case 'today': {
       const start = new Date();
       start.setHours(0, 0, 0, 0);
@@ -699,6 +758,18 @@ function buildConditionString(cond: FilterCondition): string {
   const value = cond.value;
   const value2 = cond.value2;
 
+  // Ignore incomplete conditions that require user-provided values
+  const requiresValue = !['is_null', 'is_not_null', 'today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month'].includes(operator);
+  if (requiresValue) {
+    if (value === undefined || value === null || value === '') return '';
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '';
+      if (operator === 'between' && (value[0] === '' || value[0] === undefined || value[1] === '' || value[1] === undefined)) return '';
+    } else if (operator === 'between') {
+      if (value2 === undefined || value2 === null || value2 === '') return '';
+    }
+  }
+
   if (field.id === 'intent' && (operator === '=' || operator === '!=' || operator === 'in' || operator === 'not_in')) {
     const intentValues = Array.isArray(value) ? value : [value];
     let targetValues: string[];
@@ -789,28 +860,18 @@ export function applyFilters(
   if (parts.length === 0) return query;
 
   if (rootLogic === 'AND') {
-    // For root AND: apply each condition as a SEPARATE chained .filter() call.
-    // PostgREST implicitly ANDs all conditions on a query builder chain.
-    // Each part may itself be a compound expression (e.g. or(A,B) from a sub-group),
-    // which we pass via .or() to preserve its inner semantics.
+    // PostgREST chains separate .or() calls as an implicit AND.
+    // Preserving the full expression (including inner or(...) and and(...))
+    // ensures compound conditions are not degraded to top-level ORs.
     for (const part of parts) {
-      if (part.startsWith('or(')) {
-        // Sub-group that is OR: use .or() to preserve its inner OR logic
-        query = query.or(part.substring(3, part.length - 1));
-      } else if (part.startsWith('and(')) {
-        // Nested AND sub-group: also applies as .or() with inner and(...) content
-        // PostgREST and(...) inside or() is valid — each item here is itself AND
-        query = query.or(part.substring(4, part.length - 1));
-      } else {
-        // Single condition — apply directly via .or() with single predicate
-        query = query.or(part);
-      }
+      if (!part) continue;
+      query = query.or(part);
     }
     return query;
   } else {
     // Root OR: combine all parts into a single .or() call
-    const joined = parts.join(',');
-    return query.or(joined);
+    const joined = parts.filter(Boolean).join(',');
+    return joined ? query.or(joined) : query;
   }
 }
 

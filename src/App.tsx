@@ -197,7 +197,6 @@ export default function App() {
                     <Route path="/ai-intelligence" element={<AIIntelligenceDashboard />} />
                     <Route path="/smart-view" element={<LivePipeline />} />
                     <Route path="/smart-view/:id" element={<LeadDetails />} />
-                    <Route path="/smart-view/command-center" element={<ExecutiveCommandCenter />} />
                     
                     <Route path="tasks" element={<TasksList />} />
                     <Route path="whatsapp" element={<WhatsAppCenter />} />
@@ -210,6 +209,7 @@ export default function App() {
                     
                     {/* Admin and Super Admin only route */}
                     <Route element={<ProtectedRoute allowedRoles={['Admin', 'Super Admin']} />}>
+                      <Route path="/smart-view/command-center" element={<ExecutiveCommandCenter />} />
                     
                       {/* Admin Console Routes */}
                       <Route path="admin" element={<AdminLayout />}>
