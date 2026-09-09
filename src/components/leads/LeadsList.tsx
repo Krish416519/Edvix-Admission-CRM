@@ -814,7 +814,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
             />
           </div>
           <button 
-            onClick={() => setIsFilterOpen(true)}
+            onClick={() => setIsAdvancedFilterSidebarOpen(true)}
             className={cn(
               "w-11 h-11 flex items-center justify-center border rounded-xl transition-all active:scale-95 relative shrink-0 touch-manipulation",
               ((advancedFilterState?.rootGroup?.conditions?.length ?? 0) > 0)
