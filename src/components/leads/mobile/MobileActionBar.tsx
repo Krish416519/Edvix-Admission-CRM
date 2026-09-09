@@ -139,9 +139,9 @@ export function MobileActionBar({ leadId, phone, leadStatus, crmContext, onDispo
           />
 
           {/* Sheet */}
-          <div className="relative bg-card rounded-t-3xl shadow-2xl max-h-[90svh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+          <div className="relative bg-card rounded-t-3xl shadow-2xl max-h-[90svh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
             {/* Handle + Close */}
-            <div className="sticky top-0 bg-card/95 backdrop-blur-sm z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/50">
+            <div className="sticky top-0 bg-card/95 backdrop-blur-sm z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/50 shrink-0">
               <div className="w-10 h-1 bg-border rounded-full mx-auto absolute top-3 left-1/2 -translate-x-1/2" />
               <h2 className="text-base font-bold text-foreground pt-2">Add Activity</h2>
               <button
@@ -153,11 +153,12 @@ export function MobileActionBar({ leadId, phone, leadStatus, crmContext, onDispo
               </button>
             </div>
 
-            <div className="p-5 [padding-bottom:max(1.25rem,env(safe-area-inset-bottom))]">
+            <div className="flex-1 overflow-hidden flex flex-col min-h-0">
               <DispositionWidget
                 leadId={leadId}
                 currentStatus={leadStatus || 'New'}
                 crmContext={crmContext}
+                hideHeader={true}
                 onSaved={(newStatus) => {
                   setShowDisposition(false);
                   onDispositionSaved?.(newStatus);

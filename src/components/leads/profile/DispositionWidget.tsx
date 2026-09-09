@@ -84,9 +84,17 @@ interface DispositionWidgetProps {
   crmContext?: string;
   onSaved: (newStatus?: LeadStatus) => void;
   onCancel: () => void;
+  hideHeader?: boolean;
 }
 
-export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, onCancel }: DispositionWidgetProps) {
+export function DispositionWidget({ 
+  leadId, 
+  currentStatus, 
+  crmContext, 
+  onSaved, 
+  onCancel,
+  hideHeader = false 
+}: DispositionWidgetProps) {
   const { user } = useAuth();
   const [categories, setCategories] = useState<DispositionCategory[]>([]);
   const [dispositions, setDispositions] = useState<Disposition[]>([]);
@@ -454,7 +462,11 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
   };
 
   if (isLoading) {
-    return <div className="p-4 text-center text-sm text-muted-foreground animate-pulse">Loading...</div>;
+    return (
+      <div className="bg-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground animate-pulse">
+        Loading activity options...
+      </div>
+    );
   }
 
   if (contextError) {
@@ -482,27 +494,31 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl sm:rounded-xl shadow-xl sm:shadow-sm p-4 sm:p-5 max-h-[88dvh] overflow-y-auto custom-scrollbar [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-border sticky top-0 bg-card z-10 -mt-1 pt-1">
-        <h3 className="font-bold text-lg flex items-center gap-2">
-          Add Activity
-        </h3>
-        <div className="flex items-center gap-3">
-          <span className="text-sm px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full font-medium">
-            Status: {currentStatus}
-          </span>
-          <button 
-            type="button" 
-            onClick={onCancel}
-            className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <div className="bg-card border border-border rounded-2xl sm:rounded-xl shadow-xl sm:shadow-sm flex flex-col max-h-[88dvh] overflow-hidden">
+      {!hideHeader && (
+        <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 border-b border-border bg-card shrink-0">
+          <h3 className="font-bold text-base sm:text-lg flex items-center gap-2">
+            Add Activity
+          </h3>
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full font-medium">
+              Status: {currentStatus}
+            </span>
+            <button 
+              type="button" 
+              onClick={onCancel}
+              className="p-1 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Scrollable Form Body */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 custom-scrollbar overscroll-contain">
+        <form id="disposition-widget-form" onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="uppercase text-[10px] font-bold tracking-wider text-muted-foreground">Status *</label>
@@ -1198,28 +1214,32 @@ export function DispositionWidget({ leadId, currentStatus, crmContext, onSaved, 
           />
         </div>
 
-        <div className="flex items-center gap-3 pt-4 border-t border-border mt-4">
-          <button 
-            type="button" 
-            onClick={onCancel}
-            className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit"
-            disabled={isSaving || !selectedDisposition}
-            className="flex-1 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isSaving ? (
-              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
-            Save Disposition
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
+
+      {/* Pinned Action Buttons */}
+      <div className="flex items-center gap-3 px-4 sm:px-6 py-3.5 border-t border-border bg-card shrink-0 [padding-bottom:max(0.875rem,env(safe-area-inset-bottom))]">
+        <button 
+          type="button" 
+          onClick={onCancel}
+          className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit"
+          form="disposition-widget-form"
+          disabled={isSaving || !selectedDisposition}
+          className="flex-1 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+        >
+          {isSaving ? (
+            <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4" />
+          )}
+          Save Disposition
+        </button>
+      </div>
     </div>
   );
 }

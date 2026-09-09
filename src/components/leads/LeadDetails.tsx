@@ -183,7 +183,7 @@ export function LeadDetails() {
             onClick={() => setShowDisposition(false)}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 inset-x-0 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[calc(100%-2rem)] md:max-w-3xl max-h-[92dvh] overflow-hidden rounded-t-3xl sm:rounded-2xl z-50 shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+          <div className="fixed bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[calc(100%-2rem)] md:max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-2xl z-50 shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
             <DispositionWidget 
               leadId={lead.id} 
               currentStatus={lead.status || ''} 
@@ -207,7 +207,7 @@ export function LeadDetails() {
             onClick={() => setShowAssignmentModal(false)}
             aria-hidden="true"
           />
-          <div className="fixed bottom-0 inset-x-0 sm:inset-x-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[calc(100%-2rem)] max-w-xl max-h-[90dvh] overflow-y-auto bg-card rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-50 animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 p-4 sm:p-6 [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
+          <div className="fixed bottom-0 inset-x-0 sm:inset-x-auto sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full sm:w-[calc(100%-2rem)] max-w-xl max-h-[90dvh] overflow-y-auto bg-card rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl z-50 animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 p-4 sm:p-6 [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
             <LeadAssignmentPanel lead={lead} />
           </div>
         </>
