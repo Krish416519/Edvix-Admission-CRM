@@ -329,35 +329,46 @@ function CustomConditionValueInput({
 
   // 3. Date field with between operator (Date Range: Start to End)
   if (fieldDef.type === 'date' && cond.operator === 'between') {
-    const today = new Date().toISOString().split('T')[0];
-    const startVal = Array.isArray(cond.value) ? (cond.value[0] || '') : (cond.value || '');
-    const endVal = Array.isArray(cond.value) ? (cond.value[1] || '') : (cond.value2 || '');
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const past = new Date(today);
+    past.setDate(past.getDate() - 30);
+    const pastStr = past.toISOString().split('T')[0];
+
+    const startVal = Array.isArray(cond.value) ? (cond.value[0] || pastStr) : (cond.value || pastStr);
+    const endVal = Array.isArray(cond.value) ? (cond.value[1] || todayStr) : (cond.value2 || todayStr);
 
     return (
-      <div className="flex items-center gap-1.5 w-full">
-        <input
-          type="date"
-          value={startVal}
-          onChange={(e) => {
-            const start = e.target.value;
-            const end = endVal || today;
-            onUpdate({ value: [start, end], value2: end });
-          }}
-          className="w-full px-2 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[34px]"
-          title="Start date"
-        />
-        <span className="text-xs text-muted-foreground font-semibold px-0.5 shrink-0">to</span>
-        <input
-          type="date"
-          value={endVal}
-          onChange={(e) => {
-            const start = startVal || today;
-            const end = e.target.value;
-            onUpdate({ value: [start, end], value2: end });
-          }}
-          className="w-full px-2 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[34px]"
-          title="End date"
-        />
+      <div className="flex items-center gap-2 w-full">
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="date"
+            value={startVal}
+            onChange={(e) => {
+              const start = e.target.value;
+              const end = endVal || todayStr;
+              onUpdate({ value: [start, end], value2: end });
+            }}
+            className="w-full px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[36px] text-foreground"
+            title="Start date"
+          />
+        </div>
+        <span className="text-xs text-muted-foreground font-bold px-1 shrink-0 uppercase tracking-wider">
+          to
+        </span>
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="date"
+            value={endVal}
+            onChange={(e) => {
+              const start = startVal || pastStr;
+              const end = e.target.value;
+              onUpdate({ value: [start, end], value2: end });
+            }}
+            className="w-full px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[36px] text-foreground"
+            title="End date"
+          />
+        </div>
       </div>
     );
   }
@@ -2775,139 +2786,171 @@ export function AdvancedFilterSidebar({
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            {/* Field Selector */}
-                            <select
-                              value={cond.fieldId}
-                              onChange={(e) => {
-                                const newFieldId = e.target.value;
-                                const newFieldDef = FILTER_FIELD_MAP[newFieldId] || FILTER_FIELDS[0];
-                                const validOps = newFieldDef.operators || ['=', '!='];
-                                const defaultOp = validOps[0] || '=';
-                                
-                                let defaultVal: any = '';
-                                if (newFieldId === 'assigned_counselor') defaultVal = counselors?.[0]?.id || '';
-                                else if (newFieldId === 'lead_source') defaultVal = COMMON_SOURCES[0] || 'Website';
-                                else if (newFieldId === 'lead_status' || newFieldId === 'lead_stage') defaultVal = pipelineStages[0]?.name || 'Inquiry';
-                                else if (newFieldId === 'intent') defaultVal = 'HOT';
-                                else if (newFieldId === 'priority') defaultVal = 'High';
-                                else if (newFieldId === 'university_id' || newFieldId === 'university') defaultVal = universities[0]?.id || '';
-                                else if (newFieldId === 'course_id' || newFieldId === 'course') defaultVal = courses[0]?.id || '';
-                                else if (newFieldId === 'state') defaultVal = 'Delhi';
-                                else if (newFieldId === 'budget') defaultVal = BUDGET_BANDS[1] || 'Under ₹1 Lakh';
-                                else if (newFieldId === 'disposition_category') defaultVal = categories[0]?.id || '';
-                                else if (newFieldId === 'latest_disposition_id' || newFieldId === 'historical_disposition') defaultVal = dispositions[0]?.id || '';
-                                else if (newFieldId === 'partner_id') defaultVal = partners[0]?.id || '';
-                                else if (newFieldId === 'drop_off_risk') defaultVal = 'High';
-                                else if (newFieldId === 'urgency') defaultVal = 'Immediate';
-                                else if (newFieldDef.type === 'boolean') defaultVal = true;
-                                else if (newFieldDef.type === 'date') {
-                                  const today = new Date().toISOString().split('T')[0];
-                                  if (defaultOp === 'between') defaultVal = [today, today];
-                                  else if (defaultOp === 'relative_date') defaultVal = 'last_7_days';
-                                  else if (NO_VALUE_OPERATORS.includes(defaultOp)) defaultVal = '';
-                                  else defaultVal = today;
-                                } else if (newFieldDef.type === 'number') {
-                                  defaultVal = defaultOp === 'between' ? [0, 100] : 1;
-                                }
+                          <div className="space-y-2.5">
+                            {/* Row 1: Field Selector (Col 1) and Operator Selector (Col 2) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                                  Field
+                                </label>
+                                <select
+                                  value={cond.fieldId}
+                                  onChange={(e) => {
+                                    const newFieldId = e.target.value;
+                                    const newFieldDef = FILTER_FIELD_MAP[newFieldId] || FILTER_FIELDS[0];
+                                    const validOps = newFieldDef.operators || ['=', '!='];
+                                    const defaultOp = validOps[0] || '=';
+                                    
+                                    const today = new Date();
+                                    const todayStr = today.toISOString().split('T')[0];
+                                    const past = new Date(today);
+                                    past.setDate(past.getDate() - 30);
+                                    const pastStr = past.toISOString().split('T')[0];
 
-                                setDraft(prev => ({
-                                  ...prev,
-                                  customConditions: prev.customConditions.map(c =>
-                                    c.id === cond.id
-                                      ? {
-                                          ...c,
-                                          fieldId: newFieldId,
-                                          operator: defaultOp,
-                                          value: defaultVal,
-                                          value2: Array.isArray(defaultVal) ? defaultVal[1] : undefined,
-                                        }
-                                      : c
-                                  )
-                                }));
-                              }}
-                              className="px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[34px]"
-                            >
-                              {CUSTOM_RULE_CATEGORIES.map(group => (
-                                <optgroup key={group.category} label={group.category}>
-                                  {group.fields.map(f => (
-                                    <option key={f.id} value={f.id}>{f.label}</option>
-                                  ))}
-                                </optgroup>
-                              ))}
-                            </select>
-
-                            {/* Operator Selector */}
-                            <select
-                              value={cond.operator}
-                              onChange={(e) => {
-                                const newOp = e.target.value as FilterOperator;
-                                setDraft(prev => ({
-                                  ...prev,
-                                  customConditions: prev.customConditions.map(c => {
-                                    if (c.id !== cond.id) return c;
-                                    const fieldDef = FILTER_FIELD_MAP[c.fieldId] || FILTER_FIELDS[0];
-                                    let val = c.value;
-                                    let val2 = c.value2;
-
-                                    if (NO_VALUE_OPERATORS.includes(newOp)) {
-                                      val = '';
-                                      val2 = undefined;
-                                    } else if (newOp === 'relative_date') {
-                                      val = 'last_7_days';
-                                      val2 = undefined;
-                                    } else if (newOp === 'between') {
-                                      if (fieldDef.type === 'date') {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        const first = Array.isArray(val) ? (val[0] || today) : (typeof val === 'string' && val.includes('-') ? val : today);
-                                        val = [first, today];
-                                        val2 = today;
-                                      } else if (fieldDef.type === 'number') {
-                                        const first = Array.isArray(val) ? (val[0] ?? 0) : (typeof val === 'number' ? val : 0);
-                                        val = [first, 100];
-                                        val2 = 100;
-                                      }
-                                    } else {
-                                      if (Array.isArray(val)) {
-                                        val = val[0] || '';
-                                        val2 = undefined;
-                                      }
+                                    let defaultVal: any = '';
+                                    if (newFieldId === 'assigned_counselor') defaultVal = counselors?.[0]?.id || '';
+                                    else if (newFieldId === 'lead_source') defaultVal = COMMON_SOURCES[0] || 'Website';
+                                    else if (newFieldId === 'lead_status' || newFieldId === 'lead_stage') defaultVal = pipelineStages[0]?.name || 'Inquiry';
+                                    else if (newFieldId === 'intent') defaultVal = 'HOT';
+                                    else if (newFieldId === 'priority') defaultVal = 'High';
+                                    else if (newFieldId === 'university_id' || newFieldId === 'university') defaultVal = universities[0]?.id || '';
+                                    else if (newFieldId === 'course_id' || newFieldId === 'course') defaultVal = courses[0]?.id || '';
+                                    else if (newFieldId === 'state') defaultVal = 'Delhi';
+                                    else if (newFieldId === 'budget') defaultVal = BUDGET_BANDS[1] || 'Under ₹1 Lakh';
+                                    else if (newFieldId === 'disposition_category') defaultVal = categories[0]?.id || '';
+                                    else if (newFieldId === 'latest_disposition_id' || newFieldId === 'historical_disposition') defaultVal = dispositions[0]?.id || '';
+                                    else if (newFieldId === 'partner_id') defaultVal = partners[0]?.id || '';
+                                    else if (newFieldId === 'drop_off_risk') defaultVal = 'High';
+                                    else if (newFieldId === 'urgency') defaultVal = 'Immediate';
+                                    else if (newFieldDef.type === 'boolean') defaultVal = true;
+                                    else if (newFieldDef.type === 'date') {
+                                      if (defaultOp === 'between') defaultVal = [pastStr, todayStr];
+                                      else if (defaultOp === 'relative_date') defaultVal = 'last_7_days';
+                                      else if (NO_VALUE_OPERATORS.includes(defaultOp)) defaultVal = '';
+                                      else defaultVal = todayStr;
+                                    } else if (newFieldDef.type === 'number') {
+                                      defaultVal = defaultOp === 'between' ? [0, 100] : 1;
                                     }
 
-                                    return { ...c, operator: newOp, value: val, value2: val2 };
-                                  })
-                                }));
-                              }}
-                              className="px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[34px]"
-                            >
-                              {availableOperators.map(op => (
-                                <option key={op} value={op}>
-                                  {OPERATOR_LABELS[op] || op}
-                                </option>
-                              ))}
-                            </select>
+                                    setDraft(prev => ({
+                                      ...prev,
+                                      customConditions: prev.customConditions.map(c =>
+                                        c.id === cond.id
+                                          ? {
+                                              ...c,
+                                              fieldId: newFieldId,
+                                              operator: defaultOp,
+                                              value: defaultVal,
+                                              value2: Array.isArray(defaultVal) ? defaultVal[1] : undefined,
+                                            }
+                                          : c
+                                      )
+                                    }));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[36px]"
+                                >
+                                  {CUSTOM_RULE_CATEGORIES.map(group => (
+                                    <optgroup key={group.category} label={group.category}>
+                                      {group.fields.map(f => (
+                                        <option key={f.id} value={f.id}>{f.label}</option>
+                                      ))}
+                                    </optgroup>
+                                  ))}
+                                </select>
+                              </div>
 
-                            {/* Dynamic Value Input */}
-                            <CustomConditionValueInput
-                              cond={cond}
-                              fieldDef={field}
-                              counselors={counselors}
-                              sources={COMMON_SOURCES}
-                              pipelineStages={pipelineStages}
-                              universities={universities}
-                              courses={courses}
-                              partners={partners}
-                              dispositionCategories={categories}
-                              dispositions={dispositions}
-                              onUpdate={(updates) => {
-                                setDraft(prev => ({
-                                  ...prev,
-                                  customConditions: prev.customConditions.map(c =>
-                                    c.id === cond.id ? { ...c, ...updates } : c
-                                  )
-                                }));
-                              }}
-                            />
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                                  Operator
+                                </label>
+                                <select
+                                  value={cond.operator}
+                                  onChange={(e) => {
+                                    const newOp = e.target.value as FilterOperator;
+                                    setDraft(prev => ({
+                                      ...prev,
+                                      customConditions: prev.customConditions.map(c => {
+                                        if (c.id !== cond.id) return c;
+                                        const fieldDef = FILTER_FIELD_MAP[c.fieldId] || FILTER_FIELDS[0];
+                                        let val = c.value;
+                                        let val2 = c.value2;
+
+                                        if (NO_VALUE_OPERATORS.includes(newOp)) {
+                                          val = '';
+                                          val2 = undefined;
+                                        } else if (newOp === 'relative_date') {
+                                          val = 'last_7_days';
+                                          val2 = undefined;
+                                        } else if (newOp === 'between') {
+                                          if (fieldDef.type === 'date') {
+                                            const today = new Date();
+                                            const todayStr = today.toISOString().split('T')[0];
+                                            const past = new Date(today);
+                                            past.setDate(past.getDate() - 30);
+                                            const pastStr = past.toISOString().split('T')[0];
+
+                                            const first = Array.isArray(val) ? (val[0] || pastStr) : (typeof val === 'string' && val.includes('-') ? val : pastStr);
+                                            val = [first, todayStr];
+                                            val2 = todayStr;
+                                          } else if (fieldDef.type === 'number') {
+                                            const first = Array.isArray(val) ? (val[0] ?? 0) : (typeof val === 'number' ? val : 0);
+                                            val = [first, 100];
+                                            val2 = 100;
+                                          }
+                                        } else {
+                                          if (Array.isArray(val)) {
+                                            val = val[0] || '';
+                                            val2 = undefined;
+                                          }
+                                        }
+
+                                        return { ...c, operator: newOp, value: val, value2: val2 };
+                                      })
+                                    }));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[36px]"
+                                >
+                                  {availableOperators.map(op => (
+                                    <option key={op} value={op}>
+                                      {OPERATOR_LABELS[op] || op}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Row 2: Value Input (Full Width!) */}
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+                                {NO_VALUE_OPERATORS.includes(cond.operator)
+                                  ? 'Condition Status'
+                                  : cond.operator === 'between'
+                                  ? 'Date Range (Start to End)'
+                                  : 'Filter Value'}
+                              </label>
+                              <div className="w-full">
+                                <CustomConditionValueInput
+                                  cond={cond}
+                                  fieldDef={field}
+                                  counselors={counselors}
+                                  sources={COMMON_SOURCES}
+                                  pipelineStages={pipelineStages}
+                                  universities={universities}
+                                  courses={courses}
+                                  partners={partners}
+                                  dispositionCategories={categories}
+                                  dispositions={dispositions}
+                                  onUpdate={(updates) => {
+                                    setDraft(prev => ({
+                                      ...prev,
+                                      customConditions: prev.customConditions.map(c =>
+                                        c.id === cond.id ? { ...c, ...updates } : c
+                                      )
+                                    }));
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
