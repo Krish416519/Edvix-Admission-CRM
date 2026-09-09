@@ -674,6 +674,13 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
               setStatusFilter('All');
               setSearchTerm('');
               setCurrentPage(1);
+              if (advancedFilterState?.rootGroup?.conditions?.some(c => c.fieldId === 'lead_status' || c.fieldId === 'lead_stage')) {
+                const remaining = advancedFilterState.rootGroup.conditions.filter(c => c.fieldId !== 'lead_status' && c.fieldId !== 'lead_stage');
+                setAdvancedFilterState(remaining.length > 0 ? {
+                  ...advancedFilterState,
+                  rootGroup: { ...advancedFilterState.rootGroup, conditions: remaining }
+                } : undefined);
+              }
             }}
             className={cn(
               "shrink-0 px-3 py-1.5 md:px-5 md:py-2.5 text-sm md:text-base rounded-xl font-semibold transition-all whitespace-nowrap shadow-sm border",
@@ -739,6 +746,13 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                                   setStatusFilter(stage);
                                   setSearchTerm('');
                                   setCurrentPage(1);
+                                  if (advancedFilterState?.rootGroup?.conditions?.some(c => c.fieldId === 'lead_status' || c.fieldId === 'lead_stage')) {
+                                    const remaining = advancedFilterState.rootGroup.conditions.filter(c => c.fieldId !== 'lead_status' && c.fieldId !== 'lead_stage');
+                                    setAdvancedFilterState(remaining.length > 0 ? {
+                                      ...advancedFilterState,
+                                      rootGroup: { ...advancedFilterState.rootGroup, conditions: remaining }
+                                    } : undefined);
+                                  }
                                 }}
                                 className="flex-1 text-left whitespace-nowrap focus:outline-none"
                               >
@@ -2283,11 +2297,22 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
         filterState={advancedFilterState || { rootGroup: { id: 'root', logic: 'AND', conditions: [] } }}
         onFilterChange={setAdvancedFilterState}
         onApply={() => {
+          setStatusFilter('All');
+          setSourceFilter('All');
+          setCounselorFilter('All');
+          setDispositionFilter('All');
+          setMinScoreFilter(undefined);
           setCurrentPage(1);
           setIsAdvancedFilterSidebarOpen(false);
         }}
         onClear={() => {
           setAdvancedFilterState(undefined);
+          setStatusFilter('All');
+          setSourceFilter('All');
+          setCounselorFilter('All');
+          setDispositionFilter('All');
+          setMinScoreFilter(undefined);
+          setCurrentPage(1);
         }}
         counselors={allUsers}
         leadsCount={totalCount}

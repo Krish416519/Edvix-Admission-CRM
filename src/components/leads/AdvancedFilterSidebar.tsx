@@ -1417,6 +1417,7 @@ export function AdvancedFilterSidebar({
   const [activeTab, setActiveTab] = useState<DrawerTab>('pipeline');
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [pipelineStages, setPipelineStages] = useState<string[]>(DEFAULT_PIPELINE_STAGES);
+  const [availableSources, setAvailableSources] = useState<string[]>(COMMON_SOURCES);
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [courses, setCourses] = useState<{ id: string; name: string; university_id?: string }[]>([]);
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([]);
@@ -1448,24 +1449,38 @@ export function AdvancedFilterSidebar({
     };
   }, [isOpen]);
 
-  // Load master data (universities, courses, partners, custom stages)
+  // Load master data (universities, courses, partners, custom stages, dynamic sources)
   useEffect(() => {
     if (!isOpen) return;
     async function loadMasterData() {
       try {
-        const [stagesRes, unisRes, coursesRes, partnersRes] = await Promise.all([
+        const [stagesRes, unisRes, coursesRes, partnersRes, sourcesRes, leadsStatusRes] = await Promise.all([
           supabase.from('system_settings').select('value').eq('key', 'pipeline_stages').maybeSingle(),
           supabase.from('universities').select('id, name').order('name').limit(100),
           supabase.from('courses').select('id, name, university_id').order('name').limit(150),
           supabase.from('users').select('id, name').eq('is_active', true).order('name').limit(100),
+          supabase.from('leads').select('lead_source').not('lead_source', 'is', null).limit(200),
+          supabase.from('leads').select('lead_status').not('lead_status', 'is', null).limit(200),
         ]);
 
+        let allStages = DEFAULT_PIPELINE_STAGES;
         if (stagesRes.data && Array.isArray(stagesRes.data.value) && stagesRes.data.value.length > 0) {
-          setPipelineStages(stagesRes.data.value);
+          allStages = stagesRes.data.value;
         }
+        if (leadsStatusRes.data) {
+          const distinctLeadStatuses = Array.from(new Set(leadsStatusRes.data.map((l: any) => l.lead_status).filter(Boolean))) as string[];
+          allStages = Array.from(new Set([...allStages, ...distinctLeadStatuses]));
+        }
+        setPipelineStages(allStages);
+
         if (unisRes.data) setUniversities(unisRes.data);
         if (coursesRes.data) setCourses(coursesRes.data);
         if (partnersRes.data) setPartners(partnersRes.data);
+
+        if (sourcesRes.data) {
+          const distinctSources = Array.from(new Set(sourcesRes.data.map((l: any) => l.lead_source).filter(Boolean))) as string[];
+          setAvailableSources(Array.from(new Set([...distinctSources, ...COMMON_SOURCES])));
+        }
       } catch (err) {
         console.warn('Could not fetch enterprise master data for filters:', err);
       }
@@ -2610,7 +2625,7 @@ export function AdvancedFilterSidebar({
                   >
                     All Sources
                   </button>
-                  {COMMON_SOURCES.map(source => {
+                  {availableSources.map(source => {
                     const isSelected = draft.sources.includes(source);
                     return (
                       <button
@@ -2741,7 +2756,7 @@ export function AdvancedFilterSidebar({
                         id: `custom_${Date.now()}`,
                         fieldId: 'lead_source',
                         operator: '=',
-                        value: COMMON_SOURCES[0] || 'Website',
+                        value: availableSources[0] || 'Website',
                       };
                       setDraft(prev => ({
                         ...prev,
@@ -2809,8 +2824,8 @@ export function AdvancedFilterSidebar({
 
                                     let defaultVal: any = '';
                                     if (newFieldId === 'assigned_counselor') defaultVal = counselors?.[0]?.id || '';
-                                    else if (newFieldId === 'lead_source') defaultVal = COMMON_SOURCES[0] || 'Website';
-                                    else if (newFieldId === 'lead_status' || newFieldId === 'lead_stage') defaultVal = pipelineStages[0]?.name || 'Inquiry';
+                                    else if (newFieldId === 'lead_source') defaultVal = availableSources[0] || 'Website';
+                                    else if (newFieldId === 'lead_status' || newFieldId === 'lead_stage') defaultVal = pipelineStages[0] || 'Inquiry';
                                     else if (newFieldId === 'intent') defaultVal = 'HOT';
                                     else if (newFieldId === 'priority') defaultVal = 'High';
                                     else if (newFieldId === 'university_id' || newFieldId === 'university') defaultVal = universities[0]?.id || '';
@@ -2933,7 +2948,7 @@ export function AdvancedFilterSidebar({
                                   cond={cond}
                                   fieldDef={field}
                                   counselors={counselors}
-                                  sources={COMMON_SOURCES}
+                                  sources={availableSources}
                                   pipelineStages={pipelineStages}
                                   universities={universities}
                                   courses={courses}

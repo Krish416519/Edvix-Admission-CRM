@@ -813,16 +813,17 @@ function buildConditionString(cond: FilterCondition): string {
   return buildPostgrestFilterString(col, field.type, operator, value, value2);
 }
 
-function buildGroupString(group: FilterGroup): string {
+function buildGroupString(group: FilterGroup, excludeFieldIds?: string[]): string {
   const parts: string[] = [];
 
   group.conditions?.forEach(cond => {
+    if (excludeFieldIds && excludeFieldIds.includes(cond.fieldId)) return;
     const str = buildConditionString(cond);
     if (str) parts.push(str);
   });
 
   group.groups?.forEach(sg => {
-    const str = buildGroupString(sg);
+    const str = buildGroupString(sg, excludeFieldIds);
     if (str) parts.push(str);
   });
 
@@ -835,7 +836,8 @@ function buildGroupString(group: FilterGroup): string {
 
 export function applyFilters(
   query: FilterQuery,
-  filterState: FilterState | undefined
+  filterState: FilterState | undefined,
+  excludeFieldIds?: string[]
 ): FilterQuery {
   if (!filterState || !filterState.rootGroup) {
     return query;
@@ -848,12 +850,13 @@ export function applyFilters(
   const parts: string[] = [];
 
   rootGroup.conditions?.forEach(cond => {
+    if (excludeFieldIds && excludeFieldIds.includes(cond.fieldId)) return;
     const str = buildConditionString(cond);
     if (str) parts.push(str);
   });
 
   rootGroup.groups?.forEach(sg => {
-    const str = buildGroupString(sg);
+    const str = buildGroupString(sg, excludeFieldIds);
     if (str) parts.push(str);
   });
 

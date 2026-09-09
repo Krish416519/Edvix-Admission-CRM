@@ -147,8 +147,12 @@ export function useLeads(options?: UseLeadsOptions) {
         }
   
         // Apply Advanced Filters (canonical filter engine)
-        if (options?.advancedFilters && !excludeStatusFilter) {
-          query = applyFilters(query, options.advancedFilters);
+        if (options?.advancedFilters) {
+          if (excludeStatusFilter) {
+            query = applyFilters(query, options.advancedFilters, ['lead_status', 'lead_stage', 'status', 'intent']);
+          } else {
+            query = applyFilters(query, options.advancedFilters);
+          }
         }
 
         // Apply Sorting
