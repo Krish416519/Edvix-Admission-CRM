@@ -281,7 +281,7 @@ interface CustomConditionValueInputProps {
   fieldDef: any;
   counselors?: { id: string; name: string; email?: string; role_name?: string }[];
   sources: string[];
-  pipelineStages: { name: string }[];
+  pipelineStages: (string | { name: string })[];
   universities: { id: string; name: string }[];
   courses: { id: string; name: string }[];
   partners: { id: string; name: string }[];
@@ -429,9 +429,10 @@ function CustomConditionValueInput({
         className="w-full px-2.5 py-1.5 bg-card border border-border rounded-lg text-xs font-medium focus:ring-1 focus:ring-primary h-[34px]"
       >
         <option value="">Select Status / Stage...</option>
-        {pipelineStages.map((s) => (
-          <option key={s.name} value={s.name}>{s.name}</option>
-        ))}
+        {pipelineStages.map((s) => {
+          const stageName = typeof s === 'string' ? s : s.name;
+          return <option key={stageName} value={stageName}>{stageName}</option>;
+        })}
       </select>
     );
   }
