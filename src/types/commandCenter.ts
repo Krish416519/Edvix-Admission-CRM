@@ -99,3 +99,48 @@ export interface ExecutiveSummaryReport {
   avgAdmissionProbability: number;
   stages: StageVelocity[];
 }
+
+export type PerformanceTimeHorizon = 
+  | 'today' 
+  | 'yesterday' 
+  | 'last7days' 
+  | 'thisMonth' 
+  | 'last30days' 
+  | 'thisQuarter' 
+  | 'thisYear' 
+  | 'career';
+
+export interface UserPerformanceMetric {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  avatarUrl?: string;
+  roleId?: string;
+  roleName: string;
+  designationId?: string;
+  designationName: string;
+  teamId?: string;
+  teamName: string;
+  department?: string;
+  phone?: string;
+  joinedDate: string;
+  
+  // Period Metrics (Filtered by selected horizon)
+  periodLeadsCount: number;
+  periodContactedCount: number;
+  periodHotCount: number;
+  periodWarmCount: number;
+  periodColdCount: number;
+  periodAdmissionsCount: number;
+  periodConversionRate: number;
+  periodRevenue: number;
+  periodTasksOverdue: number;
+
+  // Career / Lifetime Metrics
+  careerLeadsCount: number;
+  careerAdmissionsCount: number;
+  careerConversionRate: number;
+  careerRevenue: number;
+  tenureDays: number;
+}
+

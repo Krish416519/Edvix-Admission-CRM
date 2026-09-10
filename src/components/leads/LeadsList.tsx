@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import {
   Search, Filter, Upload, Plus, ChevronDown,
@@ -106,26 +106,22 @@ interface LeadsListProps {
 }
 
 export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, externalLoading }: LeadsListProps) {
+  const navigate = useNavigate();
   const { confirm } = useConfirm();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialFilter = searchParams.get('filter');
+  const urlStatus = searchParams.get('status');
+  const urlCounselor = searchParams.get('counselor');
+  const urlFilter = searchParams.get('filter');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'All'>(
-    initialFilter === 'docs_pending' ? 'Docs Pending' : initialFilter === 'hot' ? 'Hot' : 'All'
+    urlStatus ? (urlStatus as LeadStatus) : urlFilter === 'docs_pending' ? 'Docs Pending' : urlFilter === 'hot' ? 'Hot' : 'All'
   );
   const [minScoreFilter, setMinScoreFilter] = useState<number | undefined>(
-    initialFilter === 'hot' ? 80 : initialFilter === 'high_conversion' ? 85 : undefined
+    urlFilter === 'hot' ? 80 : urlFilter === 'high_conversion' ? 85 : undefined
   );
-
-  // Clear query params after initial read so they don't persist on reload after user changes filters
-  useEffect(() => {
-    if (initialFilter) {
-      searchParams.delete('filter');
-      setSearchParams(searchParams, { replace: true });
-    }
-  }, []);
+  const [counselorFilter, setCounselorFilter] = useState(urlCounselor || 'All');
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | undefined>();
@@ -169,12 +165,42 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
   
   // Advanced Filters
   const [showDeleted, setShowDeleted] = useState(false);
-  const [counselorFilter, setCounselorFilter] = useState('All');
   const [sourceFilter, setSourceFilter] = useState('All');
   const [dispositionFilter, setDispositionFilter] = useState('All');
   const [isAdvancedFilterSidebarOpen, setIsAdvancedFilterSidebarOpen] = useState(false);
   const [advancedFilterState, setAdvancedFilterState] = useState<FilterState | undefined>(undefined);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+
+  // Sync state dynamically whenever URL search params change
+  useEffect(() => {
+    const s = searchParams.get('status');
+    const c = searchParams.get('counselor');
+    const f = searchParams.get('filter');
+
+    if (s) {
+      setStatusFilter(s as LeadStatus);
+    }
+    if (c) {
+      setCounselorFilter(c);
+    }
+    if (f) {
+      const upperF = f.toUpperCase();
+      if (upperF === 'HOT' || upperF === 'WARM' || upperF === 'COLD') {
+        setAdvancedFilterState(prev => ({
+          rootGroup: prev?.rootGroup || { id: 'root', logicalOperator: 'AND', conditions: [] },
+          intent: upperF as any,
+          priorities: prev?.priorities || [],
+          customDateRange: prev?.customDateRange || { type: 'All Time' },
+          customNumericFilters: prev?.customNumericFilters || [],
+        }));
+      } else if (f === 'docs_pending') {
+        setStatusFilter('Docs Pending');
+      } else if (f === 'high_conversion') {
+        setMinScoreFilter(85);
+      }
+    }
+  }, [searchParams]);
+
   
   // Sorting
   const [sortField, setSortField] = useState<string>('createdAt');
@@ -987,6 +1013,73 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
 
       <div className="bg-card border-transparent md:border-border rounded-none md:rounded-2xl shadow-none md:shadow-sm flex flex-col -mx-4 sm:mx-0">
         
+        {/* Active Context Filter Strip */}
+        {(statusFilter !== 'All' || counselorFilter !== 'All' || advancedFilterState?.intent) && (
+          <div className="px-4 py-2.5 bg-primary/5 border-b border-border flex items-center gap-2 flex-wrap text-xs">
+            <span className="font-bold text-muted-foreground">Active Filter:</span>
+            {statusFilter !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold">
+                Stage: {statusFilter}
+                <button 
+                  onClick={() => {
+                    setStatusFilter('All');
+                    searchParams.delete('status');
+                    setSearchParams(searchParams);
+                  }}
+                  className="hover:opacity-70 ml-0.5"
+                  title="Remove status filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {counselorFilter !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                Counselor: {allUsers.find(u => u.id === counselorFilter)?.name || counselorFilter}
+                <button 
+                  onClick={() => {
+                    setCounselorFilter('All');
+                    searchParams.delete('counselor');
+                    setSearchParams(searchParams);
+                  }}
+                  className="hover:opacity-70 ml-0.5"
+                  title="Remove counselor filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {advancedFilterState?.intent && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-bold">
+                Intent: {advancedFilterState.intent}
+                <button 
+                  onClick={() => {
+                    setAdvancedFilterState(prev => prev ? { ...prev, intent: undefined } : undefined);
+                    searchParams.delete('filter');
+                    setSearchParams(searchParams);
+                  }}
+                  className="hover:opacity-70 ml-0.5"
+                  title="Remove intent filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setStatusFilter('All');
+                setCounselorFilter('All');
+                setAdvancedFilterState(undefined);
+                setMinScoreFilter(undefined);
+                setSearchParams({});
+              }}
+              className="text-xs font-bold text-primary hover:underline ml-auto"
+            >
+              Reset Filters
+            </button>
+          </div>
+        )}
+
         {/* Toolbar */}
         <div className="hidden md:flex p-4 border-b border-border flex-col md:flex-row gap-4 justify-between items-center bg-muted/20">
           <div className="flex items-center gap-2 w-full md:w-auto">
@@ -1555,9 +1648,14 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
                         // Prevent navigation if clicking on checkbox or action buttons
                         const target = e.target as HTMLElement;
                         if (!target.closest('button') && !target.closest('input[type="checkbox"]')) {
-                          window.open(`/all-leads/${lead.id}`, '_blank');
+                          if (e.metaKey || e.ctrlKey) {
+                            window.open(`/all-leads/${lead.id}`, '_blank');
+                          } else {
+                            navigate(`/all-leads/${lead.id}`);
+                          }
                         }
                       }}
+
                       className={cn("hover:bg-muted/30 transition-colors cursor-pointer group", selectedIds.has(lead.id) && "bg-primary/5")}
                     >
                       <td className="px-4 py-4" onClick={e => e.stopPropagation()}>

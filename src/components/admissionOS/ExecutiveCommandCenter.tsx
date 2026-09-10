@@ -15,8 +15,9 @@ import {
   DateRangeKey, FinancialMetrics, FinancialDrillDownRecord,
   StageVelocity, LeaderboardItem
 } from '../../types/commandCenter';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { UserPerformanceMatrix } from './UserPerformanceMatrix';
 
 const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -29,6 +30,9 @@ const DATE_RANGE_OPTIONS: { key: DateRangeKey; label: string }[] = [
 
 export function ExecutiveCommandCenter() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'performance' ? 'performance' : 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'performance'>(initialTab);
   const [selectedRange, setSelectedRange] = useState<DateRangeKey>('thisMonth');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -292,13 +296,56 @@ export function ExecutiveCommandCenter() {
         </div>
       </div>
 
-      {/* SECTION 2: FINANCIAL INTELLIGENCE */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <IndianRupee className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Financial Intelligence</h2>
-          </div>
+      {/* Primary Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-border pb-1">
+        <button
+          onClick={() => {
+            setActiveTab('overview');
+            setSearchParams({});
+          }}
+          className={cn(
+            "px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 touch-manipulation",
+            activeTab === 'overview'
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <Brain className="w-4 h-4" />
+          <span>Executive Intelligence</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('performance');
+            setSearchParams({ tab: 'performance' });
+          }}
+          className={cn(
+            "px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 touch-manipulation",
+            activeTab === 'performance'
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <Users className="w-4 h-4" />
+          <span>User & Team Performance Matrix</span>
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+            Live
+          </span>
+        </button>
+      </div>
+
+      {activeTab === 'performance' ? (
+        <UserPerformanceMatrix />
+      ) : (
+        <>
+          {/* SECTION 2: FINANCIAL INTELLIGENCE */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <IndianRupee className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Financial Intelligence</h2>
+              </div>
+
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
             <span>Collection Efficiency:</span>
             <span className={cn(
@@ -402,7 +449,7 @@ export function ExecutiveCommandCenter() {
             label="Admissions Today"
             value={String(admissions.admissionsToday)}
             subtext="New enrollments registered"
-            onClick={() => navigate('/all-leads')}
+            onClick={() => navigate('/all-leads?status=Admitted')}
           />
           <InteractiveKpiCard
             icon={TrendingUp}
@@ -418,7 +465,7 @@ export function ExecutiveCommandCenter() {
             label="Pending Documents"
             value={String(admissions.pendingDocuments)}
             subtext="Awaiting registrar verification"
-            onClick={() => navigate('/all-leads')}
+            onClick={() => navigate('/all-leads?status=' + encodeURIComponent('Docs Pending'))}
           />
           <InteractiveKpiCard
             icon={AlertTriangle}
@@ -463,7 +510,7 @@ export function ExecutiveCommandCenter() {
                 return (
                   <div
                     key={s.stage}
-                    onClick={() => navigate(`/all-leads`)}
+                    onClick={() => navigate('/all-leads?status=' + encodeURIComponent(s.stage))}
                     className={cn(
                       "p-2.5 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-1.5 sm:space-y-2 group hover:shadow-md touch-manipulation",
                       isOverdue
@@ -577,6 +624,15 @@ export function ExecutiveCommandCenter() {
                       <p className="text-[11px] text-muted-foreground">Active student engagements</p>
                     </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setActiveTab('performance');
+                      setSearchParams({ tab: 'performance' });
+                    }}
+                    className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Team Matrix <ArrowUpRight className="w-3 h-3" />
+                  </button>
                 </div>
 
                 {topCounselors.length === 0 ? (
@@ -586,13 +642,18 @@ export function ExecutiveCommandCenter() {
                 ) : (
                   <div className="divide-y divide-border/60">
                     {topCounselors.map((c, i) => (
-                      <div key={c.id} className="py-2.5 flex items-center justify-between gap-2">
+                      <div
+                        key={c.id}
+                        onClick={() => navigate(`/all-leads?counselor=${c.id}`)}
+                        className="py-2.5 px-2 rounded-xl hover:bg-muted/40 transition-colors flex items-center justify-between gap-2 cursor-pointer group"
+                        title={`View leads assigned to ${c.name}`}
+                      >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xs font-bold shrink-0">
                             {c.avatarText || c.name.charAt(0)}
                           </div>
                           <div className="truncate">
-                            <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
+                            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{c.name}</p>
                             {c.subText && <p className="text-[11px] text-muted-foreground">{c.subText}</p>}
                           </div>
                         </div>
@@ -608,6 +669,9 @@ export function ExecutiveCommandCenter() {
           </div>
         </div>
       </div>
+    </>
+  )}
+
 
       {/* Drill-Down Modal */}
       <FinancialDrillDownModal

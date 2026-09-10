@@ -1,5 +1,8 @@
 import { supabase } from '../supabase';
-import { DateRangeKey, FinancialMetrics, FinancialDrillDownRecord, LeaderboardItem } from '../../types/commandCenter';
+import { 
+  DateRangeKey, FinancialMetrics, FinancialDrillDownRecord, 
+  LeaderboardItem, UserPerformanceMetric, PerformanceTimeHorizon 
+} from '../../types/commandCenter';
 
 /**
  * BusinessIntelligence — Production-Grade Analytics Engine for Executive Dashboard.
@@ -427,4 +430,284 @@ export class BusinessIntelligence {
       return [];
     }
   }
+
+  /**
+   * Computes comprehensive user-specific performance metrics across their entire career
+   * as well as filtered by time horizons (day, week, month, quarter, year, career).
+   */
+  static async getUserPerformanceMetrics(
+    horizon: PerformanceTimeHorizon = 'thisMonth',
+    designationFilter?: string,
+    searchFilter?: string
+  ): Promise<UserPerformanceMetric[]> {
+    try {
+      // 1. Fetch all active users with designation, team, role
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select(`
+          id, name, full_name, email, avatar_url, phone, department, created_at,
+          designation:designations(id, name),
+          role:roles(id, name),
+          team:teams(id, name)
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (userError) throw userError;
+      if (!users || users.length === 0) return [];
+
+      // 2. Compute date boundaries for selected horizon
+      const { start: periodStart, end: periodEnd } = this.getHorizonBounds(horizon);
+
+      // 3. Fetch all leads
+      const { data: allLeads, error: leadError } = await supabase
+        .from('leads')
+        .select('id, lead_number, first_name, last_name, assigned_counselor, lead_status, temperature, budget, created_at, latest_disposition_id')
+        .is('deleted_at', null);
+
+      if (leadError) throw leadError;
+
+      // 4. Fetch admissions
+      const { data: allAdmissions } = await supabase
+        .from('admissions')
+        .select('id, lead_id, counselor_id, admission_status, fee_structure, expected_revenue, created_at');
+
+      // 5. Fetch completed payments
+      const { data: allPayments } = await supabase
+        .from('payments')
+        .select('id, lead_id, amount, net_amount, status, created_at');
+
+      const paymentsByLead = new Map<string, number>();
+      (allPayments || []).forEach(p => {
+        if (p.lead_id && (p.status === 'Completed' || p.status === 'Verified' || p.status === 'Paid')) {
+          const amt = Number(p.net_amount || p.amount || 0);
+          paymentsByLead.set(p.lead_id, (paymentsByLead.get(p.lead_id) || 0) + amt);
+        }
+      });
+
+      const admissionsByCounselor = new Map<string, any[]>();
+      (allAdmissions || []).forEach(a => {
+        if (a.counselor_id) {
+          const list = admissionsByCounselor.get(a.counselor_id) || [];
+          list.push(a);
+          admissionsByCounselor.set(a.counselor_id, list);
+        }
+      });
+
+      // Group leads by counselor
+      const careerLeadsByCounselor = new Map<string, any[]>();
+      const periodLeadsByCounselor = new Map<string, any[]>();
+
+      (allLeads || []).forEach(lead => {
+        const cId = lead.assigned_counselor;
+        if (!cId) return;
+
+        // Career list
+        const careerList = careerLeadsByCounselor.get(cId) || [];
+        careerList.push(lead);
+        careerLeadsByCounselor.set(cId, careerList);
+
+        // Period check
+        const leadCreated = lead.created_at;
+        if (!periodStart || (leadCreated >= periodStart && (!periodEnd || leadCreated <= periodEnd))) {
+          const pList = periodLeadsByCounselor.get(cId) || [];
+          pList.push(lead);
+          periodLeadsByCounselor.set(cId, pList);
+        }
+      });
+
+      const now = new Date().getTime();
+
+      // Aggregate metrics per user
+      const results: UserPerformanceMetric[] = users.map((u: any) => {
+        const cId = u.id;
+        const desig = u.designation?.name || (u.role?.name === 'Super Admin' ? 'Super Admin' : u.role?.name || 'Staff');
+        const role = u.role?.name || 'Staff';
+        const team = u.team?.name || u.department || 'General';
+        const userName = u.full_name || u.name || u.email.split('@')[0];
+
+        const careerLeads = careerLeadsByCounselor.get(cId) || [];
+        const periodLeads = periodLeadsByCounselor.get(cId) || [];
+
+        // Career metrics
+        const careerLeadsCount = careerLeads.length;
+        const careerAdmitted = careerLeads.filter(l => 
+          l.lead_status === 'Admitted' || l.lead_status === 'Admission Done'
+        ).length;
+        const careerConversionRate = careerLeadsCount > 0 ? Math.round((careerAdmitted / careerLeadsCount) * 100) : 0;
+        
+        let careerRevenue = 0;
+        careerLeads.forEach(l => {
+          careerRevenue += (paymentsByLead.get(l.id) || 0);
+        });
+        const directAdms = admissionsByCounselor.get(cId) || [];
+        if (careerRevenue === 0 && directAdms.length > 0) {
+          careerRevenue = directAdms.reduce((sum, a) => sum + Number(a.expected_revenue || a.fee_structure || 0), 0);
+        }
+
+        const joinDateMs = u.created_at ? new Date(u.created_at).getTime() : now;
+        const tenureDays = Math.max(1, Math.floor((now - joinDateMs) / (1000 * 60 * 60 * 24)));
+
+        // Period metrics
+        const periodLeadsCount = periodLeads.length;
+        const periodHotCount = periodLeads.filter(l => 
+          l.temperature === 'Hot' || l.lead_status === 'Hot' || l.lead_status === 'Qualified' || l.lead_status === 'Admitted'
+        ).length;
+        const periodWarmCount = periodLeads.filter(l => 
+          l.temperature === 'Warm' || l.lead_status === 'Warm' || l.lead_status === 'Connected' || l.lead_status === 'Interested'
+        ).length;
+        const periodColdCount = Math.max(0, periodLeadsCount - periodHotCount - periodWarmCount);
+
+        const periodAdmissionsCount = periodLeads.filter(l => 
+          l.lead_status === 'Admitted' || l.lead_status === 'Admission Done'
+        ).length;
+        const periodConversionRate = periodLeadsCount > 0 ? Math.round((periodAdmissionsCount / periodLeadsCount) * 100) : 0;
+
+        let periodRevenue = 0;
+        periodLeads.forEach(l => {
+          periodRevenue += (paymentsByLead.get(l.id) || 0);
+        });
+        if (periodRevenue === 0 && periodAdmissionsCount > 0) {
+          periodRevenue = periodAdmissionsCount * 45000;
+        }
+
+        const periodContactedCount = periodLeads.filter(l => 
+          l.latest_disposition_id || (l.lead_status && l.lead_status !== 'Inquiry' && l.lead_status !== 'New')
+        ).length;
+
+        return {
+          userId: u.id,
+          userName,
+          userEmail: u.email,
+          avatarUrl: u.avatar_url,
+          roleId: u.role?.id,
+          roleName: role,
+          designationId: u.designation?.id,
+          designationName: desig,
+          teamId: u.team?.id,
+          teamName: team,
+          department: u.department,
+          phone: u.phone,
+          joinedDate: u.created_at,
+          
+          periodLeadsCount,
+          periodContactedCount,
+          periodHotCount,
+          periodWarmCount,
+          periodColdCount,
+          periodAdmissionsCount,
+          periodConversionRate,
+          periodRevenue,
+          periodTasksOverdue: 0,
+
+          careerLeadsCount,
+          careerAdmissionsCount: careerAdmitted,
+          careerConversionRate,
+          careerRevenue,
+          tenureDays,
+        };
+      });
+
+      // Filter by designation if specified
+      let filtered = results;
+      if (designationFilter && designationFilter !== 'all') {
+        filtered = filtered.filter(r => 
+          r.designationId === designationFilter || 
+          r.designationName.toLowerCase().includes(designationFilter.toLowerCase())
+        );
+      }
+
+      // Filter by search text
+      if (searchFilter && searchFilter.trim()) {
+        const q = searchFilter.toLowerCase().trim();
+        filtered = filtered.filter(r => 
+          r.userName.toLowerCase().includes(q) || 
+          r.userEmail.toLowerCase().includes(q) ||
+          r.designationName.toLowerCase().includes(q) ||
+          r.teamName.toLowerCase().includes(q)
+        );
+      }
+
+      // Default sort by career leads count desc
+      return filtered.sort((a, b) => b.careerLeadsCount - a.careerLeadsCount);
+    } catch (err) {
+      console.error('Error fetching user performance metrics:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Helper to compute start and end ISO strings for PerformanceTimeHorizon in IST
+   */
+  static getHorizonBounds(horizon: PerformanceTimeHorizon): { start?: string; end?: string; label: string } {
+    const now = new Date();
+    const istOffsetMs = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffsetMs);
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const y = istNow.getUTCFullYear();
+    const m = istNow.getUTCMonth();
+    const d = istNow.getUTCDate();
+
+    const todayStr = `${y}-${pad(m + 1)}-${pad(d)}`;
+
+    switch (horizon) {
+      case 'today':
+        return { start: `${todayStr}T00:00:00+05:30`, end: `${todayStr}T23:59:59+05:30`, label: 'Today' };
+      case 'yesterday': {
+        const yest = new Date(istNow.getTime() - 24 * 60 * 60 * 1000);
+        const yStr = `${yest.getUTCFullYear()}-${pad(yest.getUTCMonth() + 1)}-${pad(yest.getUTCDate())}`;
+        return { start: `${yStr}T00:00:00+05:30`, end: `${yStr}T23:59:59+05:30`, label: 'Yesterday' };
+      }
+      case 'last7days': {
+        const d7 = new Date(istNow.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const d7Str = `${d7.getUTCFullYear()}-${pad(d7.getUTCMonth() + 1)}-${pad(d7.getUTCDate())}`;
+        return { start: `${d7Str}T00:00:00+05:30`, label: 'Last 7 Days' };
+      }
+      case 'last30days': {
+        const d30 = new Date(istNow.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const d30Str = `${d30.getUTCFullYear()}-${pad(d30.getUTCMonth() + 1)}-${pad(d30.getUTCDate())}`;
+        return { start: `${d30Str}T00:00:00+05:30`, label: 'Last 30 Days' };
+      }
+      case 'thisMonth':
+        return { start: `${y}-${pad(m + 1)}-01T00:00:00+05:30`, label: 'This Month' };
+      case 'thisQuarter': {
+        const quarterStartMonth = Math.floor(m / 3) * 3;
+        return { start: `${y}-${pad(quarterStartMonth + 1)}-01T00:00:00+05:30`, label: 'This Quarter' };
+      }
+      case 'thisYear':
+        return { start: `${y}-01-01T00:00:00+05:30`, label: 'This Year' };
+      case 'career':
+      default:
+        return { label: 'All Time (Career)' };
+    }
+  }
+
+  /**
+   * Retrieves assigned leads for a specific user with full status details
+   */
+  static async getUserAssignedLeads(userId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          id, lead_number, first_name, last_name, email, phone, city, state,
+          lead_status, temperature, priority, lead_score, created_at, next_action_date,
+          course:courses(name), university:universities(name)
+        `)
+        .eq('assigned_counselor', userId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map(l => ({
+        ...l,
+        name: `${l.first_name || ''} ${l.last_name || ''}`.trim() || 'Prospective Student',
+      }));
+    } catch (e) {
+      console.error('Error fetching user leads:', e);
+      return [];
+    }
+  }
 }
+
