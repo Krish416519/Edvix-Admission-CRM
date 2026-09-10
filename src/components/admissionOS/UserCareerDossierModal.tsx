@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { 
   X, User, Mail, Phone, Building2, Award, TrendingUp, 
   GraduationCap, IndianRupee, ExternalLink, Calendar, 
-  Clock, Flame, Shield, ArrowUpRight, Search, CheckCircle2
+  Clock, Flame, Shield, ArrowUpRight, Search, CheckCircle2,
+  UserCheck, Users, ChevronRight, Network, Layers
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { UserPerformanceMetric } from '../../types/commandCenter';
@@ -14,6 +15,7 @@ interface UserCareerDossierModalProps {
   onClose: () => void;
   userMetric: UserPerformanceMetric | null;
   periodLabel: string;
+  onSelectUserById?: (userId: string) => void;
 }
 
 export function UserCareerDossierModal({
@@ -21,6 +23,7 @@ export function UserCareerDossierModal({
   onClose,
   userMetric,
   periodLabel,
+  onSelectUserById,
 }: UserCareerDossierModalProps) {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<any[]>([]);
@@ -72,6 +75,9 @@ export function UserCareerDossierModal({
 
   const statuses = ['All', ...Array.from(new Set(leads.map(l => l.lead_status).filter(Boolean)))];
 
+  const hasDirectReports = (userMetric.directReports && userMetric.directReports.length > 0) || userMetric.directReportsCount > 0;
+  const isOrgHead = userMetric.designationLevel >= 100 || !userMetric.managerId;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
@@ -97,10 +103,10 @@ export function UserCareerDossierModal({
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl font-bold text-foreground">{userMetric.userName}</h2>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  {userMetric.designationName}
+                  {userMetric.designationName} (Lvl {userMetric.designationLevel})
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                  {userMetric.teamName}
+                  {userMetric.teamName} &bull; Admissions
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
@@ -144,11 +150,128 @@ export function UserCareerDossierModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar">
+          
+          {/* SECTION: ORGANIZATIONAL REPORTING CHAIN & HIERARCHY ("Under Whom He Comes") */}
+          <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                <Network className="w-4 h-4" /> Chain of Command & Reporting Line
+              </h3>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                Level {userMetric.designationLevel} &bull; Admissions Department
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {/* Direct Reporting Manager Card */}
+              <div className="p-3 bg-card border border-border rounded-xl space-y-1.5">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide block">
+                  Direct Reporting Manager
+                </span>
+                {isOrgHead ? (
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Head of Department / Apex</p>
+                      <p className="text-xs text-muted-foreground">Highest authority in Admissions & Sales</p>
+                    </div>
+                  </div>
+                ) : userMetric.managerName ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                        <UserCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{userMetric.managerName}</p>
+                        <p className="text-xs text-muted-foreground">{userMetric.managerDesignation || 'Supervisor'} &bull; {userMetric.managerEmail}</p>
+                      </div>
+                    </div>
+                    {onSelectUserById && userMetric.managerId && (
+                      <button
+                        onClick={() => onSelectUserById(userMetric.managerId!)}
+                        className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      >
+                        View Dossier
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Reports to {userMetric.reportsToDesignationName || 'Admissions Head'}</p>
+                )}
+              </div>
+
+              {/* Hierarchy Flow Breadcrumb */}
+              <div className="p-3 bg-card border border-border rounded-xl space-y-1.5">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide block">
+                  Hierarchy Path (Ascending)
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                  <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                    {userMetric.userName} ({userMetric.designationName.split(' ')[0]})
+                  </span>
+                  {userMetric.reportingChain.map((node, i) => (
+                    <React.Fragment key={node.id}>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span 
+                        onClick={() => onSelectUserById && onSelectUserById(node.id)}
+                        className={cn(
+                          "px-2 py-0.5 rounded font-semibold transition-colors",
+                          onSelectUserById ? "cursor-pointer hover:bg-primary/10 hover:text-primary text-foreground" : "text-muted-foreground"
+                        )}
+                        title="Click to switch to this supervisor's dossier"
+                      >
+                        {node.name} ({node.designation.split(' ')[0]})
+                      </span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* If user manages staff: display Direct Reports & Team Roll-up */}
+            {hasDirectReports && (
+              <div className="mt-3 pt-3 border-t border-indigo-500/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> Supervised Admissions Team ({userMetric.directReports.length} Direct Counselors)
+                  </span>
+                  {userMetric.teamRollup && (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      Team Conversion: {userMetric.teamRollup.teamConversionRate}% ({userMetric.teamRollup.totalTeamAdmissions}/{userMetric.teamRollup.totalTeamLeads} enrolled)
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {userMetric.directReports.map(sub => (
+                    <div
+                      key={sub.id}
+                      onClick={() => onSelectUserById && onSelectUserById(sub.id)}
+                      className="p-2.5 rounded-lg bg-card border border-border hover:border-primary transition-all cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                          {sub.name}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{sub.designation}</p>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground mt-2 pt-1 border-t border-border/50">
+                        <span>{sub.periodLeads} leads</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">{sub.periodEnrolled} adm</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Career vs Period Comparison Matrix */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-primary" /> Performance Scorecard (Career vs. {periodLabel})
+                <Award className="w-4 h-4 text-primary" /> Individual Performance Scorecard (Career vs. {periodLabel})
               </h3>
             </div>
 
@@ -240,99 +363,105 @@ export function UserCareerDossierModal({
                 Assigned Students & Inquiries ({filteredLeads.length})
               </h3>
 
-              {/* Filters within dossier */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search student..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="h-8 pl-8 pr-3 text-xs bg-card border border-border rounded-lg outline-none focus:border-primary w-40 sm:w-48"
-                  />
-                </div>
-
+              <div className="flex items-center gap-2">
+                {/* Status Filter */}
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
-                  className="h-8 px-2.5 text-xs bg-card border border-border rounded-lg outline-none focus:border-primary"
+                  className="h-8 px-2 text-xs bg-background border border-border rounded-lg outline-none cursor-pointer"
                 >
                   {statuses.map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
+
+                {/* Search */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search assigned leads..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="h-8 pl-7 pr-2.5 text-xs bg-background border border-border rounded-lg outline-none focus:border-primary w-40"
+                  />
+                </div>
               </div>
             </div>
 
-            {loadingLeads ? (
-              <div className="py-12 text-center text-muted-foreground space-y-2">
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs">Fetching assigned leads from Supabase...</p>
+            <div className="border border-border rounded-xl overflow-hidden bg-card">
+              <div className="overflow-x-auto max-h-64">
+                <table className="w-full text-xs text-left">
+                  <thead className="text-[11px] text-muted-foreground uppercase bg-muted/50 border-b border-border sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3.5 py-2.5 font-semibold">Lead ID / Student</th>
+                      <th className="px-3.5 py-2.5 font-semibold">Stage</th>
+                      <th className="px-3.5 py-2.5 font-semibold">Intent</th>
+                      <th className="px-3.5 py-2.5 font-semibold">Contact</th>
+                      <th className="px-3.5 py-2.5 font-semibold">Assigned Date</th>
+                      <th className="px-3.5 py-2.5 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {loadingLeads ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-1" />
+                          <span>Loading student files...</span>
+                        </td>
+                      </tr>
+                    ) : filteredLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                          No student files match current filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredLeads.map(l => (
+                        <tr key={l.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-3.5 py-2.5">
+                            <span className="font-bold text-foreground block">{l.name}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{l.lead_number}</span>
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-secondary-foreground">
+                              {l.lead_status}
+                            </span>
+                          </td>
+                          <td className="px-3.5 py-2.5">
+                            {l.temperature === 'Hot' ? (
+                              <span className="text-orange-600 font-bold text-[11px]">🔥 Hot</span>
+                            ) : l.temperature === 'Warm' ? (
+                              <span className="text-amber-600 font-bold text-[11px]">⚡ Warm</span>
+                            ) : (
+                              <span className="text-blue-500 font-semibold text-[11px]">❄ Cold</span>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-muted-foreground">
+                            <span>{l.phone || l.email || '—'}</span>
+                          </td>
+                          <td className="px-3.5 py-2.5 text-muted-foreground">
+                            {new Date(l.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right">
+                            <button
+                              onClick={() => {
+                                onClose();
+                                navigate(`/all-leads/${l.id}`);
+                              }}
+                              className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded text-[11px] inline-flex items-center gap-1 transition-colors"
+                            >
+                              Open <ArrowUpRight className="w-3 h-3" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-            ) : filteredLeads.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground text-xs border border-dashed border-border rounded-xl">
-                No matching leads assigned to this user.
-              </div>
-            ) : (
-              <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-card">
-                {filteredLeads.map(lead => {
-                  const intentBadge = lead.temperature === 'Hot' ? '🔥 HOT' :
-                    lead.temperature === 'Warm' ? '⚡ WARM' : '❄ COLD';
-
-                  return (
-                    <div
-                      key={lead.id}
-                      className="p-3.5 hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-foreground truncate">
-                            {lead.name}
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {lead.lead_status || 'Inquiry'}
-                          </span>
-                          <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                            lead.temperature === 'Hot' ? "bg-red-500/10 text-red-600 border-red-500/20" :
-                            lead.temperature === 'Warm' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-                            "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                          )}>
-                            {intentBadge}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                          <span>ID: {lead.lead_number}</span>
-                          {lead.email && <span>• {lead.email}</span>}
-                          {lead.phone && <span>• {lead.phone}</span>}
-                          {lead.course?.name && <span>• Course: {lead.course.name}</span>}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                        <button
-                          onClick={() => {
-                            onClose();
-                            navigate(`/all-leads/${lead.id}`);
-                          }}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-colors inline-flex items-center gap-1 shadow-xs"
-                        >
-                          View Lead <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            </div>
           </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-border bg-muted/10 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Authoritative Supabase Career Dossier</span>
-          <span>{leads.length} Total Assigned Leads</span>
         </div>
       </div>
     </div>

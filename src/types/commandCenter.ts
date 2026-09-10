@@ -142,5 +142,22 @@ export interface UserPerformanceMetric {
   careerConversionRate: number;
   careerRevenue: number;
   tenureDays: number;
+
+  // Hierarchical Reporting & Organization Structure
+  managerId?: string;
+  managerName?: string;
+  managerEmail?: string;
+  managerDesignation?: string;
+  reportsToDesignationName?: string;
+  designationLevel: number;
+  reportingChain: { id: string; name: string; designation: string; level: number }[];
+  directReportsCount: number;
+  directReports: { id: string; name: string; designation: string; periodLeads: number; periodEnrolled: number }[];
+  teamRollup?: {
+    totalTeamLeads: number;
+    totalTeamAdmissions: number;
+    teamConversionRate: number;
+    totalTeamRevenue: number;
+  };
 }
 

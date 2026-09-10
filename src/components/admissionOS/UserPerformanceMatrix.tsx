@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, TrendingUp, Award, IndianRupee, GraduationCap,
   Search, Filter, RefreshCw, ChevronRight, ArrowUpRight,
-  Flame, Clock, Calendar, CheckCircle2, AlertCircle, Shield
+  Flame, Clock, Calendar, CheckCircle2, AlertCircle, Shield,
+  UserCheck, Network, Briefcase
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { UserPerformanceMetric, PerformanceTimeHorizon } from '../../types/commandCenter';
@@ -26,6 +27,8 @@ export function UserPerformanceMatrix() {
   const [selectedHorizon, setSelectedHorizon] = useState<PerformanceTimeHorizon>('thisMonth');
   const [designations, setDesignations] = useState<{ id: string; name: string }[]>([]);
   const [selectedDesignation, setSelectedDesignation] = useState<string>('all');
+  const [managers, setManagers] = useState<{ id: string; name: string; designation: string; directReportsCount: number }[]>([]);
+  const [selectedManager, setSelectedManager] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [metrics, setMetrics] = useState<UserPerformanceMetric[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +44,32 @@ export function UserPerformanceMatrix() {
         .from('designations')
         .select('id, name')
         .order('level', { ascending: false });
-      if (data) setDesignations(data);
+      if (data) {
+        // Only keep Admissions/Sales relevant designations
+        const salesDesigs = data.filter(d => 
+          !d.name.toLowerCase().includes('hr') && 
+          !d.name.toLowerCase().includes('finance') &&
+          !d.name.toLowerCase().includes('marketing admin')
+        );
+        setDesignations(salesDesigs);
+      }
     };
     loadDesignations();
   }, []);
+
+  // Fetch managers list
+  const loadManagersList = useCallback(async () => {
+    try {
+      const mgrList = await BusinessIntelligence.getAdmissionsManagers();
+      setManagers(mgrList);
+    } catch (e) {
+      console.error('Failed to load managers list:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadManagersList();
+  }, [loadManagersList]);
 
   // Fetch performance data
   const loadPerformanceData = useCallback(async (isSilent: boolean = false) => {
@@ -55,7 +80,8 @@ export function UserPerformanceMatrix() {
       const data = await BusinessIntelligence.getUserPerformanceMetrics(
         selectedHorizon,
         selectedDesignation,
-        searchTerm
+        searchTerm,
+        selectedManager
       );
       setMetrics(data);
     } catch (err) {
@@ -64,7 +90,7 @@ export function UserPerformanceMatrix() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedHorizon, selectedDesignation, searchTerm]);
+  }, [selectedHorizon, selectedDesignation, searchTerm, selectedManager]);
 
   useEffect(() => {
     loadPerformanceData(false);
@@ -93,18 +119,37 @@ export function UserPerformanceMatrix() {
       <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Staff & Counselor Career Performance Matrix
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-primary" />
+                Admissions & Sales Performance Center
+              </h2>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                Admissions Department
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Track multi-horizon output, admission throughput, conversion rates, and revenue across all staff roles.
+              Strictly tracking enrollment advisory output, conversion velocity, revenue, and supervisory reporting hierarchies.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            {selectedManager !== 'all' && (
+              <button
+                onClick={() => setSelectedManager('all')}
+                className="h-9 px-3 border border-amber-500/30 bg-amber-500/10 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5 transition-colors"
+                title="Clear manager filter"
+              >
+                <span>Manager Filter Active</span>
+                <span className="font-extrabold">&times;</span>
+              </button>
+            )}
+
             <button
-              onClick={() => loadPerformanceData(true)}
+              onClick={() => {
+                loadPerformanceData(true);
+                loadManagersList();
+              }}
               disabled={refreshing}
               className="h-9 px-3.5 border border-border bg-card hover:bg-muted/50 rounded-xl text-xs font-semibold text-foreground flex items-center gap-1.5 transition-colors shadow-sm"
               title="Refresh performance data"
@@ -116,7 +161,7 @@ export function UserPerformanceMatrix() {
         </div>
 
         {/* Filter Controls Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-border/60">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-2 border-t border-border/60">
           {/* Segmented Time Horizons */}
           <div className="inline-flex items-center p-1 bg-muted/60 border border-border rounded-xl text-xs overflow-x-auto hide-scrollbar flex-nowrap max-w-full">
             {TIME_HORIZONS.map(h => (
@@ -135,13 +180,34 @@ export function UserPerformanceMatrix() {
             ))}
           </div>
 
-          {/* Designation Dropdown & Search */}
+          {/* Designation Dropdown, Manager Filter, & Search */}
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            {/* Manager / Supervisor Filter */}
+            <div className="relative flex-1 sm:flex-initial">
+              <select
+                value={selectedManager}
+                onChange={e => setSelectedManager(e.target.value)}
+                className={cn(
+                  "h-9 pl-3 pr-8 text-xs font-semibold bg-background border rounded-xl text-foreground outline-none focus:border-primary shadow-sm w-full sm:w-44 cursor-pointer",
+                  selectedManager !== 'all' ? "border-primary text-primary font-bold bg-primary/5" : "border-border"
+                )}
+                title="Filter counselors reporting under a specific Manager / Supervisor"
+              >
+                <option value="all">All Supervisors / TLs</option>
+                {managers.map(m => (
+                  <option key={m.id} value={m.id}>
+                    Under: {m.name} ({m.designation.split(' ')[0]})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Designation Selector */}
             <div className="relative flex-1 sm:flex-initial">
               <select
                 value={selectedDesignation}
                 onChange={e => setSelectedDesignation(e.target.value)}
-                className="h-9 pl-3 pr-8 text-xs font-semibold bg-background border border-border rounded-xl text-foreground outline-none focus:border-primary shadow-sm w-full sm:w-48 cursor-pointer"
+                className="h-9 pl-3 pr-8 text-xs font-semibold bg-background border border-border rounded-xl text-foreground outline-none focus:border-primary shadow-sm w-full sm:w-40 cursor-pointer"
               >
                 <option value="all">All Designations</option>
                 {designations.map(d => (
@@ -150,14 +216,15 @@ export function UserPerformanceMatrix() {
               </select>
             </div>
 
+            {/* Search Input */}
             <div className="relative flex-1 sm:flex-initial">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search staff..."
+                placeholder="Search staff / manager..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="h-9 pl-8 pr-3 text-xs bg-background border border-border rounded-xl outline-none focus:border-primary w-full sm:w-48 shadow-sm"
+                className="h-9 pl-8 pr-3 text-xs bg-background border border-border rounded-xl outline-none focus:border-primary w-full sm:w-44 shadow-sm"
               />
             </div>
           </div>
@@ -168,11 +235,11 @@ export function UserPerformanceMatrix() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold">Active Team Members</span>
+            <span className="text-xs font-semibold">Active Admissions Staff</span>
             <Users className="w-4 h-4 text-primary" />
           </div>
           <p className="text-2xl font-extrabold text-foreground">{totalStaff}</p>
-          <p className="text-[11px] text-muted-foreground">Monitored profiles</p>
+          <p className="text-[11px] text-muted-foreground">Sales & advisory profiles</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1">
@@ -207,7 +274,7 @@ export function UserPerformanceMatrix() {
             <Award className="w-4 h-4 text-amber-500" />
           </div>
           <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{avgConversionRate}%</p>
-          <p className="text-[11px] text-muted-foreground">Admitted / Handled</p>
+          <p className="text-[11px] text-muted-foreground">Enrolled / Assigned</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1">
@@ -224,15 +291,22 @@ export function UserPerformanceMatrix() {
         </div>
       </div>
 
-      {/* Main Staff Performance Table */}
+      {/* Main Staff Performance Table with Hierarchical Reporting Structure */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/20">
           <div>
-            <h3 className="font-bold text-sm text-foreground">User Performance Records</h3>
-            <p className="text-xs text-muted-foreground">Click any staff row to open their full career dossier and assigned student files.</p>
+            <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
+              <span>Admissions Staff Performance & Chain of Command</span>
+              {selectedManager !== 'all' && (
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  Filtered to Supervisees of: {managers.find(m => m.id === selectedManager)?.name}
+                </span>
+              )}
+            </h3>
+            <p className="text-xs text-muted-foreground">Click any staff row to open their full career dossier, reporting chain, and student pipeline.</p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-            {metrics.length} Staff Members
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary self-start sm:self-center">
+            {metrics.length} Staff Profiles
           </span>
         </div>
 
@@ -241,7 +315,8 @@ export function UserPerformanceMatrix() {
             <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
               <tr>
                 <th className="px-4 py-3.5 font-semibold">Staff Member</th>
-                <th className="px-4 py-3.5 font-semibold">Designation & Team</th>
+                <th className="px-4 py-3.5 font-semibold">Designation & Level</th>
+                <th className="px-4 py-3.5 font-semibold">Reports To (Chain)</th>
                 <th className="px-4 py-3.5 font-semibold text-center">Assigned Leads</th>
                 <th className="px-4 py-3.5 font-semibold text-center">Pipeline (🔥 / ⚡ / ❄)</th>
                 <th className="px-4 py-3.5 font-semibold text-center">Admissions</th>
@@ -254,21 +329,24 @@ export function UserPerformanceMatrix() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={10} className="py-12 text-center text-muted-foreground">
                     <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <span className="text-xs font-medium">Aggregating user performance from PostgreSQL...</span>
+                    <span className="text-xs font-medium">Aggregating admissions performance & reporting hierarchy...</span>
                   </td>
                 </tr>
               ) : metrics.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={10} className="py-12 text-center text-muted-foreground">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
-                    <p className="text-sm font-semibold">No staff records match your criteria</p>
-                    <p className="text-xs mt-1">Try switching designation or clearing your search term.</p>
+                    <p className="text-sm font-semibold">No admissions staff records match your criteria</p>
+                    <p className="text-xs mt-1">Try resetting the manager dropdown or clearing your search term.</p>
                   </td>
                 </tr>
               ) : (
                 metrics.map((m, idx) => {
+                  const isOrgHead = m.designationLevel >= 100 || !m.managerId;
+                  const isManager = m.directReportsCount > 0 || m.designationLevel >= 50;
+
                   return (
                     <tr
                       key={m.userId}
@@ -301,16 +379,67 @@ export function UserPerformanceMatrix() {
                         </div>
                       </td>
 
-                      {/* Designation & Team */}
+                      {/* Designation & Level */}
                       <td className="px-4 py-3.5">
                         <div>
                           <span className="text-xs font-semibold text-foreground block">
                             {m.designationName}
                           </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {m.teamName}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                              Lvl {m.designationLevel}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                              {m.teamName}
+                            </span>
+                          </div>
                         </div>
+                      </td>
+
+                      {/* Reporting Hierarchy ("Who reports to whom / Under whom he comes") */}
+                      <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                        {isOrgHead ? (
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 w-fit">
+                              <Shield className="w-3 h-3" /> Org / Admissions Head
+                            </span>
+                            {m.directReportsCount > 0 && (
+                              <span 
+                                onClick={() => setSelectedManager(m.userId)}
+                                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer mt-1 inline-flex items-center gap-1"
+                                title="Click to view staff reporting to this head"
+                              >
+                                <Users className="w-3 h-3" /> Oversees {m.directReportsCount} Team Members
+                              </span>
+                            )}
+                          </div>
+                        ) : m.managerName ? (
+                          <div className="flex flex-col space-y-0.5">
+                            <span 
+                              onClick={() => setSelectedManager(m.managerId || 'all')}
+                              className="text-xs font-bold text-primary hover:underline cursor-pointer inline-flex items-center gap-1"
+                              title={`Click to filter matrix to all staff under ${m.managerName}`}
+                            >
+                              <UserCheck className="w-3.5 h-3.5 text-primary" /> {m.managerName}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {m.managerDesignation || m.reportsToDesignationName || 'Supervisor'}
+                            </span>
+                            {m.directReportsCount > 0 && (
+                              <span 
+                                onClick={() => setSelectedManager(m.userId)}
+                                className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer pt-0.5"
+                                title="Click to filter to supervisees of this manager"
+                              >
+                                👥 Manages {m.directReportsCount} Counselors
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">
+                            Reports to {m.reportsToDesignationName || 'Admissions Head'}
+                          </span>
+                        )}
                       </td>
 
                       {/* Leads Handled */}
@@ -409,6 +538,10 @@ export function UserPerformanceMatrix() {
         onClose={() => setSelectedUser(null)}
         userMetric={selectedUser}
         periodLabel={activeHorizonLabel}
+        onSelectUserById={async (userId) => {
+          const found = metrics.find(m => m.userId === userId);
+          if (found) setSelectedUser(found);
+        }}
       />
     </div>
   );

@@ -438,17 +438,18 @@ export class BusinessIntelligence {
   static async getUserPerformanceMetrics(
     horizon: PerformanceTimeHorizon = 'thisMonth',
     designationFilter?: string,
-    searchFilter?: string
+    searchFilter?: string,
+    managerFilter?: string
   ): Promise<UserPerformanceMetric[]> {
     try {
-      // 1. Fetch all active users with designation, team, role
+      // 1. Fetch all active users with designation, team, role, and manager relations
       const { data: users, error: userError } = await supabase
         .from('users')
         .select(`
-          id, name, full_name, email, avatar_url, phone, department, created_at,
-          designation:designations(id, name),
+          id, name, full_name, email, avatar_url, phone, department, department_id, manager_id, created_at,
+          designation:designations(id, name, level, reports_to_designation_id),
           role:roles(id, name),
-          team:teams(id, name)
+          team:teams(id, name, team_leader_id)
         `)
         .eq('is_active', true)
         .order('name');
@@ -456,10 +457,44 @@ export class BusinessIntelligence {
       if (userError) throw userError;
       if (!users || users.length === 0) return [];
 
-      // 2. Compute date boundaries for selected horizon
+      // Fetch all designations for reporting level reference
+      const { data: allDesignations } = await supabase
+        .from('designations')
+        .select('id, name, level, reports_to_designation_id');
+      const designationMap = new Map((allDesignations || []).map(d => [d.id, d]));
+
+      // Build quick user lookup map
+      const userMap = new Map<string, any>(users.map((u: any) => [u.id, u]));
+
+      // 2. Filter strictly to Admissions & Sales Department
+      const admissionsUsers = users.filter((u: any) => {
+        const deptId = u.department_id;
+        const dept = (u.department || '').toLowerCase();
+        const desig = (u.designation?.name || '').toLowerCase();
+        const role = (u.role?.name || '').toLowerCase();
+
+        // Admissions Department canonical ID
+        if (deptId === 'befec17a-23ed-4699-b7b9-f62e3d28d39c') return true;
+        // Text department check
+        if (dept.includes('admission') || dept.includes('sales') || dept.includes('enroll')) return true;
+        // Admissions designations & roles
+        if (
+          desig.includes('counselor') ||
+          desig.includes('admissions') ||
+          desig.includes('team leader') ||
+          role.includes('counselor') ||
+          role.includes('admission') ||
+          role.includes('super admin')
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      // 3. Compute date boundaries for selected horizon
       const { start: periodStart, end: periodEnd } = this.getHorizonBounds(horizon);
 
-      // 3. Fetch all leads
+      // 4. Fetch all leads
       const { data: allLeads, error: leadError } = await supabase
         .from('leads')
         .select('id, lead_number, first_name, last_name, assigned_counselor, lead_status, temperature, budget, created_at, latest_disposition_id')
@@ -467,12 +502,12 @@ export class BusinessIntelligence {
 
       if (leadError) throw leadError;
 
-      // 4. Fetch admissions
+      // 5. Fetch admissions
       const { data: allAdmissions } = await supabase
         .from('admissions')
         .select('id, lead_id, counselor_id, admission_status, fee_structure, expected_revenue, created_at');
 
-      // 5. Fetch completed payments
+      // 6. Fetch completed payments
       const { data: allPayments } = await supabase
         .from('payments')
         .select('id, lead_id, amount, net_amount, status, created_at');
@@ -519,12 +554,12 @@ export class BusinessIntelligence {
       const now = new Date().getTime();
 
       // Aggregate metrics per user
-      const results: UserPerformanceMetric[] = users.map((u: any) => {
+      const results: UserPerformanceMetric[] = admissionsUsers.map((u: any) => {
         const cId = u.id;
-        const desig = u.designation?.name || (u.role?.name === 'Super Admin' ? 'Super Admin' : u.role?.name || 'Staff');
+        const desig = u.designation?.name || (u.role?.name === 'Super Admin' ? 'Admissions Admin' : u.role?.name || 'Staff');
         const role = u.role?.name || 'Staff';
-        const team = u.team?.name || u.department || 'General';
-        const userName = u.full_name || u.name || u.email.split('@')[0];
+        const team = u.team?.name || u.department || 'Admissions Team';
+        const userName = (u.full_name || u.name || u.email.split('@')[0]).trim();
 
         const careerLeads = careerLeadsByCounselor.get(cId) || [];
         const periodLeads = periodLeadsByCounselor.get(cId) || [];
@@ -575,6 +610,82 @@ export class BusinessIntelligence {
           l.latest_disposition_id || (l.lead_status && l.lead_status !== 'Inquiry' && l.lead_status !== 'New')
         ).length;
 
+        // Resolve reporting manager
+        let managerId: string | undefined = u.manager_id || undefined;
+        if (!managerId && u.team?.team_leader_id && u.team.team_leader_id !== u.id) {
+          managerId = u.team.team_leader_id;
+        }
+
+        const managerUser = managerId ? userMap.get(managerId) : undefined;
+        const managerName = managerUser 
+          ? (managerUser.full_name || managerUser.name || managerUser.email.split('@')[0]).trim() 
+          : undefined;
+        const managerDesignation = managerUser?.designation?.name || managerUser?.role?.name || undefined;
+        const managerEmail = managerUser?.email;
+
+        // Resolve designation level and reporting target
+        const desigRecord = u.designation?.id ? designationMap.get(u.designation.id) : undefined;
+        const designationLevel = desigRecord?.level || (role === 'Super Admin' ? 100 : 10);
+        const reportsToDesigRecord = desigRecord?.reports_to_designation_id 
+          ? designationMap.get(desigRecord.reports_to_designation_id) 
+          : undefined;
+        const reportsToDesignationName = reportsToDesigRecord?.name;
+
+        // Build reporting chain upwards
+        const reportingChain: { id: string; name: string; designation: string; level: number }[] = [];
+        let currManagerId = managerId;
+        const visited = new Set<string>([u.id]);
+        while (currManagerId && !visited.has(currManagerId)) {
+          visited.add(currManagerId);
+          const m = userMap.get(currManagerId);
+          if (m) {
+            reportingChain.push({
+              id: m.id,
+              name: (m.full_name || m.name || m.email.split('@')[0]).trim(),
+              designation: m.designation?.name || m.role?.name || 'Manager',
+              level: m.designation?.level || 50,
+            });
+            currManagerId = m.manager_id;
+          } else {
+            break;
+          }
+        }
+
+        // Compute direct reports (who reports to this person)
+        const directReports = admissionsUsers
+          .filter((other: any) => other.id !== u.id && other.manager_id === u.id)
+          .map((other: any) => {
+            const oLeads = periodLeadsByCounselor.get(other.id) || [];
+            const oEnrolled = oLeads.filter(l => l.lead_status === 'Admitted' || l.lead_status === 'Admission Done').length;
+            return {
+              id: other.id,
+              name: (other.full_name || other.name || other.email.split('@')[0]).trim(),
+              designation: other.designation?.name || other.role?.name || 'Counselor',
+              periodLeads: oLeads.length,
+              periodEnrolled: oEnrolled,
+            };
+          });
+
+        let teamRollup = undefined;
+        if (directReports.length > 0) {
+          const totalTeamLeads = directReports.reduce((s, r) => s + r.periodLeads, 0);
+          const totalTeamAdmissions = directReports.reduce((s, r) => s + r.periodEnrolled, 0);
+          const teamConversionRate = totalTeamLeads > 0 ? Math.round((totalTeamAdmissions / totalTeamLeads) * 100) : 0;
+          let totalTeamRevenue = 0;
+          directReports.forEach(r => {
+            const rLeads = periodLeadsByCounselor.get(r.id) || [];
+            rLeads.forEach(l => {
+              totalTeamRevenue += (paymentsByLead.get(l.id) || 0);
+            });
+          });
+          teamRollup = {
+            totalTeamLeads,
+            totalTeamAdmissions,
+            teamConversionRate,
+            totalTeamRevenue,
+          };
+        }
+
         return {
           userId: u.id,
           userName,
@@ -586,7 +697,7 @@ export class BusinessIntelligence {
           designationName: desig,
           teamId: u.team?.id,
           teamName: team,
-          department: u.department,
+          department: u.department || 'Admissions',
           phone: u.phone,
           joinedDate: u.created_at,
           
@@ -605,6 +716,17 @@ export class BusinessIntelligence {
           careerConversionRate,
           careerRevenue,
           tenureDays,
+
+          managerId,
+          managerName,
+          managerEmail,
+          managerDesignation,
+          reportsToDesignationName,
+          designationLevel,
+          reportingChain,
+          directReportsCount: directReports.length,
+          directReports,
+          teamRollup,
         };
       });
 
@@ -617,6 +739,13 @@ export class BusinessIntelligence {
         );
       }
 
+      // Filter by Manager if specified
+      if (managerFilter && managerFilter !== 'all') {
+        filtered = filtered.filter(r => 
+          r.managerId === managerFilter || r.userId === managerFilter
+        );
+      }
+
       // Filter by search text
       if (searchFilter && searchFilter.trim()) {
         const q = searchFilter.toLowerCase().trim();
@@ -624,14 +753,39 @@ export class BusinessIntelligence {
           r.userName.toLowerCase().includes(q) || 
           r.userEmail.toLowerCase().includes(q) ||
           r.designationName.toLowerCase().includes(q) ||
-          r.teamName.toLowerCase().includes(q)
+          r.teamName.toLowerCase().includes(q) ||
+          (r.managerName && r.managerName.toLowerCase().includes(q))
         );
       }
 
-      // Default sort by career leads count desc
-      return filtered.sort((a, b) => b.careerLeadsCount - a.careerLeadsCount);
+      // Default sort by designation level desc, then career leads count desc
+      return filtered.sort((a, b) => {
+        if (b.designationLevel !== a.designationLevel) {
+          return b.designationLevel - a.designationLevel;
+        }
+        return b.careerLeadsCount - a.careerLeadsCount;
+      });
     } catch (err) {
       console.error('Error fetching user performance metrics:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Returns list of Admissions Managers and Supervisors for filtering
+   */
+  static async getAdmissionsManagers(): Promise<{ id: string; name: string; designation: string; directReportsCount: number }[]> {
+    try {
+      const allMetrics = await this.getUserPerformanceMetrics('thisMonth');
+      const managers = allMetrics.filter(m => m.directReportsCount > 0 || m.designationLevel >= 50);
+      return managers.map(m => ({
+        id: m.userId,
+        name: m.userName,
+        designation: m.designationName,
+        directReportsCount: m.directReportsCount,
+      }));
+    } catch (e) {
+      console.error('Error fetching admissions managers:', e);
       return [];
     }
   }
