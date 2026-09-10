@@ -277,7 +277,7 @@ export function UserPerformanceMatrix() {
           <p className="text-[11px] text-muted-foreground">Enrolled / Assigned</p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1">
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-1 col-span-2 sm:col-span-1 lg:col-span-1">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Revenue Generated</span>
             <IndianRupee className="w-4 h-4 text-emerald-600" />
@@ -291,7 +291,7 @@ export function UserPerformanceMatrix() {
         </div>
       </div>
 
-      {/* Main Staff Performance Table with Hierarchical Reporting Structure */}
+      {/* Main Staff Performance Table & Mobile Card Feed */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/20">
           <div>
@@ -303,14 +303,15 @@ export function UserPerformanceMatrix() {
                 </span>
               )}
             </h3>
-            <p className="text-xs text-muted-foreground">Click any staff row to open their full career dossier, reporting chain, and student pipeline.</p>
+            <p className="text-xs text-muted-foreground">Click any staff card or row to open their full career dossier and reporting chain.</p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary self-start sm:self-center">
             {metrics.length} Staff Profiles
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View (>= md screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
               <tr>
@@ -529,6 +530,158 @@ export function UserPerformanceMatrix() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card Feed (< md screens) */}
+        <div className="md:hidden divide-y divide-border">
+          {loading ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <span className="text-xs font-medium">Aggregating admissions performance...</span>
+            </div>
+          ) : metrics.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground p-4">
+              <AlertCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/60" />
+              <p className="text-sm font-semibold">No admissions staff found</p>
+              <p className="text-xs mt-1">Try resetting the manager dropdown or search term.</p>
+            </div>
+          ) : (
+            metrics.map((m, idx) => {
+              const isOrgHead = m.designationLevel >= 100 || !m.managerId;
+              return (
+                <div
+                  key={m.userId}
+                  onClick={() => setSelectedUser(m)}
+                  className="p-4 space-y-3 hover:bg-muted/30 active:bg-muted/50 transition-colors cursor-pointer"
+                >
+                  {/* Header Row: Avatar, Name, Email, Top Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0 border border-primary/20">
+                        {m.avatarUrl ? (
+                          <img src={m.avatarUrl} alt={m.userName} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          m.userName.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-foreground text-sm">{m.userName}</span>
+                          {idx === 0 && (
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                              Top
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{m.userEmail}</span>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                      Lvl {m.designationLevel}
+                    </span>
+                  </div>
+
+                  {/* Designation & Reports To Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                    <span className="font-semibold text-foreground px-2 py-0.5 rounded bg-muted">
+                      {m.designationName}
+                    </span>
+                    <span className="text-muted-foreground text-[11px]">
+                      {m.teamName}
+                    </span>
+
+                    {/* Reports To Link */}
+                    {isOrgHead ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        ⭐ Org Head
+                      </span>
+                    ) : m.managerName ? (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedManager(m.managerId || 'all');
+                        }}
+                        className="text-[11px] font-semibold text-primary bg-primary/5 border border-primary/20 px-2 py-0.5 rounded-md inline-flex items-center gap-1 hover:underline"
+                      >
+                        <UserCheck className="w-3 h-3" /> Under: {m.managerName}
+                      </span>
+                    ) : null}
+
+                    {m.directReportsCount > 0 && (
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedManager(m.userId);
+                        }}
+                        className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-600 border border-indigo-500/20"
+                      >
+                        👥 {m.directReportsCount} Counselors
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 4-Cell Metric Grid */}
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    <div className="p-2 rounded-lg bg-muted/40 border border-border/50 text-center">
+                      <span className="text-[10px] text-muted-foreground block font-medium">Leads</span>
+                      <span className="text-sm font-extrabold text-foreground">
+                        {selectedHorizon === 'career' ? m.careerLeadsCount : m.periodLeadsCount}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-center">
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-medium">Enrolled</span>
+                      <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {selectedHorizon === 'career' ? m.careerAdmissionsCount : m.periodAdmissionsCount}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/20 text-center">
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 block font-medium">Conv %</span>
+                      <span className="text-sm font-extrabold text-amber-600 dark:text-amber-400">
+                        {selectedHorizon === 'career' ? m.careerConversionRate : m.periodConversionRate}%
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-lg bg-blue-500/5 border border-blue-500/20 text-center">
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 block font-medium">Revenue</span>
+                      <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 truncate block">
+                        {fmt(selectedHorizon === 'career' ? m.careerRevenue : m.periodRevenue)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pipeline Intent Bar & Action Buttons */}
+                  <div className="flex items-center justify-between pt-1 border-t border-border/50 gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                      <span className="text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">
+                        🔥 {m.periodHotCount}
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        ⚡ {m.periodWarmCount}
+                      </span>
+                      <span className="text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                        ❄ {m.periodColdCount}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => setSelectedUser(m)}
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
+                      >
+                        Dossier
+                      </button>
+                      <button
+                        onClick={() => navigate(`/all-leads?counselor=${m.userId}`)}
+                        className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors inline-flex items-center gap-1"
+                      >
+                        Leads <ArrowUpRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
