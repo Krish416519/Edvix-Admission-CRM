@@ -275,8 +275,8 @@ export const AIIntelligenceService = {
 
     const { data: incompleteApps } = await supabase
       .from('admissions')
-      .select('id, lead_id, status')
-      .eq('status', 'Documents Pending')
+      .select('id, lead_id, admission_status')
+      .eq('admission_status', 'Documents Pending')
       .limit(20);
 
     if (incompleteApps) {

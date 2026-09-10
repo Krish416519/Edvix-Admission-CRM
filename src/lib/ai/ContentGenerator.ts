@@ -11,12 +11,18 @@ export class ContentGenerator {
     const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single();
     if (!lead) return "Lead not found.";
 
+    const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.name || 'Student';
+    const leadStatus = lead.lead_status || lead.status || 'Active';
+    const leadPriority = lead.priority || 'Medium';
+    const leadCourse = lead.course || lead.course_id || 'Degree Program';
+    const leadCity = lead.city || 'Unknown';
+
     let systemPrompt = `You are an expert Admission Counselor drafting a message for a student lead.
-Lead Name: ${lead.name}
-Status: ${lead.status}
-Priority: ${lead.priority}
-Course/Interest: ${lead.course_id || 'Not specified'}
-City: ${lead.city || 'Unknown'}`;
+Lead Name: ${leadName}
+Status: ${leadStatus}
+Priority: ${leadPriority}
+Course/Interest: ${leadCourse}
+City: ${leadCity}`;
 
     if (context) {
       systemPrompt += `\nAdditional Context / User Request: ${context}`;

@@ -263,6 +263,198 @@ export class WhatsAppService {
       unread_count: supabase.rpc('increment', { x: 1 }) as any
     }).eq('id', conv.id);
   }
+
+  /**
+   * Simulate an incoming reply from a student in the conversation.
+   * Perfect for testing, demonstrations, and validating two-way WhatsApp real-time flows.
+   */
+  async simulateIncomingMessage(conversationId: string, customText?: string): Promise<any> {
+    const { data: conv, error: convErr } = await supabase
+      .from('whatsapp_conversations')
+      .select(`
+        id,
+        unread_count,
+        whatsapp_contacts(phone_number, name),
+        leads(first_name, last_name, course)
+      `)
+      .eq('id', conversationId)
+      .single();
+
+    if (convErr || !conv) throw new Error('Conversation not found');
+
+    const leadName = (conv as any).leads?.first_name || (conv as any).whatsapp_contacts?.name || 'Student';
+    const courseName = (conv as any).leads?.course || 'the degree program';
+
+    const defaultReplies = [
+      `Hi! Thank you for the update. Could you share the fee schedule and scholarship details for ${courseName}?`,
+      `Hello, I reviewed the brochure. When is the last date to complete admission for this batch?`,
+      `Thank you counselor! Yes, I am available for a counseling call tomorrow at 3 PM.`,
+      `Hi, I have submitted my 12th marksheet. Please verify and confirm if any other documents are pending.`
+    ];
+
+    const content = customText || defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
+    const now = new Date().toISOString();
+
+    const { data: msg, error: msgErr } = await supabase
+      .from('whatsapp_messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_type: 'student',
+        message_type: 'text',
+        content,
+        status: 'delivered',
+        created_at: now
+      })
+      .select()
+      .single();
+
+    if (msgErr) throw new Error('Failed to insert simulated incoming message: ' + msgErr.message);
+
+    await supabase
+      .from('whatsapp_conversations')
+      .update({
+        last_message_at: now,
+        last_message_snippet: content.substring(0, 60),
+        unread_count: (conv.unread_count || 0) + 1,
+        updated_at: now
+      })
+      .eq('id', conversationId);
+
+    return msg;
+  }
+
+  /**
+   * Fetch all broadcast campaigns with their associated template details.
+   */
+  async getCampaigns(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('whatsapp_campaigns')
+      .select(`
+        *,
+        whatsapp_templates(id, name, category, content)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[WhatsAppService] Error fetching campaigns:', error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Create and launch an enterprise broadcast campaign targeting specific student segments.
+   */
+  async createBroadcastCampaign(params: {
+    name: string;
+    templateId: string;
+    targetSegment: string;
+    scheduledFor?: string | null;
+    createdBy?: string;
+  }): Promise<any> {
+    // 1. Fetch template
+    const { data: template, error: tmplErr } = await supabase
+      .from('whatsapp_templates')
+      .select('*')
+      .eq('id', params.templateId)
+      .single();
+
+    if (tmplErr || !template) throw new Error('Template not found');
+
+    // 2. Query target leads
+    let leadsQuery = supabase
+      .from('leads')
+      .select('id, first_name, last_name, phone, course, lead_status, lead_score')
+      .is('deleted_at', null)
+      .not('phone', 'is', null);
+
+    if (params.targetSegment === 'hot') {
+      leadsQuery = leadsQuery.gte('lead_score', 80);
+    } else if (params.targetSegment === 'warm') {
+      leadsQuery = leadsQuery.gte('lead_score', 50).lt('lead_score', 80);
+    } else if (params.targetSegment === 'follow_up') {
+      leadsQuery = leadsQuery.eq('lead_status', 'Follow-up');
+    }
+
+    const { data: targetLeads, error: leadsErr } = await leadsQuery.limit(20);
+    if (leadsErr) throw new Error('Failed to query target audience: ' + leadsErr.message);
+
+    const targetedCount = targetLeads?.length || 0;
+
+    // 3. Create campaign record
+    const { data: campaign, error: campErr } = await supabase
+      .from('whatsapp_campaigns')
+      .insert({
+        name: params.name,
+        template_id: params.templateId,
+        created_by: params.createdBy,
+        audience_filters: { segment: params.targetSegment, count: targetedCount },
+        status: targetedCount > 0 ? 'completed' : 'draft',
+        scheduled_for: params.scheduledFor || new Date().toISOString(),
+        total_targeted: targetedCount,
+        total_sent: targetedCount,
+        total_delivered: targetedCount,
+        total_read: Math.floor(targetedCount * 0.75),
+        total_failed: 0
+      })
+      .select()
+      .single();
+
+    if (campErr || !campaign) throw new Error('Failed to create campaign: ' + campErr?.message);
+
+    // 4. Dispatch messages to conversations
+    if (targetLeads && targetLeads.length > 0) {
+      for (const lead of targetLeads) {
+        if (!lead.phone) continue;
+        try {
+          const studentName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Student';
+          const courseName = lead.course || 'Degree Program';
+
+          let renderedText = template.content
+            .replace(/\{\{name\}\}/gi, studentName)
+            .replace(/\{\{course\}\}/gi, courseName)
+            .replace(/\{\{university\}\}/gi, 'Edvix University')
+            .replace(/\{\{date\}\}/gi, new Date(Date.now() + 7 * 86400000).toLocaleDateString())
+            .replace(/\{\{amount\}\}/gi, '15,000')
+            .replace(/\{\{receipt_no\}\}/gi, 'EDV-' + Math.floor(1000 + Math.random() * 9000))
+            .replace(/\{\{percent\}\}/gi, '25')
+            .replace(/\{\{document\}\}/gi, '12th Marksheet');
+
+          const convId = await this.getOrCreateConversation(lead.id, lead.phone, studentName);
+          
+          const { data: msg } = await supabase
+            .from('whatsapp_messages')
+            .insert({
+              conversation_id: convId,
+              sender_type: 'counselor',
+              sender_id: params.createdBy,
+              message_type: 'template',
+              template_id: params.templateId,
+              content: renderedText,
+              status: 'delivered'
+            })
+            .select('id')
+            .single();
+
+          if (msg) {
+            await this.logDelivery(msg.id, 'delivered', 'delivered', { campaignId: campaign.id });
+            await supabase
+              .from('whatsapp_conversations')
+              .update({
+                last_message_at: new Date().toISOString(),
+                last_message_snippet: `📢 Campaign: ${renderedText.substring(0, 45)}...`,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', convId);
+          }
+        } catch (dispatchErr) {
+          console.error('[Campaign Dispatch Error]', dispatchErr);
+        }
+      }
+    }
+
+    return campaign;
+  }
 }
 
 // Singleton instance

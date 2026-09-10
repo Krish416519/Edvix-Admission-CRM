@@ -187,7 +187,7 @@ export function LeadsList({ showSmartStages, externalLeads, externalTotalCount, 
       const upperF = f.toUpperCase();
       if (upperF === 'HOT' || upperF === 'WARM' || upperF === 'COLD') {
         setAdvancedFilterState(prev => ({
-          rootGroup: prev?.rootGroup || { id: 'root', logicalOperator: 'AND', conditions: [] },
+          rootGroup: prev?.rootGroup || { id: 'root', logic: 'AND', conditions: [] },
           intent: upperF as any,
           priorities: prev?.priorities || [],
           customDateRange: prev?.customDateRange || { type: 'All Time' },

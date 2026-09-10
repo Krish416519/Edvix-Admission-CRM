@@ -67,6 +67,10 @@ export interface FilterState {
   rootGroup: FilterGroup;
   sort?: { field: string; direction: 'asc' | 'desc' } | null;
   crmContext?: string;
+  intent?: 'HOT' | 'WARM' | 'COLD' | string | null;
+  priorities?: string[];
+  customDateRange?: any;
+  customNumericFilters?: any[];
 }
 
 export interface LeadFilterOptions {

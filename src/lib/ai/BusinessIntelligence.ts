@@ -443,6 +443,7 @@ export class BusinessIntelligence {
   ): Promise<UserPerformanceMetric[]> {
     try {
       // 1. Fetch all active users with designation, team, role, and manager relations
+      // Enforce backend scoping to Admissions Department ID at query level
       const { data: users, error: userError } = await supabase
         .from('users')
         .select(`
@@ -452,6 +453,7 @@ export class BusinessIntelligence {
           team:teams(id, name, team_leader_id)
         `)
         .eq('is_active', true)
+        .eq('department_id', 'befec17a-23ed-4699-b7b9-f62e3d28d39c')
         .order('name');
 
       if (userError) throw userError;
@@ -466,30 +468,8 @@ export class BusinessIntelligence {
       // Build quick user lookup map
       const userMap = new Map<string, any>(users.map((u: any) => [u.id, u]));
 
-      // 2. Filter strictly to Admissions & Sales Department
-      const admissionsUsers = users.filter((u: any) => {
-        const deptId = u.department_id;
-        const dept = (u.department || '').toLowerCase();
-        const desig = (u.designation?.name || '').toLowerCase();
-        const role = (u.role?.name || '').toLowerCase();
-
-        // Admissions Department canonical ID
-        if (deptId === 'befec17a-23ed-4699-b7b9-f62e3d28d39c') return true;
-        // Text department check
-        if (dept.includes('admission') || dept.includes('sales') || dept.includes('enroll')) return true;
-        // Admissions designations & roles
-        if (
-          desig.includes('counselor') ||
-          desig.includes('admissions') ||
-          desig.includes('team leader') ||
-          role.includes('counselor') ||
-          role.includes('admission') ||
-          role.includes('super admin')
-        ) {
-          return true;
-        }
-        return false;
-      });
+      // 2. Admissions users list (backend scoped)
+      const admissionsUsers = users;
 
       // 3. Compute date boundaries for selected horizon
       const { start: periodStart, end: periodEnd } = this.getHorizonBounds(horizon);
@@ -502,30 +482,38 @@ export class BusinessIntelligence {
 
       if (leadError) throw leadError;
 
-      // 5. Fetch admissions
+      // 5. Fetch admissions (using canonical assigned_counselor column)
       const { data: allAdmissions } = await supabase
         .from('admissions')
-        .select('id, lead_id, counselor_id, admission_status, fee_structure, expected_revenue, created_at');
+        .select('id, lead_id, assigned_counselor, admission_status, fee_structure, expected_revenue, created_at');
 
-      // 6. Fetch completed payments
-      const { data: allPayments } = await supabase
-        .from('payments')
-        .select('id, lead_id, amount, net_amount, status, created_at');
-
+      // 6. Map payments/revenue by counselor directly from canonical admissions records
       const paymentsByLead = new Map<string, number>();
-      (allPayments || []).forEach(p => {
-        if (p.lead_id && (p.status === 'Completed' || p.status === 'Verified' || p.status === 'Paid')) {
-          const amt = Number(p.net_amount || p.amount || 0);
-          paymentsByLead.set(p.lead_id, (paymentsByLead.get(p.lead_id) || 0) + amt);
+      try {
+        const { data: allPayments, error: payError } = await supabase
+          .from('payments')
+          .select('id, admission_id, amount, net_amount, status, created_at');
+
+        if (!payError && allPayments) {
+          const admToLead = new Map((allAdmissions || []).map(a => [a.id, a.lead_id]));
+          allPayments.forEach(p => {
+            const leadId = admToLead.get(p.admission_id);
+            if (leadId && (p.status === 'Completed' || p.status === 'Verified' || p.status === 'Paid')) {
+              const amt = Number(p.net_amount || p.amount || 0);
+              paymentsByLead.set(leadId, (paymentsByLead.get(leadId) || 0) + amt);
+            }
+          });
         }
-      });
+      } catch (_e) {
+        // Payments view access is role-restricted; canonical admissions fallback is active
+      }
 
       const admissionsByCounselor = new Map<string, any[]>();
       (allAdmissions || []).forEach(a => {
-        if (a.counselor_id) {
-          const list = admissionsByCounselor.get(a.counselor_id) || [];
+        if (a.assigned_counselor) {
+          const list = admissionsByCounselor.get(a.assigned_counselor) || [];
           list.push(a);
-          admissionsByCounselor.set(a.counselor_id, list);
+          admissionsByCounselor.set(a.assigned_counselor, list);
         }
       });
 
@@ -602,8 +590,8 @@ export class BusinessIntelligence {
         periodLeads.forEach(l => {
           periodRevenue += (paymentsByLead.get(l.id) || 0);
         });
-        if (periodRevenue === 0 && periodAdmissionsCount > 0) {
-          periodRevenue = periodAdmissionsCount * 45000;
+        if (periodRevenue === 0 && directAdms.length > 0) {
+          periodRevenue = directAdms.reduce((sum, a) => sum + Number(a.expected_revenue || a.fee_structure || 0), 0);
         }
 
         const periodContactedCount = periodLeads.filter(l => 

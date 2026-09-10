@@ -60,6 +60,13 @@ export function useWhatsApp(activeConversationId?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+
+  const fetchCampaigns = useCallback(async () => {
+    const data = await whatsAppCoreService.getCampaigns();
+    setCampaigns(data);
+  }, []);
+
   const fetchConversations = useCallback(async () => {
     const { data, error } = await supabase
       .from('whatsapp_conversations')
@@ -106,19 +113,21 @@ export function useWhatsApp(activeConversationId?: string) {
   useEffect(() => {
     fetchConversations();
     fetchTemplates();
-  }, []);
+    fetchCampaigns();
+  }, [fetchConversations, fetchTemplates, fetchCampaigns]);
 
   useEffect(() => {
     if (activeConversationId) {
       fetchMessages(activeConversationId);
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, fetchMessages]);
 
   // Realtime subscription for messages in active conversation
   useEffect(() => {
     if (!activeConversationId) return;
 
-    const channel = supabase.channel(`wa-messages-${activeConversationId}-${Math.random()}`)
+    const channelId = `wa-msgs-${activeConversationId}-${Math.random().toString(36).substring(2, 8)}-${Date.now()}`;
+    const channel = supabase.channel(channelId)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -126,21 +135,29 @@ export function useWhatsApp(activeConversationId?: string) {
         filter: `conversation_id=eq.${activeConversationId}`
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          setMessages(prev => [...prev, payload.new as WAMessage]);
+          setMessages(prev => {
+            // Avoid duplicate if optimistic temp message matches
+            const exists = prev.some(m => m.id === payload.new.id || (m.id.startsWith('temp-') && m.content === payload.new.content));
+            if (exists) {
+              return prev.map(m => (m.id.startsWith('temp-') && m.content === payload.new.content) ? (payload.new as WAMessage) : m);
+            }
+            return [...prev, payload.new as WAMessage];
+          });
         } else if (payload.eventType === 'UPDATE') {
           setMessages(prev => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m));
         }
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+    };
   }, [activeConversationId]);
 
-  // Realtime for conversation list updates (unread counts, last message)
+  // Realtime for conversation list updates (unread counts, last message) and campaigns
   useEffect(() => {
-    if (waConversationsListSubscribed) return;
-
-    const channel = supabase.channel(`wa-conversations-list-${Math.random()}`)
+    const channelId = `wa-convs-${Math.random().toString(36).substring(2, 8)}-${Date.now()}`;
+    const channel = supabase.channel(channelId)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -148,25 +165,85 @@ export function useWhatsApp(activeConversationId?: string) {
       }, () => {
         fetchConversations();
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'whatsapp_campaigns'
+      }, () => {
+        fetchCampaigns();
+      })
       .subscribe();
 
-    waConversationsListSubscribed = true;
-
     return () => {
-      waConversationsListSubscribed = false;
       supabase.removeChannel(channel);
     };
-  }, [fetchConversations]);
+  }, [fetchConversations, fetchCampaigns]);
 
   const sendMessage = async (conversationId: string, content: string, messageType: 'text' | 'template' = 'text', isInternalNote = false, templateId?: string) => {
     if (!content.trim() || !user) return;
     setIsSending(true);
+
+    // Optimistic message addition for immediate user feedback
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: WAMessage = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_type: 'counselor',
+      sender_id: user.id,
+      message_type: messageType,
+      content,
+      media_url: null,
+      file_name: null,
+      status: 'sent',
+      is_internal_note: isInternalNote,
+      template_id: templateId || null,
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
     try {
       await whatsAppCoreService.sendMessage(conversationId, content, messageType, isInternalNote, user.id, templateId);
+      await fetchMessages(conversationId);
+      await fetchConversations();
     } catch (err: any) {
       toast.error('Failed to send message: ' + err.message);
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const simulateIncomingReply = async (conversationId: string, text?: string) => {
+    try {
+      await whatsAppCoreService.simulateIncomingMessage(conversationId, text);
+      await fetchMessages(conversationId);
+      await fetchConversations();
+      toast.success('Inbound student reply received via Realtime!');
+    } catch (err: any) {
+      toast.error('Simulation error: ' + err.message);
+    }
+  };
+
+  const createCampaign = async (params: {
+    name: string;
+    templateId: string;
+    targetSegment: string;
+    scheduledFor?: string | null;
+  }) => {
+    if (!user) return;
+    try {
+      const camp = await whatsAppCoreService.createBroadcastCampaign({
+        ...params,
+        createdBy: user.id
+      });
+      toast.success(`Broadcast campaign "${params.name}" launched successfully!`);
+      await fetchCampaigns();
+      await fetchConversations();
+      return camp;
+    } catch (err: any) {
+      toast.error('Failed to create campaign: ' + err.message);
+      throw err;
     }
   };
 
@@ -180,11 +257,15 @@ export function useWhatsApp(activeConversationId?: string) {
     conversations,
     messages,
     templates,
+    campaigns,
     isLoading,
     isSending,
     sendMessage,
+    simulateIncomingReply,
+    createCampaign,
     getOrCreateConversation,
     refresh: fetchConversations,
-    refreshMessages: fetchMessages
+    refreshMessages: fetchMessages,
+    refreshCampaigns: fetchCampaigns
   };
 }

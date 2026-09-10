@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, Check, CheckCheck, Clock, FileText, Bot, X, AlertCircle } from 'lucide-react';
+import { Send, Paperclip, Check, CheckCheck, Clock, FileText, Bot, X, AlertCircle, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWhatsApp, WAMessage, WATemplate } from '../../hooks/useWhatsApp';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 
 export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId: string, leadId?: string }) {
   const { user } = useAuth();
-  const { messages, templates, sendMessage, isSending } = useWhatsApp(conversationId);
+  const { messages, templates, sendMessage, simulateIncomingReply, isSending } = useWhatsApp(conversationId);
   const [inputText, setInputText] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -149,6 +149,13 @@ export function WhatsAppChatWindow({ conversationId, leadId }: { conversationId:
           title="AI Draft Message"
         >
           {isDrafting ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : <Sparkles className="w-4 h-4 md:w-5 md:h-5" />}
+        </button>
+        <button 
+          onClick={() => simulateIncomingReply(conversationId)}
+          className="p-2 md:p-2.5 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors shrink-0"
+          title="Simulate Student Inbound Reply (Test Workflow)"
+        >
+          <UserCheck className="w-4 h-4 md:w-5 md:h-5" />
         </button>
         <button className="p-2 md:p-2.5 text-muted-foreground hover:bg-muted rounded-full transition-colors shrink-0 hidden sm:block">
           <Paperclip className="w-4 h-4 md:w-5 md:h-5" />

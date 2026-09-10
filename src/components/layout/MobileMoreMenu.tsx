@@ -24,7 +24,7 @@ export function MobileMoreMenu({ isOpen, onClose }: MobileMoreMenuProps) {
     { name: 'Tasks', href: '/tasks', icon: CheckCircle },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Command Center', href: '/smart-view/command-center', icon: ShieldAlert, roles: ['Super Admin', 'Admin'] },
-    { name: 'AI Assistant', href: '/ai-dashboard', icon: Sparkles },
+    { name: 'AI Intelligence Suite', href: '/ai-dashboard', icon: Sparkles },
     { name: 'WhatsApp', href: '/whatsapp', icon: MessageSquare, resource: 'Communication' },
     { name: 'Call Center', href: '/call-center', icon: Phone, resource: 'Communication' },
     { name: 'Integrations', href: '/integration', icon: Network, permission: { action: 'Manage Integrations', resource: 'System Settings' } },

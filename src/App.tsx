@@ -195,7 +195,7 @@ export default function App() {
                     <Route path="all-leads/:id" element={<LeadDetails />} />
                     <Route path="/ai-dashboard" element={<EnterpriseAIDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
-                    <Route path="/ai-intelligence" element={<EnterpriseAIDashboard />} />
+                    <Route path="/ai-intelligence" element={<Navigate to="/ai-dashboard" replace />} />
                     <Route path="/smart-view" element={<LivePipeline />} />
                     <Route path="/smart-view/:id" element={<LeadDetails />} />
                     
