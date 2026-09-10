@@ -23,6 +23,7 @@ const Login = React.lazy(() => import('./components/auth/Login').then(m => ({ de
 const ForgotPassword = React.lazy(() => import('./components/auth/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const ResetPassword = React.lazy(() => import('./components/auth/ResetPassword').then(m => ({ default: m.ResetPassword })));
 const CounselorDashboard = React.lazy(() => import('./components/ai/CounselorDashboard').then(m => ({ default: m.CounselorDashboard })));
+const EnterpriseAIDashboard = React.lazy(() => import('./components/ai/EnterpriseAIDashboard').then(m => ({ default: m.EnterpriseAIDashboard })));
 const ManagerDashboard = React.lazy(() => import('./components/ai/ManagerDashboard').then(m => ({ default: m.ManagerDashboard })));
 const FounderDashboard = React.lazy(() => import('./components/ai/FounderDashboard').then(m => ({ default: m.FounderDashboard })));
 const CallCenterDashboard = React.lazy(() => import('./components/telephony/CallCenterDashboard'));
@@ -192,9 +193,9 @@ export default function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="all-leads" element={<LeadsList />} />
                     <Route path="all-leads/:id" element={<LeadDetails />} />
-                    <Route path="/ai-dashboard" element={<CounselorDashboard />} />
+                    <Route path="/ai-dashboard" element={<EnterpriseAIDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
-                    <Route path="/ai-intelligence" element={<AIIntelligenceDashboard />} />
+                    <Route path="/ai-intelligence" element={<EnterpriseAIDashboard />} />
                     <Route path="/smart-view" element={<LivePipeline />} />
                     <Route path="/smart-view/:id" element={<LeadDetails />} />
                     
