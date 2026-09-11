@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Phone, PhoneIncoming, PhoneMissed, Clock, Users, Activity, BarChart2, Settings, History, Sparkles } from 'lucide-react';
+import { Phone, PhoneIncoming, PhoneMissed, Clock, Users, Activity, BarChart2, Settings, History, RefreshCw, Plus } from 'lucide-react';
 import { useCallReports } from '../../hooks/useCallReports';
 import { CallHistoryPanel } from './CallHistoryPanel';
 import { CallReportsPanel } from './CallReportsPanel';
 import { ProviderSettings } from './ProviderSettings';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTelephony } from '../../contexts/TelephonyContext';
 import { cn } from '../../lib/utils';
 
 export default function CallCenterDashboard() {
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole(['Super Admin', 'Admin']);
+  const { hasRole, isSuperAdmin } = useAuth();
+  const { setIsDialerOpen, simulateInboundCall } = useTelephony();
+  const isAdmin = hasRole(['Super Admin', 'Admin', 'Admission Admin']) || isSuperAdmin();
   
   // Date range state (default 30 days)
   const [dateRange, setDateRange] = useState({
@@ -17,9 +19,16 @@ export default function CallCenterDashboard() {
     to: new Date()
   });
 
-  const { stats, counselorStats, reportData, recentCalls, isLoading } = useCallReports(dateRange);
+  const { stats, counselorStats, reportData, recentCalls, counselors, designations, userMap, isLoading, refresh } = useCallReports(dateRange);
   
   const [activeTab, setActiveTab] = useState<'dashboard' | 'history' | 'reports' | 'settings'>('dashboard');
+
+  const setPresetRange = (days: number) => {
+    setDateRange({
+      from: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
+      to: new Date()
+    });
+  };
 
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -29,42 +38,99 @@ export default function CallCenterDashboard() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Phone className="w-6 h-6 text-primary" /> Call Center Operations
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">Live overview of telephony and AI-driven insights.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Enterprise real-time telephony, automated transcription & AI call intelligence.</p>
         </div>
 
+        {/* Quick Actions & Controls */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          <button
+            onClick={() => simulateInboundCall()}
+            className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 shadow-sm transition-all"
+            title="Simulate an incoming student call for QA testing"
+          >
+            <PhoneIncoming className="w-3.5 h-3.5" /> Simulate Inbound Call
+          </button>
+
+          <button
+            onClick={() => setIsDialerOpen(true)}
+            className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all"
+            title="Open telephony dialer keypad"
+          >
+            <Phone className="w-3.5 h-3.5" /> Open Dialer
+          </button>
+
+          <button
+            onClick={() => refresh()}
+            className="p-2 rounded-lg border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            title="Refresh statistics"
+          >
+            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs & Date Presets Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-border pb-3">
         {/* Top Tabs */}
         <div className="flex p-1 bg-muted rounded-lg w-full sm:w-auto overflow-x-auto hide-scrollbar">
           <button 
+            data-testid="tab-dashboard"
             onClick={() => setActiveTab('dashboard')}
-            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'dashboard' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'dashboard' ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground")}
           >
             <Activity className="w-4 h-4" /> Live Dashboard
           </button>
           <button 
+            data-testid="tab-history"
             onClick={() => setActiveTab('history')}
-            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'history' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'history' ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground")}
           >
             <History className="w-4 h-4" /> Call History
           </button>
           <button 
+            data-testid="tab-reports"
             onClick={() => setActiveTab('reports')}
-            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'reports' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'reports' ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground")}
           >
             <BarChart2 className="w-4 h-4" /> Reports & AI
           </button>
           {isAdmin && (
             <button 
+              data-testid="tab-settings"
               onClick={() => setActiveTab('settings')}
-              className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'settings' ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+              className={cn("px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-colors flex items-center gap-2", activeTab === 'settings' ? "bg-card text-foreground shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground")}
             >
               <Settings className="w-4 h-4" /> Settings
             </button>
           )}
+        </div>
+
+        {/* Date Presets */}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground mr-1">Period:</span>
+          <button
+            onClick={() => setPresetRange(1)}
+            className="px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors"
+          >
+            24h
+          </button>
+          <button
+            onClick={() => setPresetRange(7)}
+            className="px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors"
+          >
+            7 Days
+          </button>
+          <button
+            onClick={() => setPresetRange(30)}
+            className="px-2.5 py-1 rounded border border-border bg-primary/10 text-primary font-medium hover:bg-primary/20 transition-colors"
+          >
+            30 Days
+          </button>
         </div>
       </div>
 
@@ -134,11 +200,17 @@ export default function CallCenterDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-[400px] md:h-[500px]">
-              <CallHistoryPanel calls={recentCalls} isLoading={isLoading} />
+            <div className="lg:col-span-2 h-[450px] md:h-[550px]">
+              <CallHistoryPanel
+                calls={recentCalls}
+                isLoading={isLoading}
+                counselors={counselors}
+                designations={designations}
+                userMap={userMap}
+              />
             </div>
 
-            <div className="bg-card border border-border rounded-xl shadow-sm h-[400px] md:h-[500px] flex flex-col">
+            <div className="bg-card border border-border rounded-xl shadow-sm h-[450px] md:h-[550px] flex flex-col">
               <div className="p-4 border-b border-border">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" /> Counselor Performance
@@ -178,8 +250,14 @@ export default function CallCenterDashboard() {
       )}
 
       {activeTab === 'history' && (
-        <div className="h-[calc(100dvh-15rem)] md:h-[75vh] animate-in fade-in duration-300">
-           <CallHistoryPanel calls={recentCalls} isLoading={isLoading} />
+        <div className="h-[calc(100dvh-15rem)] md:h-[78vh] animate-in fade-in duration-300">
+           <CallHistoryPanel
+             calls={recentCalls}
+             isLoading={isLoading}
+             counselors={counselors}
+             designations={designations}
+             userMap={userMap}
+           />
         </div>
       )}
 

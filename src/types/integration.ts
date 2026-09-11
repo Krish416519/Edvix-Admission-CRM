@@ -7,12 +7,16 @@ export type ImportStatus = 'Pending' | 'Processing' | 'Completed' | 'Failed';
 export interface ApiKey extends BaseEntity {
   name: string;
   keyPrefix: string;
-  token: string; // Hashed/hidden in real app
+  token?: string;
   permissions: ('read' | 'write' | 'admin')[];
+  scopes?: string[];
+  environment?: 'Production' | 'Test';
+  rateLimit?: number;
   status: ApiKeyStatus;
   lastUsedAt?: string;
   createdAt: string;
   expiresAt?: string;
+  createdBy?: string;
 }
 
 export interface WebhookConfig extends BaseEntity {
@@ -23,6 +27,8 @@ export interface WebhookConfig extends BaseEntity {
   status: WebhookStatus;
   retryCount: number;
   lastTriggeredAt?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ApiLog extends BaseEntity {
@@ -30,10 +36,12 @@ export interface ApiLog extends BaseEntity {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   status: number;
   ipAddress: string;
-  source: string; // e.g. "Website Form", "API Key 1"
+  source: string; // e.g. "Website Form", "API Key 1", "Shiksha"
   responseTimeMs: number;
   payload?: any;
   timestamp: string;
+  headers?: Record<string, string>;
+  errorMessage?: string;
 }
 
 export interface ImportJob extends BaseEntity {
@@ -52,13 +60,32 @@ export interface ImportJob extends BaseEntity {
 export interface FieldMapping {
   sourceField: string;
   targetField: string;
-  required: boolean;
+  required?: boolean;
   transform?: 'lowercase' | 'uppercase' | 'phone_format' | 'none';
 }
+
+export type DeduplicationStrategy = 'skip' | 'merge' | 'create_always';
 
 export interface LeadSourceConfig extends BaseEntity {
   sourceName: string;
   active: boolean;
   autoAssignRule: string;
   defaultPriority: 'High' | 'Medium' | 'Low';
+}
+
+export interface PortalIntegration {
+  id: string;
+  name: string;
+  category: 'Lead Portals' | 'Advertising' | 'Automation' | 'Communication';
+  description: string;
+  logo: string;
+  accentColor: string;
+  status: 'Connected' | 'Not Configured' | 'Syncing';
+  inboundWebhookUrl?: string;
+  apiKey?: string;
+  partnerId?: string;
+  campaignId?: string;
+  autoAssignCounselor?: string;
+  lastSyncAt?: string;
+  totalLeadsSynced: number;
 }

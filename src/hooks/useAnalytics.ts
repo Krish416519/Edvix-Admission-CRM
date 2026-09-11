@@ -68,11 +68,11 @@ export interface PaymentMethodEntry { name: string; value: number; amount: numbe
 
 // ─── Cache layer ──────────────────────────────────────────────────────────────
 
-interface CacheEntry<T> { data: T; fetchedAt: number; }
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+interface CacheEntry<T> { data: T; fetchedAt: number; key?: string; }
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
 
-function isFresh<T>(entry: CacheEntry<T> | null): boolean {
-  return !!entry && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+function isFresh<T>(entry: CacheEntry<T> | null, expectedKey: string): boolean {
+  return !!entry && entry.key === expectedKey && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
 }
 
 const cache: {
@@ -98,40 +98,42 @@ const cache: {
   dailyLeads: null, leadAging: null, leadsByState: null, paymentMethods: null,
 };
 
-function invalidateCache() {
+export function invalidateAnalyticsCache() {
   (Object.keys(cache) as (keyof typeof cache)[]).forEach(k => { (cache as any)[k] = null; });
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useAnalytics(startDate?: Date, endDate?: Date) {
-  const [kpis, setKpis] = useState<AnalyticsKPIs | null>(cache.kpis?.data ?? null);
-  const [financeAnalytics, setFinance] = useState<FinanceAnalytics | null>(cache.financeAnalytics?.data ?? null);
-  const [taskAnalytics, setTasks] = useState<TaskAnalytics | null>(cache.taskAnalytics?.data ?? null);
-  const [admissionsPipeline, setPipeline] = useState<StageCount[]>(cache.pipeline?.data ?? []);
-  const [leadSource, setLeadSource] = useState<LeadSourceEntry[]>(cache.leadSource?.data ?? []);
-  const [universityPerformance, setUniversity] = useState<UniversityPerformanceEntry[]>(cache.universityPerf?.data ?? []);
-  const [coursePerformance, setCourse] = useState<CoursePerformanceEntry[]>(cache.coursePerf?.data ?? []);
-  const [counselorPerformance, setCounselor] = useState<CounselorPerformanceEntry[]>(cache.counselorPerf?.data ?? []);
-  const [conversionFunnel, setFunnel] = useState<ConversionFunnelEntry[]>(cache.funnel?.data ?? []);
-  const [trend, setTrend] = useState<TrendEntry[]>(cache.trend?.data ?? []);
-  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendEntry[]>(cache.monthlyTrend?.data ?? []);
-  const [dailyLeads, setDailyLeads] = useState<DailyLeadEntry[]>(cache.dailyLeads?.data ?? []);
-  const [leadAging, setLeadAging] = useState<LeadAgingEntry[]>(cache.leadAging?.data ?? []);
-  const [leadsByState, setLeadsByState] = useState<StateLeadEntry[]>(cache.leadsByState?.data ?? []);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodEntry[]>(cache.paymentMethods?.data ?? []);
-  const [isLoading, setIsLoading] = useState(!cache.kpis);
+  const dateKey = `${startDate ? startDate.toISOString().slice(0, 10) : 'all'}_${endDate ? endDate.toISOString().slice(0, 10) : 'all'}`;
+
+  const [kpis, setKpis] = useState<AnalyticsKPIs | null>(cache.kpis?.key === dateKey ? cache.kpis.data : null);
+  const [financeAnalytics, setFinance] = useState<FinanceAnalytics | null>(cache.financeAnalytics?.key === dateKey ? cache.financeAnalytics.data : null);
+  const [taskAnalytics, setTasks] = useState<TaskAnalytics | null>(cache.taskAnalytics?.key === dateKey ? cache.taskAnalytics.data : null);
+  const [admissionsPipeline, setPipeline] = useState<StageCount[]>(cache.pipeline?.key === dateKey ? cache.pipeline.data : []);
+  const [leadSource, setLeadSource] = useState<LeadSourceEntry[]>(cache.leadSource?.key === dateKey ? cache.leadSource.data : []);
+  const [universityPerformance, setUniversity] = useState<UniversityPerformanceEntry[]>(cache.universityPerf?.key === dateKey ? cache.universityPerf.data : []);
+  const [coursePerformance, setCourse] = useState<CoursePerformanceEntry[]>(cache.coursePerf?.key === dateKey ? cache.coursePerf.data : []);
+  const [counselorPerformance, setCounselor] = useState<CounselorPerformanceEntry[]>(cache.counselorPerf?.key === dateKey ? cache.counselorPerf.data : []);
+  const [conversionFunnel, setFunnel] = useState<ConversionFunnelEntry[]>(cache.funnel?.key === dateKey ? cache.funnel.data : []);
+  const [trend, setTrend] = useState<TrendEntry[]>(cache.trend?.key === dateKey ? cache.trend.data : []);
+  const [monthlyTrend, setMonthlyTrend] = useState<MonthlyTrendEntry[]>(cache.monthlyTrend?.key === dateKey ? cache.monthlyTrend.data : []);
+  const [dailyLeads, setDailyLeads] = useState<DailyLeadEntry[]>(cache.dailyLeads?.key === dateKey ? cache.dailyLeads.data : []);
+  const [leadAging, setLeadAging] = useState<LeadAgingEntry[]>(cache.leadAging?.key === dateKey ? cache.leadAging.data : []);
+  const [leadsByState, setLeadsByState] = useState<StateLeadEntry[]>(cache.leadsByState?.key === dateKey ? cache.leadsByState.data : []);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodEntry[]>(cache.paymentMethods?.key === dateKey ? cache.paymentMethods.data : []);
+  const [isLoading, setIsLoading] = useState(!cache.kpis || cache.kpis.key !== dateKey);
   const [error, setError] = useState<string | null>(null);
 
   const isMounted = useRef(true);
 
   const fetchAll = useCallback(async (force = false) => {
     const allFresh = !force &&
-      isFresh(cache.kpis) && isFresh(cache.pipeline) && isFresh(cache.leadSource) &&
-      isFresh(cache.universityPerf) && isFresh(cache.coursePerf) && isFresh(cache.counselorPerf) &&
-      isFresh(cache.funnel) && isFresh(cache.trend) && isFresh(cache.monthlyTrend) &&
-      isFresh(cache.dailyLeads) && isFresh(cache.financeAnalytics) && isFresh(cache.taskAnalytics) &&
-      isFresh(cache.leadAging) && isFresh(cache.leadsByState) && isFresh(cache.paymentMethods);
+      isFresh(cache.kpis, dateKey) && isFresh(cache.pipeline, dateKey) && isFresh(cache.leadSource, dateKey) &&
+      isFresh(cache.universityPerf, dateKey) && isFresh(cache.coursePerf, dateKey) && isFresh(cache.counselorPerf, dateKey) &&
+      isFresh(cache.funnel, dateKey) && isFresh(cache.trend, dateKey) && isFresh(cache.monthlyTrend, dateKey) &&
+      isFresh(cache.dailyLeads, dateKey) && isFresh(cache.financeAnalytics, dateKey) && isFresh(cache.taskAnalytics, dateKey) &&
+      isFresh(cache.leadAging, dateKey) && isFresh(cache.leadsByState, dateKey) && isFresh(cache.paymentMethods, dateKey);
 
     if (allFresh) {
       setKpis(cache.kpis!.data);
@@ -188,34 +190,34 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
 
       // KPIs
       const kpisData = kpisRes.data as AnalyticsKPIs;
-      cache.kpis = { data: kpisData, fetchedAt: Date.now() };
+      cache.kpis = { data: kpisData, fetchedAt: Date.now(), key: dateKey };
       setKpis(kpisData);
 
       // Finance
       if (!financeRes.error && financeRes.data) {
         const fd = financeRes.data as FinanceAnalytics;
-        cache.financeAnalytics = { data: fd, fetchedAt: Date.now() };
+        cache.financeAnalytics = { data: fd, fetchedAt: Date.now(), key: dateKey };
         setFinance(fd);
       }
 
       // Tasks
       if (!taskRes.error && taskRes.data) {
         const td = taskRes.data as TaskAnalytics;
-        cache.taskAnalytics = { data: td, fetchedAt: Date.now() };
+        cache.taskAnalytics = { data: td, fetchedAt: Date.now(), key: dateKey };
         setTasks(td);
       }
 
       // Pipeline
       if (!pipelineRes.error && pipelineRes.data) {
         const pl = (pipelineRes.data as any[]).map(r => ({ stage: r.stage as string, count: Number(r.count) }));
-        cache.pipeline = { data: pl, fetchedAt: Date.now() };
+        cache.pipeline = { data: pl, fetchedAt: Date.now(), key: dateKey };
         setPipeline(pl);
       }
 
       // Lead source
       if (!sourceRes.error && sourceRes.data) {
         const src = (sourceRes.data as any[]).map(r => ({ name: r.name as string, value: Number(r.value) }));
-        cache.leadSource = { data: src, fetchedAt: Date.now() };
+        cache.leadSource = { data: src, fetchedAt: Date.now(), key: dateKey };
         setLeadSource(src);
       }
 
@@ -225,7 +227,7 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
           name: r.name as string, leads: Number(r.leads),
           admissions: Number(r.admissions), revenue: Number(r.revenue)
         }));
-        cache.universityPerf = { data: univ, fetchedAt: Date.now() };
+        cache.universityPerf = { data: univ, fetchedAt: Date.now(), key: dateKey };
         setUniversity(univ);
       }
 
@@ -235,7 +237,7 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
           name: r.name as string, leads: Number(r.leads),
           admissions: Number(r.admissions), avg_fee: Number(r.avg_fee)
         }));
-        cache.coursePerf = { data: courses, fetchedAt: Date.now() };
+        cache.coursePerf = { data: courses, fetchedAt: Date.now(), key: dateKey };
         setCourse(courses);
       }
 
@@ -251,21 +253,21 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
           tasks_completed: Number(r.tasks_completed),
           tasks_overdue: Number(r.tasks_overdue),
         }));
-        cache.counselorPerf = { data: counselors, fetchedAt: Date.now() };
+        cache.counselorPerf = { data: counselors, fetchedAt: Date.now(), key: dateKey };
         setCounselor(counselors);
       }
 
       // Conversion funnel
       if (!funnelRes.error && funnelRes.data) {
         const funnel = (funnelRes.data as any[]).map(r => ({ name: r.name as string, value: Number(r.value) }));
-        cache.funnel = { data: funnel, fetchedAt: Date.now() };
+        cache.funnel = { data: funnel, fetchedAt: Date.now(), key: dateKey };
         setFunnel(funnel);
       }
 
       // Weekly trend
       if (!trendRes.error && trendRes.data) {
         const wt = (trendRes.data as any[]).map(r => ({ name: r.name as string, leads: Number(r.leads), admissions: Number(r.admissions) }));
-        cache.trend = { data: wt, fetchedAt: Date.now() };
+        cache.trend = { data: wt, fetchedAt: Date.now(), key: dateKey };
         setTrend(wt);
       }
 
@@ -275,28 +277,28 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
           name: r.name as string, leads: Number(r.leads),
           admissions: Number(r.admissions), revenue: Number(r.revenue)
         }));
-        cache.monthlyTrend = { data: mt, fetchedAt: Date.now() };
+        cache.monthlyTrend = { data: mt, fetchedAt: Date.now(), key: dateKey };
         setMonthlyTrend(mt);
       }
 
       // Daily leads
       if (!dailyRes.error && dailyRes.data) {
         const dl = (dailyRes.data as any[]).map(r => ({ name: r.name as string, leads: Number(r.leads) }));
-        cache.dailyLeads = { data: dl, fetchedAt: Date.now() };
+        cache.dailyLeads = { data: dl, fetchedAt: Date.now(), key: dateKey };
         setDailyLeads(dl);
       }
 
       // Lead aging
       if (!agingRes.error && agingRes.data) {
         const ag = (agingRes.data as any[]).map(r => ({ bucket: r.bucket as string, count: Number(r.count) }));
-        cache.leadAging = { data: ag, fetchedAt: Date.now() };
+        cache.leadAging = { data: ag, fetchedAt: Date.now(), key: dateKey };
         setLeadAging(ag);
       }
 
       // Leads by state
       if (!stateRes.error && stateRes.data) {
         const st = (stateRes.data as any[]).map(r => ({ name: r.name as string, value: Number(r.value) }));
-        cache.leadsByState = { data: st, fetchedAt: Date.now() };
+        cache.leadsByState = { data: st, fetchedAt: Date.now(), key: dateKey };
         setLeadsByState(st);
       }
 
@@ -305,7 +307,7 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
         const pm = (methodRes.data as any[]).map(r => ({
           name: r.name as string, value: Number(r.value), amount: Number(r.amount)
         }));
-        cache.paymentMethods = { data: pm, fetchedAt: Date.now() };
+        cache.paymentMethods = { data: pm, fetchedAt: Date.now(), key: dateKey };
         setPaymentMethods(pm);
       }
 
@@ -315,7 +317,7 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
     } finally {
       if (isMounted.current) setIsLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, dateKey]);
 
   // ── Initial fetch + real-time invalidation ───────────────────────────────
 
@@ -323,7 +325,7 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
     isMounted.current = true;
     fetchAll();
 
-    const handleChange = () => { invalidateCache(); fetchAll(true); };
+    const handleChange = () => { invalidateAnalyticsCache(); fetchAll(true); };
 
     const leadsChannel = supabase.channel('analytics-leads')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, handleChange)
@@ -341,20 +343,25 @@ export function useAnalytics(startDate?: Date, endDate?: Date) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, handleChange)
       .subscribe();
 
+    const callsChannel = supabase.channel('analytics-calls')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calls' }, handleChange)
+      .subscribe();
+
     return () => {
       isMounted.current = false;
       supabase.removeChannel(leadsChannel);
       supabase.removeChannel(admissionsChannel);
       supabase.removeChannel(paymentsChannel);
       supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(callsChannel);
     };
   }, [fetchAll]);
 
-  // ── Derived filter helpers ────────────────────────────────────────────────
+  // ── Derived filter helpers (deduplicated) ──────────────────────────────────
 
-  const counselorNames = useMemo(() => counselorPerformance.map(c => c.name), [counselorPerformance]);
-  const universityNames = useMemo(() => universityPerformance.map(u => u.name), [universityPerformance]);
-  const courseNames = useMemo(() => coursePerformance.map(c => c.name), [coursePerformance]);
+  const counselorNames = useMemo(() => Array.from(new Set(counselorPerformance.map(c => c.name).filter(Boolean))), [counselorPerformance]);
+  const universityNames = useMemo(() => Array.from(new Set(universityPerformance.map(u => u.name).filter(Boolean))), [universityPerformance]);
+  const courseNames = useMemo(() => Array.from(new Set(coursePerformance.map(c => c.name).filter(Boolean))), [coursePerformance]);
 
   // ── Export data ───────────────────────────────────────────────────────────
 

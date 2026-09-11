@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { CallCenterStats, CounselorCallStats, CallReportData, Call } from '../types/telephony';
+import { CounselorUser, DesignationOption } from '../types/callFilter';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -10,7 +11,16 @@ export function useCallReports(dateRange: { from: Date; to: Date }) {
   const [counselorStats, setCounselorStats] = useState<CounselorCallStats[]>([]);
   const [reportData, setReportData] = useState<CallReportData | null>(null);
   const [recentCalls, setRecentCalls] = useState<Call[]>([]);
+  const [counselors, setCounselors] = useState<CounselorUser[]>([]);
+  const [designations, setDesignations] = useState<DesignationOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Memoized user map for fast O(1) lookup
+  const userMap = useMemo(() => {
+    const map = new Map<string, CounselorUser>();
+    counselors.forEach(c => map.set(c.id, c));
+    return map;
+  }, [counselors]);
 
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
@@ -36,12 +46,45 @@ export function useCallReports(dateRange: { from: Date; to: Date }) {
       });
       if (repError) throw repError;
 
-      // 4. Fetch Recent Calls
+      // 4. Fetch Users and Designations for filtering
+      const [usersRes, desigsRes] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, name, full_name, email, designation_id, roles(name), designations(id, name)'),
+        supabase
+          .from('designations')
+          .select('id, name, level')
+          .order('level', { ascending: false })
+      ]);
+
+      const localUserMap = new Map<string, CounselorUser>();
+      if (usersRes.data) {
+        const mappedUsers: CounselorUser[] = usersRes.data.map((u: any) => ({
+          id: u.id,
+          name: u.name || u.full_name || u.email,
+          email: u.email,
+          roleName: u.roles?.name,
+          designationId: u.designation_id,
+          designationName: u.designations?.name
+        }));
+        mappedUsers.forEach(u => localUserMap.set(u.id, u));
+        setCounselors(mappedUsers);
+      }
+
+      if (desigsRes.data) {
+        setDesignations(desigsRes.data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          level: d.level
+        })));
+      }
+
+      // 5. Fetch Recent Calls (Expanded to 100 for comprehensive search & filtering)
       const { data: callsData, error: callsError } = await supabase
         .from('calls')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(100);
       
       if (callsError) throw callsError;
 
@@ -80,23 +123,36 @@ export function useCallReports(dateRange: { from: Date; to: Date }) {
       } as CallReportData);
       
       // Map recent calls
-      setRecentCalls(callsData.map((c: any) => ({
-        id: c.id,
-        leadId: c.lead_id,
-        counselorId: c.counselor_id,
-        providerCallId: c.provider_call_id,
-        direction: c.direction,
-        status: c.status,
-        durationSeconds: c.duration_seconds,
-        recordingUrl: c.recording_url,
-        leadName: c.lead_name,
-        leadPhone: c.lead_phone,
-        counselorName: c.counselor_name,
-        outcome: c.outcome,
-        aiSentiment: c.ai_sentiment,
-        createdAt: c.created_at,
-        updatedAt: c.updated_at
-      })) as Call[]);
+      setRecentCalls(callsData.map((c: any) => {
+        const counselorObj = c.counselor_id ? localUserMap.get(c.counselor_id) : null;
+        return {
+          id: c.id,
+          leadId: c.lead_id,
+          counselorId: c.counselor_id,
+          providerCallId: c.provider_call_id,
+          direction: c.direction,
+          status: c.status,
+          durationSeconds: c.duration_seconds,
+          recordingUrl: c.recording_url,
+          leadName: c.lead_name,
+          leadPhone: c.lead_phone,
+          counselorName: c.counselor_name || counselorObj?.name || 'Assigned Counselor',
+          outcome: c.outcome,
+          notes: c.notes,
+          tags: c.tags,
+          nextFollowUp: c.next_follow_up,
+          transcript: c.transcript,
+          aiSummary: c.ai_summary,
+          aiSentiment: c.ai_sentiment,
+          aiObjections: c.ai_objections,
+          aiActionItems: c.ai_action_items,
+          aiRecommendedNextSteps: c.ai_recommended_next_steps,
+          aiFollowUpEmail: c.ai_follow_up_email,
+          aiWhatsappMessage: c.ai_whatsapp_message,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at
+        };
+      }) as Call[]);
 
     } catch (e: any) {
       console.error('Error fetching call reports:', e);
@@ -127,7 +183,11 @@ export function useCallReports(dateRange: { from: Date; to: Date }) {
     counselorStats,
     reportData,
     recentCalls,
+    counselors,
+    designations,
+    userMap,
     isLoading,
     refresh: fetchReports
   };
 }
+

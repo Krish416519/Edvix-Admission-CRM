@@ -16,12 +16,14 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
 
-  // Handle Ctrl+K
+  // Handle Ctrl+K and Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setShowGlobalSearch(true);
+      } else if (e.key === 'Escape') {
+        setShowGlobalSearch(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -188,8 +190,14 @@ export function TopNav({ setSidebarOpen }: { setSidebarOpen: (open: boolean) => 
 
       {/* Global Search Modal */}
       {showGlobalSearch && (
-        <div className="fixed inset-0 z-[100] bg-card md:bg-black/40 md:backdrop-blur-sm flex justify-center items-start md:pt-20 md:p-4">
-          <div className="bg-card w-full h-full md:h-auto md:max-w-2xl md:rounded-xl md:shadow-2xl md:border md:border-border flex flex-col overflow-hidden animate-in fade-in md:zoom-in-95 duration-200">
+        <div 
+          className="fixed inset-0 z-[100] bg-card md:bg-black/40 md:backdrop-blur-sm flex justify-center items-start md:pt-20 md:p-4"
+          onClick={() => setShowGlobalSearch(false)}
+        >
+          <div 
+            className="bg-card w-full h-full md:h-auto md:max-w-2xl md:rounded-xl md:shadow-2xl md:border md:border-border flex flex-col overflow-hidden animate-in fade-in md:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center px-4 py-3 border-b border-border gap-3 mt-[env(safe-area-inset-top)] md:mt-0">
               <Search className="w-5 h-5 text-muted-foreground" />
               <input 

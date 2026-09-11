@@ -37,7 +37,12 @@ export function CallDetailModal({ call, onClose }: CallDetailModalProps) {
               <span>Agent: {call.counselorName}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
+          <button 
+            onClick={onClose} 
+            aria-label="Close modal" 
+            data-testid="close-call-detail-modal"
+            className="p-2 hover:bg-muted rounded-full transition-colors"
+          >
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>

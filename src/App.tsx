@@ -193,6 +193,8 @@ export default function App() {
                     <Route index element={<Dashboard />} />
                     <Route path="all-leads" element={<LeadsList />} />
                     <Route path="all-leads/:id" element={<LeadDetails />} />
+                    <Route path="leads" element={<Navigate to="/all-leads" replace />} />
+                    <Route path="leads/:id" element={<LeadDetails />} />
                     <Route path="/ai-dashboard" element={<EnterpriseAIDashboard />} />
                     <Route path="/admin/founder" element={<FounderDashboard />} />
                     <Route path="/ai-intelligence" element={<Navigate to="/ai-dashboard" replace />} />

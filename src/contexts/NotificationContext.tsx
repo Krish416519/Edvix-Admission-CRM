@@ -5,13 +5,75 @@ import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import { showTaskReminderToast } from '../components/tasks/GlobalTaskReminder';
 
+export type NotificationSoundTone = 'ios_tritone' | 'bubble_pop' | 'crystal_glass' | 'gentle_ding' | 'marimba_chord';
+
+export interface SoundToneOption {
+  id: NotificationSoundTone;
+  name: string;
+  description: string;
+  category: string;
+  badge: string;
+}
+
+export const AVAILABLE_SOUND_TONES: SoundToneOption[] = [
+  { 
+    id: 'ios_tritone', 
+    name: 'iPhone Tri-tone', 
+    description: 'Iconic Apple 3-note chime (G5 - B5 - D6)', 
+    category: 'Apple iOS',
+    badge: 'iPhone'
+  },
+  { 
+    id: 'bubble_pop', 
+    name: 'Bubble Pop', 
+    description: 'Crisp water bubble pop (WhatsApp & Messages)', 
+    category: 'Modern',
+    badge: 'Popular'
+  },
+  { 
+    id: 'crystal_glass', 
+    name: 'Crystal Glass', 
+    description: 'High-frequency dual harmonic ping', 
+    category: 'Classic',
+    badge: 'Subtle'
+  },
+  { 
+    id: 'gentle_ding', 
+    name: 'Gentle Bell', 
+    description: 'Soft reassuring single bell chime', 
+    category: 'Minimal',
+    badge: 'Quiet'
+  },
+  { 
+    id: 'marimba_chord', 
+    name: 'Marimba Duo', 
+    description: 'Warm acoustic wooden marimba chime', 
+    category: 'Android / Pixel',
+    badge: 'Android'
+  }
+];
+
 interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
   hasHighPriorityUnread: boolean;
   markAsRead: (id: string) => Promise<void>;
+  markAsUnread: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAllRead: () => Promise<void>;
+  markMultipleAsRead: (ids: string[]) => Promise<void>;
+  markMultipleAsUnread: (ids: string[]) => Promise<void>;
+  deleteMultiple: (ids: string[]) => Promise<void>;
   addNotification: (notification: Partial<AppNotification>) => Promise<void>;
+  soundEnabled: boolean;
+  toggleSound: () => void;
+  selectedTone: NotificationSoundTone;
+  setSelectedTone: (tone: NotificationSoundTone) => void;
+  soundTones: SoundToneOption[];
+  playTonePreview: (tone?: NotificationSoundTone) => void;
+  playTestChime: () => void;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -19,6 +81,27 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const { user } = useAuth();
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('edvix_notifications_sound_enabled');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const [selectedTone, setSelectedToneState] = useState<NotificationSoundTone>(() => {
+    const saved = localStorage.getItem('edvix_notifications_sound_tone') as NotificationSoundTone;
+    if (saved && AVAILABLE_SOUND_TONES.some(t => t.id === saved)) {
+      return saved;
+    }
+    return 'ios_tritone';
+  });
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('edvix_notifications_sound_enabled', String(next));
+      toast.info(next ? 'Notification audio enabled' : 'Notification audio muted');
+      return next;
+    });
+  }, []);
   
   // Request browser notification permission and initialize AudioContext on first user interaction
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -200,13 +283,150 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
   }, [user]);
 
+  // Phone Sound Tone Synthesizer using Web Audio API
+  const playToneWithAudioContext = useCallback((context: AudioContext, tone: NotificationSoundTone) => {
+    try {
+      const now = context.currentTime;
+
+      switch (tone) {
+        case 'ios_tritone': {
+          // Classic iPhone Tri-tone (G5 784Hz -> B5 988Hz -> D6 1175Hz)
+          const notes = [
+            { freq: 784, start: 0, duration: 0.11 },
+            { freq: 988, start: 0.10, duration: 0.11 },
+            { freq: 1175, start: 0.20, duration: 0.26 },
+          ];
+          notes.forEach(({ freq, start, duration }) => {
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + start);
+
+            gain.gain.setValueAtTime(0.38, now + start);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
+
+            osc.connect(gain);
+            gain.connect(context.destination);
+
+            osc.start(now + start);
+            osc.stop(now + start + duration);
+          });
+          break;
+        }
+
+        case 'bubble_pop': {
+          // Modern WhatsApp/Messages Water Bubble Pop
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(450, now);
+          osc.frequency.exponentialRampToValueAtTime(1350, now + 0.08);
+
+          gain.gain.setValueAtTime(0.55, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+
+          osc.connect(gain);
+          gain.connect(context.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.09);
+          break;
+        }
+
+        case 'crystal_glass': {
+          // High-frequency dual harmonic crystal ping
+          const osc1 = context.createOscillator();
+          const osc2 = context.createOscillator();
+          const gain = context.createGain();
+
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(1760, now); // A6
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(3520, now); // A7 overtone
+
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(context.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.35);
+          osc2.stop(now + 0.35);
+          break;
+        }
+
+        case 'gentle_ding': {
+          // Soft minimal bell chime
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1046.5, now); // C6
+
+          gain.gain.setValueAtTime(0.01, now);
+          gain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+          osc.connect(gain);
+          gain.connect(context.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.45);
+          break;
+        }
+
+        case 'marimba_chord': {
+          // Warm acoustic wooden marimba strike (Android / Pixel style)
+          const notes = [
+            { freq: 659.25, start: 0, duration: 0.15 }, // E5
+            { freq: 880.00, start: 0.08, duration: 0.24 }, // A5
+          ];
+          notes.forEach(({ freq, start, duration }) => {
+            const osc = context.createOscillator();
+            const gain = context.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + start);
+
+            gain.gain.setValueAtTime(0.48, now + start);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
+
+            osc.connect(gain);
+            gain.connect(context.destination);
+
+            osc.start(now + start);
+            osc.stop(now + start + duration);
+          });
+          break;
+        }
+
+        default: {
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+          gain.gain.setValueAtTime(0.5, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.connect(gain);
+          gain.connect(context.destination);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        }
+      }
+    } catch (err) {
+      console.debug('Tone synthesizer failed:', err);
+    }
+  }, []);
+
   // Sound Flood Protection (3-second cooldown)
   const playSound = useCallback(() => {
+    if (!soundEnabled) return;
     const now = Date.now();
     const lastPlayed = parseInt(localStorage.getItem('lastNotifSound') || '0', 10);
     if (now - lastPlayed > 3000) {
-       try {
-        // Reuse a shared AudioContext (created on first user interaction)
+      try {
         const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
         if (!AudioContext) return;
 
@@ -216,15 +436,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           audioContextRef.current = context;
         }
 
-        // Resume the context if suspended (browser autoplay policy)
         if (context.state === 'suspended') {
           context.resume().then(() => {
-            if (context) playSoundWithOscillator(context);
+            if (context) playToneWithAudioContext(context, selectedTone);
           }).catch(err => {
             console.debug('AudioContext.resume failed:', err);
           });
         } else {
-          playSoundWithOscillator(context);
+          playToneWithAudioContext(context, selectedTone);
         }
 
         localStorage.setItem('lastNotifSound', now.toString());
@@ -232,30 +451,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         console.debug('Audio play prevented or unsupported', err);
       }
     }
-  }, []);
-
-  // Helper to play the pop sound with an oscillator
-  const playSoundWithOscillator = useCallback((context: AudioContext) => {
-    try {
-      const oscillator = context.createOscillator();
-      const gainNode = context.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(800, context.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(150, context.currentTime + 0.1);
-      
-      gainNode.gain.setValueAtTime(0.5, context.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(context.destination);
-      
-      oscillator.start();
-      oscillator.stop(context.currentTime + 0.1);
-    } catch (err) {
-      console.debug('Oscillator play failed:', err);
-    }
-  }, []);
+  }, [soundEnabled, selectedTone, playToneWithAudioContext]);
 
   // Real-time Subscriptions
   useEffect(() => {
@@ -471,14 +667,118 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     await supabase.from('notifications').update({ status: 'Read', read_at: new Date().toISOString() }).eq('id', id);
   }, [user]);
 
-  const markAllAsRead = useCallback(async () => {
+  const markAsUnread = useCallback(async (id: string) => {
     if (!user) return;
-    setNotifications(prev => prev.map(n => ({ ...n, status: 'Read', readAt: new Date().toISOString() })));
-    await supabase.from('notifications').update({ status: 'Read', read_at: new Date().toISOString() }).eq('recipient_id', user.id).eq('status', 'Unread');
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, status: 'Unread', readAt: undefined } : n));
+    await supabase.from('notifications').update({ status: 'Unread', read_at: null }).eq('id', id);
   }, [user]);
 
+  const markAllAsRead = useCallback(async () => {
+    if (!user) return;
+    const now = new Date().toISOString();
+    setNotifications(prev => prev.map(n => ({ ...n, status: 'Read', readAt: now })));
+    await supabase.from('notifications').update({ status: 'Read', read_at: now }).eq('recipient_id', user.id).eq('status', 'Unread');
+    toast.success('All notifications marked as read');
+  }, [user]);
+
+  const deleteNotification = useCallback(async (id: string) => {
+    if (!user) return;
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    await supabase.from('notifications').update({ status: 'Deleted' }).eq('id', id);
+    toast.success('Notification dismissed');
+  }, [user]);
+
+  const clearAllRead = useCallback(async () => {
+    if (!user) return;
+    setNotifications(prev => prev.filter(n => n.status !== 'Read'));
+    await supabase.from('notifications').update({ status: 'Deleted' }).eq('recipient_id', user.id).eq('status', 'Read');
+    toast.success('Cleared all read notifications');
+  }, [user]);
+
+  const markMultipleAsRead = useCallback(async (ids: string[]) => {
+    if (!user || ids.length === 0) return;
+    const now = new Date().toISOString();
+    setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, status: 'Read', readAt: now } : n));
+    await supabase.from('notifications').update({ status: 'Read', read_at: now }).in('id', ids);
+    toast.success(`Marked ${ids.length} notifications as read`);
+  }, [user]);
+
+  const markMultipleAsUnread = useCallback(async (ids: string[]) => {
+    if (!user || ids.length === 0) return;
+    setNotifications(prev => prev.map(n => ids.includes(n.id) ? { ...n, status: 'Unread', readAt: undefined } : n));
+    await supabase.from('notifications').update({ status: 'Unread', read_at: null }).in('id', ids);
+    toast.success(`Marked ${ids.length} notifications as unread`);
+  }, [user]);
+
+  const deleteMultiple = useCallback(async (ids: string[]) => {
+    if (!user || ids.length === 0) return;
+    setNotifications(prev => prev.filter(n => !ids.includes(n.id)));
+    await supabase.from('notifications').update({ status: 'Deleted' }).in('id', ids);
+    toast.success(`Deleted ${ids.length} notifications`);
+  }, [user]);
+
+  const playTonePreview = useCallback((toneToPlay?: NotificationSoundTone) => {
+    try {
+      const tone = toneToPlay || selectedTone;
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) {
+        toast.info('Audio not supported in this browser');
+        return;
+      }
+      let context = audioContextRef.current;
+      if (!context) {
+        context = new AudioContext();
+        audioContextRef.current = context;
+      }
+      if (context.state === 'suspended') {
+        context.resume().then(() => {
+          if (context) playToneWithAudioContext(context, tone);
+        });
+      } else {
+        playToneWithAudioContext(context, tone);
+      }
+    } catch (err) {
+      console.debug('Failed to play tone preview:', err);
+    }
+  }, [selectedTone, playToneWithAudioContext]);
+
+  const setSelectedTone = useCallback((tone: NotificationSoundTone) => {
+    setSelectedToneState(tone);
+    localStorage.setItem('edvix_notifications_sound_tone', tone);
+    playTonePreview(tone);
+    const found = AVAILABLE_SOUND_TONES.find(t => t.id === tone);
+    toast.success(`Notification sound set to: ${found?.name || tone}`);
+  }, [playTonePreview]);
+
+  const playTestChime = useCallback(() => {
+    playTonePreview(selectedTone);
+    const found = AVAILABLE_SOUND_TONES.find(t => t.id === selectedTone);
+    toast.success(`Testing ${found?.name || 'sound tone'}`);
+  }, [playTonePreview, selectedTone]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, hasHighPriorityUnread, markAsRead, markAllAsRead, addNotification }}>
+    <NotificationContext.Provider value={{
+      notifications,
+      unreadCount,
+      hasHighPriorityUnread,
+      markAsRead,
+      markAsUnread,
+      markAllAsRead,
+      deleteNotification,
+      clearAllRead,
+      markMultipleAsRead,
+      markMultipleAsUnread,
+      deleteMultiple,
+      addNotification,
+      soundEnabled,
+      toggleSound,
+      selectedTone,
+      setSelectedTone,
+      soundTones: AVAILABLE_SOUND_TONES,
+      playTonePreview,
+      playTestChime,
+      refreshNotifications: fetchNotifications
+    }}>
       {children}
     </NotificationContext.Provider>
   );

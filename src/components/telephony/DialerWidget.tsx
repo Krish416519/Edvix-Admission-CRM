@@ -7,7 +7,21 @@ import { CALL_OUTCOMES, CALL_TAGS, CallOutcome, CallTag } from '../../types/tele
 import { useAuth } from '../../contexts/AuthContext';
 
 export function DialerWidget() {
-  const { activeCall, isDialerOpen, setIsDialerOpen, isMuted, toggleMute, isOnHold, toggleHold, callDuration, endCall, makeCall } = useTelephony();
+  const { 
+    activeCall, 
+    isDialerOpen, 
+    setIsDialerOpen, 
+    isMuted, 
+    toggleMute, 
+    isOnHold, 
+    toggleHold, 
+    callDuration, 
+    endCall, 
+    hangUp,
+    answerCall,
+    makeCall,
+    simulateInboundCall
+  } = useTelephony();
   
   const [outcome, setOutcome] = useState<CallOutcome | ''>('');
   const [notes, setNotes] = useState('');
@@ -27,9 +41,9 @@ export function DialerWidget() {
 
   const handleEndCall = () => {
     if (activeCall?.status === 'in-progress' || activeCall?.status === 'ringing' || activeCall?.status === 'initiated') {
-      endCall(); // Will trigger outcome form
+      hangUp();
     } else {
-      setIsDialerOpen(false); // Just close if already completed
+      setIsDialerOpen(false);
     }
   };
 
@@ -39,7 +53,6 @@ export function DialerWidget() {
       return;
     }
     await endCall(outcome, notes, selectedTags, nextFollowUp ? new Date(nextFollowUp).toISOString() : undefined);
-    toast.success('Call logged successfully');
     
     // Reset state
     setOutcome('');
@@ -72,10 +85,10 @@ export function DialerWidget() {
   };
 
   return (
-    <div className="fixed bottom-0 sm:bottom-6 left-0 right-0 sm:left-auto sm:right-6 w-full sm:w-80 bg-card border border-border shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-2xl rounded-t-3xl sm:rounded-2xl z-[60] overflow-visible flex flex-col animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-0 sm:bottom-6 left-0 right-0 sm:left-auto sm:right-6 w-full sm:w-84 bg-card border border-border shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.3)] sm:shadow-2xl rounded-t-3xl sm:rounded-2xl z-[60] flex flex-col animate-in slide-in-from-bottom-5 max-h-[90vh] overflow-hidden">
       {/* Header */}
       <div className={cn(
-        "px-4 py-3 flex justify-between items-center text-white rounded-t-2xl",
+        "px-4 py-3 flex justify-between items-center text-white shrink-0",
         activeCall?.status === 'in-progress' ? "bg-emerald-600" :
         activeCall?.status === 'ringing' || activeCall?.status === 'initiated' ? "bg-blue-600 animate-pulse" :
         activeCall?.status === 'failed' ? "bg-red-600" :
@@ -85,23 +98,23 @@ export function DialerWidget() {
           <Phone className="w-4 h-4" />
           <span className="font-semibold text-sm">
             {activeCall?.status === 'in-progress' ? 'Active Call' : 
-             activeCall?.status === 'ringing' ? 'Calling...' : 
+             activeCall?.status === 'ringing' ? (activeCall.direction === 'inbound' ? 'Incoming Call...' : 'Calling...') : 
              activeCall?.status === 'completed' || activeCall?.status === 'missed' ? 'Call Ended' : 'Dialer'}
           </span>
         </div>
-        <button onClick={() => setIsDialerOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors">
+        <button onClick={() => setIsDialerOpen(false)} className="hover:bg-white/20 p-1 rounded transition-colors" title="Minimize Dialer">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5 flex flex-col items-center">
+      <div className="p-5 flex flex-col items-center overflow-y-auto max-h-[calc(90vh-50px)]">
         {!activeCall ? (
           <div className="w-full flex flex-col items-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 border-2 border-primary/20">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3 border-2 border-primary/20">
               <Phone className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-4">Manual Dialer</h3>
+            <h3 className="font-semibold text-foreground mb-3">Enterprise Dialer</h3>
             <div className="w-full space-y-3">
               <input 
                 type="tel" 
@@ -114,14 +127,63 @@ export function DialerWidget() {
               <button 
                 onClick={handleManualCall}
                 disabled={!manualNumber}
-                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-emerald-600/20"
               >
                 <Phone className="w-5 h-5 fill-current" />
                 Call Number
               </button>
+
+              <div className="pt-2 border-t border-border w-full text-center">
+                <button
+                  type="button"
+                  onClick={() => simulateInboundCall()}
+                  className="text-xs text-primary hover:underline font-medium flex items-center justify-center gap-1.5 mx-auto py-1"
+                >
+                  <Phone className="w-3.5 h-3.5" /> Simulate Inbound Call (QA)
+                </button>
+              </div>
             </div>
           </div>
-        ) : activeCall.status !== 'completed' && activeCall.status !== 'missed' && activeCall.status !== 'failed' ? (
+        ) : activeCall.status === 'ringing' ? (
+          <div className="w-full flex flex-col items-center py-2 animate-in fade-in">
+            <div className="w-20 h-20 bg-blue-100 dark:bg-blue-950/40 text-blue-600 rounded-full flex items-center justify-center mb-3 border-2 border-blue-400 animate-bounce">
+              <Phone className="w-10 h-10 animate-pulse" />
+            </div>
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
+              {activeCall.direction === 'inbound' ? 'Incoming Call' : 'Ringing...'}
+            </p>
+            <h3 className="text-lg font-bold text-foreground text-center truncate w-full">
+              {activeCall.leadName || 'Student'}
+            </h3>
+            <p className="text-sm font-mono text-muted-foreground mb-6">
+              {activeCall.leadPhone || '+91 98765 43210'}
+            </p>
+
+            {activeCall.direction === 'inbound' ? (
+              <div className="flex gap-4 w-full">
+                <button
+                  onClick={() => answerCall()}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
+                >
+                  <Phone className="w-5 h-5 fill-current" /> Answer
+                </button>
+                <button
+                  onClick={() => hangUp()}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all"
+                >
+                  <PhoneOff className="w-5 h-5" /> Decline
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => hangUp()}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 transition-all"
+              >
+                <PhoneOff className="w-5 h-5" /> Cancel Call
+              </button>
+            )}
+          </div>
+        ) : activeCall.status === 'in-progress' ? (
           <>
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3 border-2 border-primary/20">
               <span className="text-xl font-bold text-primary">
@@ -143,7 +205,7 @@ export function DialerWidget() {
             <div className="flex gap-4 mb-6">
               <button 
                 onClick={toggleMute}
-                title="Mute"
+                title={isMuted ? "Unmute" : "Mute"}
                 className={cn("p-4 rounded-full transition-colors", isMuted ? "bg-red-100 text-red-600 dark:bg-red-900/30" : "bg-muted text-foreground hover:bg-muted/80")}
               >
                 {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -159,7 +221,7 @@ export function DialerWidget() {
 
               <button 
                 onClick={toggleHold}
-                title="Hold"
+                title={isOnHold ? "Unhold" : "Hold"}
                 className={cn("p-4 rounded-full transition-colors", isOnHold ? "bg-orange-100 text-orange-600 dark:bg-orange-900/30" : "bg-muted text-foreground hover:bg-muted/80")}
               >
                 {isOnHold ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
@@ -177,11 +239,15 @@ export function DialerWidget() {
           <div className="w-full space-y-4">
             <div className="text-center mb-2">
               <h3 className="font-semibold text-foreground">Log Call Outcome</h3>
-              <p className="text-xs text-muted-foreground font-mono">Duration: {formatDuration(callDuration)}</p>
+              <p className="text-xs text-muted-foreground font-mono">
+                Duration: {formatDuration(activeCall.durationSeconds || callDuration)} • {activeCall.leadName}
+              </p>
             </div>
             
             <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1"><Phone className="w-3 h-3 text-muted-foreground"/> Outcome *</label>
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <Phone className="w-3 h-3 text-muted-foreground"/> Outcome *
+              </label>
               <select 
                 value={outcome}
                 onChange={e => setOutcome(e.target.value as CallOutcome)}
@@ -229,7 +295,9 @@ export function DialerWidget() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1"><Calendar className="w-3 h-3 text-muted-foreground"/> Next Follow-up</label>
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-muted-foreground"/> Next Follow-up
+              </label>
               <input 
                 type="datetime-local" 
                 value={nextFollowUp}
@@ -250,7 +318,7 @@ export function DialerWidget() {
 
             <button 
               onClick={handleSaveOutcome}
-              className="w-full py-2 bg-primary text-primary-foreground font-semibold rounded-md shadow-sm hover:bg-primary/90 flex justify-center items-center gap-2 transition-colors mt-2"
+              className="w-full py-2.5 bg-primary text-primary-foreground font-semibold rounded-md shadow-sm hover:bg-primary/90 flex justify-center items-center gap-2 transition-colors mt-2"
             >
               <Save className="w-4 h-4" /> Save Log
             </button>
